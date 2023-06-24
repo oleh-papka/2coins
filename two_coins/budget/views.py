@@ -15,12 +15,8 @@ class CurrencyList(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["instance_name"] = 'Currency'
+        context["instance_name"] = 'Currencies'
         return context
-
-
-def currency(request, pk):
-    return HttpResponse(f'Currency {pk}')
 
 
 def currency_add(request):
@@ -36,7 +32,7 @@ def currency_add(request):
     return render(request, 'budget/currency_create.html',
                   {'form': forms.CurrencyForm,
                    'acct_types': models.Currency.MONEY_TYPES_CHOICES,
-                   'instance_name': 'Currency'})
+                   'instance_name': 'Currencies'})
 
 
 def currency_edit(request, pk):
@@ -55,7 +51,7 @@ def currency_edit(request, pk):
                   {'form': forms.CurrencyForm(instance=curr),
                    'object': curr,
                    'acct_types': models.Currency.MONEY_TYPES_CHOICES,
-                   'instance_name': 'Currency'})
+                   'instance_name': 'Currencies'})
 
 
 def currency_delete(request, pk):
@@ -67,7 +63,7 @@ def currency_delete(request, pk):
 
     return render(request, 'budget/currency_delete.html',
                   {'object': curr,
-                   'instance_name': 'Currency'})
+                   'instance_name': 'Currencies'})
 
 
 # Accounts
@@ -79,12 +75,17 @@ class AccountList(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["instance_name"] = 'Account'
+        context["instance_name"] = 'Accounts'
         return context
 
 
 def account(request, pk):
-    return HttpResponse(f"Account {pk}")
+    template_name = "budget/account.html"
+    acct = models.Account.objects.get(pk=pk)
+
+    return render(request, template_name,
+                  {'object': acct,
+                   'instance_name': 'Accounts'})
 
 
 def account_add(request):
@@ -103,7 +104,7 @@ def account_add(request):
     return render(request, 'budget/account_create.html',
                   {'form': forms.AccountForm,
                    'currencies': currencies,
-                   'instance_name': 'Account'})
+                   'instance_name': 'Accounts'})
 
 
 def account_edit(request, pk):
@@ -125,7 +126,7 @@ def account_edit(request, pk):
                   {'form': forms.AccountForm(instance=acct),
                    'object': acct,
                    'currencies': currencies,
-                   'instance_name': 'Account'})
+                   'instance_name': 'Accounts'})
 
 
 def account_delete(request, pk):
@@ -137,4 +138,4 @@ def account_delete(request, pk):
 
     return render(request, 'budget/account_delete.html',
                   {'object': acct,
-                   'instance_name': 'Account'})
+                   'instance_name': 'Accounts'})

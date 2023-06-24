@@ -5,7 +5,6 @@ urlpatterns = [
     # Currencies
     path('currency/', views.CurrencyList.as_view(), name='currency_list'),
     path('currency/add/', views.currency_add, name='currency_add'),
-    path('currency/<int:pk>/', views.currency, name='currency'),
     path('currency/<int:pk>/edit/', views.currency_edit, name='currency_edit'),
     path('currency/<int:pk>/delete/', views.currency_delete, name='currency_delete'),
 
