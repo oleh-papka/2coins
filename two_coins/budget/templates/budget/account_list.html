@@ -20,8 +20,9 @@
                         {{ account.name }}
                     </h5>
 
-                    <p class="card-text ms-auto">
-                        {{ account.balance }} {{ account.currency.symbol }}
+                    <p class="card-text mt-auto ms-auto">
+                        {% load intspace %}
+                        {{ account.balance|intspace }} {{ account.currency.symbol }}
                     </p>
 
                     <div>
