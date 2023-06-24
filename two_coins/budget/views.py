@@ -40,7 +40,22 @@ def currency_add(request):
 
 
 def currency_edit(request, pk):
-    return HttpResponse(f"Form for editing your currency {pk}")
+    curr = models.Currency.objects.get(pk=pk)
+
+    if request.method == "POST":
+        form = forms.CurrencyForm(request.POST, instance=curr)
+
+        if form.is_valid():
+            form.save()
+            return redirect('currency_list')
+        else:
+            print('NO')
+
+    return render(request, 'budget/currency_edit.html',
+                  {'form': forms.CurrencyForm(instance=curr),
+                   'object': curr,
+                   'acct_types': models.Currency.MONEY_TYPES_CHOICES,
+                   'instance_name': 'Currency'})
 
 
 def currency_delete(request, pk):
@@ -92,7 +107,25 @@ def account_add(request):
 
 
 def account_edit(request, pk):
-    return HttpResponse(f"Form for editing your account {pk}")
+    acct = models.Account.objects.get(pk=pk)
+
+    if request.method == "POST":
+        form = forms.AccountForm(request.POST, instance=acct)
+        print(form.data)
+
+        if form.is_valid():
+            form.save()
+            return redirect('account_list')
+        else:
+            print('NO no no')
+
+    currencies = [(curr.id, curr.abbr) for curr in models.Currency.objects.all()]
+
+    return render(request, 'budget/account_edit.html',
+                  {'form': forms.AccountForm(instance=acct),
+                   'object': acct,
+                   'currencies': currencies,
+                   'instance_name': 'Account'})
 
 
 def account_delete(request, pk):

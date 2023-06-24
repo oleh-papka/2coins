@@ -1,0 +1,78 @@
+{% extends 'create_form.html' %}
+{% load static %}
+
+{% block custom_static %}
+    <link rel="stylesheet" href="{% static 'budget/css/accounts_create.css' %}">
+{% endblock %}
+
+{% block page-controls %}
+    <a href="{% url 'account_list' %}" type="button" class="btn btn-outline-secondary">Back
+        to {{ instance_name }}s</a>
+{% endblock %}
+
+
+{% block form_block %}
+    <form action="{% url 'account_edit' object.id %}" method="post">
+        {% csrf_token %}
+
+        {% for field in form %}
+            {% if field.name == 'acct_type' %}
+            {% elif field.name == 'color' %}
+                <div class="row mb-3">
+                    <label for="id_color"
+                           class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <input type="color" class="form-control form-control-color" id="id_color"
+                               value="#8bc34a" name="color"
+                               title="Choose your color" style="width: 5rem">
+                    </div>
+                </div>
+            {% elif field.name == 'initial_date' %}
+                <div class="row mb-3">
+                    <label for="id_initial_date"
+                           class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <input type="date" class="form-control" id="id_initial_date" name="initial_date"
+                               placeholder="{{ field.label }}" value="{{ field.value|date:'Y-m-d' }}">
+                    </div>
+                </div>
+            {% elif field.name == 'currency' %}
+            {% elif field.name == 'balance' %}
+                <div class="row mb-3">
+                    <label for="id_balance"
+                           class="col-sm-3 align-self-center">{{ field.label }}</label>
+                    <div class="col input-group">
+                        <input type="text" class="form-control" id="id_balance" placeholder="{{ field.label }}"
+                               name="balance" value="{{ field.value }}">
+                        <div class="input-group-text bg-body p-1">
+                            <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">
+                                {% for opt in currencies %}
+                                    <option value="{{ opt.0 }}"
+                                            {% if opt.0 == form.currency.value %}selected{% endif %}>{{ opt.1 }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="row mb-3">
+                    <label for="id-{{ field.name }}"
+                           class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <input type="text" class="form-control" id="id-{{ field.name }}" name="{{ field.name }}"
+                               placeholder="{{ field.label }}" value="{% if field.value %}{{ field.value }}{% endif %}">
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        <div class="d-flex justify-content-end column-gap-2 mt-4">
+            <a href="{% url 'account_list' %}" type="button" class="btn btn-outline-danger">Cancel</a>
+            <button class="btn btn-primary" type="submit">Update</button>
+        </div>
+    </form>
+{% endblock %}
+
+{% block custom_scripts %}
+    <script src="{% static 'budget/js/account_create.js' %}"></script>
+{% endblock %}
