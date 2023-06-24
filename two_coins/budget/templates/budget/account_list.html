@@ -14,32 +14,33 @@
 {% block content %}
     <div class="d-flex flex-wrap gap-4">
         {% for account in account_list %}
-            <div class="card">
-                <div class="card-header">
-                    {{ account.acct_type }}
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title">{{ account.name }}</h5>
-                    <p class="card-text">
-                        Description
+            <div class="card rounded-4 border border-2">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <h5 class="card-title">
+                        {{ account.name }}
+                    </h5>
+
+                    <p class="card-text ms-auto">
+                        {{ account.balance }} {{ account.currency.symbol }}
                     </p>
-                    <span class="badge text-bg-secondary">Secondary</span>
-                    <a href="#" class="stretched-link"></a>
+
+                    <div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <a href="{% url 'account' account.id %}"
+                                   class="btn btn-sm btn-outline-primary">View</a>
+                            </div>
+                            <div>
+                                <a href="{% url 'account_edit' account.id %}"
+                                   class="btn btn-sm btn-outline-warning">Edit</a>
+                                <a href="{% url 'account_delete' account.id %}"
+                                   class="btn btn-sm btn-outline-danger">Delete</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         {% endfor %}
-
-{#        <div class="card">#}
-{#            <div class="card-header">#}
-{#                Type#}
-{#            </div>#}
-{#            <div class="card-body">#}
-{#                <h5 class="card-title">Name</h5>#}
-{#                <p class="card-text">#}
-{#                    Description#}
-{#                </p>#}
-{#                <a href="#" class="stretched-link"></a>#}
-{#            </div>#}
-{#        </div>#}
     </div>
 {% endblock %}

@@ -44,7 +44,15 @@ def currency_edit(request, pk):
 
 
 def currency_delete(request, pk):
-    return HttpResponse(f"Form for deleting your currency {pk}")
+    curr = models.Currency.objects.get(pk=pk)
+
+    if request.method == "POST":
+        curr.delete()
+        return redirect('currency_list')
+
+    return render(request, 'budget/currency_delete.html',
+                  {'object': curr,
+                   'instance_name': 'Currency'})
 
 
 # Accounts
@@ -79,7 +87,6 @@ def account_add(request):
 
     return render(request, 'budget/account_create.html',
                   {'form': forms.AccountForm,
-                   'acct_types': models.ACCOUNT_TYPES_CHOICES,
                    'currencies': currencies,
                    'instance_name': 'Account'})
 
@@ -89,4 +96,12 @@ def account_edit(request, pk):
 
 
 def account_delete(request, pk):
-    return HttpResponse(f"Form for deleting your account {pk}")
+    acct = models.Account.objects.get(pk=pk)
+
+    if request.method == "POST":
+        acct.delete()
+        return redirect('account_list')
+
+    return render(request, 'budget/account_delete.html',
+                  {'object': acct,
+                   'instance_name': 'Account'})
