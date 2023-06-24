@@ -14,4 +14,10 @@ urlpatterns = [
     path('account/<int:pk>/', views.account, name='account'),
     path('account/<int:pk>/edit/', views.account_edit, name='account_edit'),
     path('account/<int:pk>/delete/', views.account_delete, name='account_delete'),
+
+    # Categories
+    path('category/', views.CategoryList.as_view(), name='category_list'),
+    path('category/add/', views.category_add, name='category_add'),
+    path('category/<int:pk>/edit/', views.category_edit, name='category_edit'),
+    path('category/<int:pk>/delete/', views.category_delete, name='category_delete'),
 ]

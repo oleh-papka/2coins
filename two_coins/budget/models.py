@@ -107,3 +107,19 @@ class Account(TimeStampMixin):
             self.balance = 0
 
         super(Account, self).save(*args, **kwargs)
+
+
+class Category(TimeStampMixin):
+    """
+    Model for storing transaction category.
+    """
+
+    name = models.CharField(null=False,
+                            blank=False,
+                            max_length=30,
+                            verbose_name="Category name")
+    color = models.CharField(null=False,
+                             blank=True,
+                             max_length=7,
+                             default="#fcba03",
+                             verbose_name="Category color")

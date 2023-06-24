@@ -139,3 +139,61 @@ def account_delete(request, pk):
     return render(request, 'budget/account_delete.html',
                   {'object': acct,
                    'instance_name': 'Accounts'})
+
+
+# Categories
+
+class CategoryList(ListView):
+    model = models.Category
+    context_object_name = 'category_list'
+    template_name = "budget/category_list.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["instance_name"] = 'Categories'
+        return context
+
+
+def category_add(request):
+    if request.method == "POST":
+        form = forms.CategoryForm(request.POST)
+
+        if form.is_valid():
+            form.save()
+            return redirect('category_list')
+        else:
+            print('NO')
+
+    return render(request, 'budget/category_create.html',
+                  {'form': forms.CategoryForm,
+                   'instance_name': 'Categories'})
+
+
+def category_edit(request, pk):
+    cat = models.Category.objects.get(pk=pk)
+
+    if request.method == "POST":
+        form = forms.CategoryForm(request.POST, instance=cat)
+
+        if form.is_valid():
+            form.save()
+            return redirect('category_list')
+        else:
+            print('NO')
+
+    return render(request, 'budget/category_edit.html',
+                  {'form': forms.CategoryForm(instance=cat),
+                   'object': cat,
+                   'instance_name': 'Categories'})
+
+
+def category_delete(request, pk):
+    cat = models.Category.objects.get(pk=pk)
+
+    if request.method == "POST":
+        cat.delete()
+        return redirect('category_list')
+
+    return render(request, 'budget/category_delete.html',
+                  {'object': cat,
+                   'instance_name': 'Categories'})

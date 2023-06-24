@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block page-controls %}
-    <a href="{% url 'currency_add' %}" type="button" class="btn btn-outline-success">Add new</a>
+    <a href="{% url 'category_add' %}" type="button" class="btn btn-outline-success">Add new</a>
 {% endblock %}
 
 {% block content %}
@@ -17,9 +17,7 @@
             <thead class="table table-bordered">
             <tr>
                 <th scope="col">Name</th>
-                <th scope="col">Type</th>
-                <th scope="col" class="text-center">ABBR</th>
-                <th scope="col" class="text-center">Symbol</th>
+                <th scope="col">Color</th>
                 <th></th>
             </tr>
             </thead>
@@ -27,13 +25,13 @@
             {% for object in object_list %}
                 <tr>
                     <td>{{ object.name }}</td>
-                    <td>{{ object.get_ccy_type_display }}</td>
-                    <td class="text-center">{{ object.abbr }}</td>
-                    <td class="text-center">{{ object.symbol }}</td>
+                    <td>
+                        <div class="color-preview rounded-3" style="background-color: {{ object.color }};"></div>
+                    </td>
                     <td class="text-end">
-                        <a href="{% url 'currency_edit' object.id %}"
+                        <a href="{% url 'category_edit' object.id %}"
                            class="btn btn-sm btn-outline-warning">Edit</a>
-                        <a href="{% url 'currency_delete' object.id %}"
+                        <a href="{% url 'category_delete' object.id %}"
                            class="btn btn-sm btn-outline-danger">Delete</a>
                     </td>
                 </tr>

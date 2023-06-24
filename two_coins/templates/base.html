@@ -43,7 +43,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="#"
+                <a href="{% url 'category_list' %}"
                    class="nav-link d-flex {% if "category" in request.resolver_match.url_name %} active {% else %} text-secondary {% endif %}"
                         {% if "category" in request.resolver_match.url_name %} aria-current="page" {% endif %}>
                     <span class="material-symbols-outlined me-3">category</span>

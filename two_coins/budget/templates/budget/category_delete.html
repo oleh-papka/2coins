@@ -1,0 +1,27 @@
+{% extends 'delete_form.html' %}
+{% load static %}
+
+{% block custom_static %}
+    <link rel="stylesheet" href="{% static 'budget/css/accounts_create.css' %}">
+{% endblock %}
+
+{% block page-controls %}
+    <a href="{% url 'category_list' %}" type="button" class="btn btn-outline-secondary">Back
+        to {{ instance_name }}</a>
+{% endblock %}
+
+
+{% block form_block %}
+    <form action="{% url 'category_delete' object.id %}" method="post">
+        {% csrf_token %}
+
+        <div class="mb-5">
+            <h5>Delete Category "{{ object.name }}"?</h5>
+        </div>
+
+        <div class="d-flex justify-content-end column-gap-2 mt-4">
+            <a href="{% url 'account_list' %}" type="button" class="btn btn-outline-secondary">Back</a>
+            <button class="btn btn-danger" type="submit">Delete</button>
+        </div>
+    </form>
+{% endblock %}
