@@ -1,0 +1,13 @@
+#logo {
+    height: 50px;
+    min-height: 50px;
+}
+
+#page-title {
+    height: 80px;
+    min-height: 80px;
+}
+
+#side-nav {
+    width: 280px;
+}

@@ -1,20 +1,38 @@
+import datetime
+
 from django.db import models
 
 from misc.models import TimeStampMixin
 
-USUAL = "u"
-SAVINGS = "s"
-DEBT = "d"
-CRYPTO = "c"
-FOREIGN_CCY = "f"
 
-ACCOUNT_TYPES_CHOICES = [
-    (USUAL, "Usual account"),
-    (SAVINGS, "Savings account"),
-    (DEBT, "Debt account"),
-    (CRYPTO, "Crypto wallet"),
-    (FOREIGN_CCY, "Foreign currency wallet"),
-]
+class ColorChoices:
+    COLOR_ROSE = '#ffe4e1'
+    COLOR_BLUE = '#2196f3'
+    COLOR_LIGHT_BLUE = '#03a9f4'
+    COLOR_CYAN = '#00bcd4'
+    COLOR_GREEN = '#4caf50'
+    COLOR_LIGHT_GREEN = '#8bc34a'
+    COLOR_LIME = '#cddc39'
+    COLOR_YELLOW = '#ffeb3b'
+    COLOR_AMBER = '#ffc107'
+    COLOR_ORANGE = '#ff9800'
+    COLOR_DARK_ORANGE = '#ff5722'
+    COLOR_LIGHT_GREY = '#c0c0c0'
+
+    CHOICES = (
+        (COLOR_BLUE, 'Blue'),
+        (COLOR_LIGHT_BLUE, 'Light Blue'),
+        (COLOR_CYAN, 'Cyan'),
+        (COLOR_GREEN, 'Green'),
+        (COLOR_LIGHT_GREEN, 'Light Green'),
+        (COLOR_LIME, 'Lime'),
+        (COLOR_YELLOW, 'Yellow'),
+        (COLOR_AMBER, 'Amber'),
+        (COLOR_ORANGE, 'Orange'),
+        (COLOR_DARK_ORANGE, 'Dark Orange'),
+        (COLOR_ROSE, 'Rose'),
+        (COLOR_LIGHT_GREY, 'Light Grey'),
+    )
 
 
 class Currency(TimeStampMixin):
@@ -32,7 +50,8 @@ class Currency(TimeStampMixin):
     name = models.CharField(null=False,
                             blank=False,
                             max_length=30,
-                            verbose_name="Currency name")
+                            verbose_name="Currency name",
+                            unique=True)
     ccy_type = models.CharField(max_length=2,
                                 choices=MONEY_TYPES_CHOICES,
                                 default=FIAT,
@@ -41,14 +60,16 @@ class Currency(TimeStampMixin):
     symbol = models.CharField(null=True,
                               blank=True,
                               max_length=1,
-                              verbose_name="Currency symbol")
+                              verbose_name="Symbol",
+                              unique=True)
     abbr = models.CharField(null=False,
                             blank=False,
                             max_length=5,
-                            verbose_name="Currency abbreviation")
+                            verbose_name="Abbreviation",
+                            unique=True)
 
 
-class BaseAccount(TimeStampMixin):
+class Account(TimeStampMixin):
     """
     Base model representing accounts of the user.
     """
@@ -57,83 +78,32 @@ class BaseAccount(TimeStampMixin):
                             blank=False,
                             max_length=30,
                             verbose_name="Account name")
-    balance = models.IntegerField(null=False,
-                                  blank=True,
-                                  default=0,
-                                  verbose_name="Account balance")
     currency = models.ForeignKey(Currency,
                                  null=False,
                                  blank=False,
                                  on_delete=models.DO_NOTHING,
                                  related_name="+")
-    acct_type = models.CharField(max_length=1,
-                                 choices=ACCOUNT_TYPES_CHOICES,
-                                 default=USUAL,
-                                 verbose_name="Account type")
+    balance = models.IntegerField(null=False,
+                                  blank=True,
+                                  default=0,
+                                  verbose_name="Balance")
+    initial_date = models.DateTimeField(null=False,
+                                        blank=True,
+                                        verbose_name="Initial date")
     color = models.CharField(null=False,
                              blank=True,
-                             max_length=6,
-                             default="fcba03",
+                             max_length=7,
+                             default="#fcba03",
                              verbose_name="Account color")
-    description = models.CharField(null=True,
-                                   blank=True,
-                                   max_length=50,
-                                   verbose_name="Account description")
-
-
-class UsualAccount(BaseAccount):
-    """
-    Usual account for the user.
-    """
-    pass
-
-
-class SavingsAccount(BaseAccount):
-    """
-    Savings account for the user.
-    """
     goal_balance = models.IntegerField(null=True,
                                        blank=True,
                                        default=None,
                                        verbose_name="Goal balance")
 
-
-class DebtAccount(BaseAccount):
-    """
-    Debt account for the user.
-    """
-    debt = models.IntegerField(null=False,
-                               blank=False,
-                               verbose_name="Amount of debt")
-
-
-class ForeignCurrencyAccount(BaseAccount):
-    """
-    Foreign currency account for the user.
-    """
-    initial_balance = models.IntegerField(null=False,
-                                          blank=True,
-                                          verbose_name="Initial balance")
-    initial_price_main_ccy = models.IntegerField(null=False,
-                                                 blank=False,
-                                                 verbose_name="Initial price (main currency)")
-    initial_date = models.DateTimeField(null=False,
-                                        blank=True,
-                                        verbose_name="Initial date")
-
     def save(self, *args, **kwargs):
-        if not self.initial_balance:
-            self.initial_balance = self.balance
         if not self.initial_date:
-            self.initial_date = self.created_at
+            self.initial_date = datetime.datetime.now()
+        if not self.balance:
+            self.balance = 0
 
-        super(ForeignCurrencyAccount, self).save(*args, **kwargs)
-
-
-class CryptoAccount(ForeignCurrencyAccount):
-    """
-    Crypto account for the user.
-    """
-    initial_price_usd = models.IntegerField(null=False,
-                                            blank=False,
-                                            verbose_name="Initial price (USD)")
+        super(Account, self).save(*args, **kwargs)

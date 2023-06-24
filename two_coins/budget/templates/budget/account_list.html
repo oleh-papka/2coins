@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}2coins | {{ instance_name }}s{% endblock %}
+
+{% block custom_static %}
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'budget/css/accounts.css' %}">
+{% endblock %}
+
+{% block page-controls %}
+    <a href="{% url 'account_add' %}" type="button" class="btn btn-outline-primary">Add new</a>
+{% endblock %}
+
+{% block content %}
+    <div class="d-flex flex-wrap gap-4">
+        {% for account in account_list %}
+            <div class="card">
+                <div class="card-header">
+                    {{ account.acct_type }}
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ account.name }}</h5>
+                    <p class="card-text">
+                        Description
+                    </p>
+                    <span class="badge text-bg-secondary">Secondary</span>
+                    <a href="#" class="stretched-link"></a>
+                </div>
+            </div>
+        {% endfor %}
+
+{#        <div class="card">#}
+{#            <div class="card-header">#}
+{#                Type#}
+{#            </div>#}
+{#            <div class="card-body">#}
+{#                <h5 class="card-title">Name</h5>#}
+{#                <p class="card-text">#}
+{#                    Description#}
+{#                </p>#}
+{#                <a href="#" class="stretched-link"></a>#}
+{#            </div>#}
+{#        </div>#}
+    </div>
+{% endblock %}
