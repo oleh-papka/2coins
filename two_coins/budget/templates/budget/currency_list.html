@@ -4,7 +4,7 @@
 
 {% block custom_static %}
     {% load static %}
-    <link rel="stylesheet" href="{% static 'budget/css/accounts.css' %}">
+    <link rel="stylesheet" href="{% static 'budget/css/currency_list.css' %}">
 {% endblock %}
 
 {% block page-controls %}
@@ -12,30 +12,29 @@
 {% endblock %}
 
 {% block content %}
-    <div class="d-flex flex-wrap gap-4">
-        <table class="table table-hover">
-            <thead class="table-light">
+    <div id="currency_table" class="mx-auto">
+        <table class="table table-hover table align-middle">
+            <thead class="table table-bordered">
             <tr>
                 <th scope="col">Name</th>
                 <th scope="col">Type</th>
-                <th scope="col">ABBR</th>
-                <th scope="col">Symbol</th>
+                <th scope="col" class="text-center">ABBR</th>
+                <th scope="col" class="text-center">Symbol</th>
+                <th></th>
             </tr>
             </thead>
             <tbody>
             {% for object in object_list %}
                 <tr>
                     <td>{{ object.name }}</td>
-                    <td>{{ object.ccy_type }}</td>
-                    <td>{{ object.abbr }}</td>
-                    <td>
-                        <div class="d-flex justify-content-between">
-                            {{ object.symbol }}
-                            <div>
-                                <a href="{% url 'currency_edit' object.id %}" class="btn btn-warning">Edit</a>
-                                <a href="{% url 'currency_delete' object.id %}" class="btn btn-danger">Delete</a>
-                            </div>
-                        </div>
+                    <td>{{ object.get_ccy_type_display }}</td>
+                    <td class="text-center">{{ object.abbr }}</td>
+                    <td class="text-center">{{ object.symbol }}</td>
+                    <td class="text-end">
+                        <a href="{% url 'currency_edit' object.id %}"
+                           class="btn btn-sm btn-outline-warning">Edit</a>
+                        <a href="{% url 'currency_delete' object.id %}"
+                           class="btn btn-sm btn-outline-danger">Delete</a>
                     </td>
                 </tr>
             {% endfor %}
