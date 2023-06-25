@@ -55,8 +55,7 @@ class Currency(TimeStampMixin):
     ccy_type = models.CharField(max_length=2,
                                 choices=MONEY_TYPES_CHOICES,
                                 default=FIAT,
-                                verbose_name="Currency type"
-                                )
+                                verbose_name="Currency type")
     symbol = models.CharField(null=True,
                               blank=True,
                               max_length=1,
@@ -123,3 +122,49 @@ class Category(TimeStampMixin):
                              max_length=7,
                              default="#fcba03",
                              verbose_name="Category color")
+
+
+class Transaction(TimeStampMixin):
+    """
+    Model for storing one transaction with account
+    """
+
+    INCOME = "+"
+    EXPENSE = "-"
+    # TRANSFER = ">"
+    TRANSACTION_TYPES_CHOICES = [
+        (EXPENSE, "Expense"),
+        (INCOME, "Income"),
+        # (TRANSFER, "Transfer"), # TODO: money transfer between accounts
+    ]
+
+    txn_type = models.CharField(max_length=2,
+                                choices=TRANSACTION_TYPES_CHOICES,
+                                default=EXPENSE,
+                                verbose_name="Transaction type")
+    amount = models.IntegerField(null=False,
+                                 blank=False,
+                                 verbose_name="Amount")
+    category = models.ForeignKey(null=False,
+                                 blank=False,
+                                 to=Category,
+                                 on_delete=models.DO_NOTHING,
+                                 verbose_name="Category")
+    account = models.ForeignKey(null=False,
+                                blank=False,
+                                to=Account,
+                                on_delete=models.DO_NOTHING,
+                                verbose_name="Account")
+    description = models.CharField(null=True,
+                                   blank=True,
+                                   max_length=30,
+                                   verbose_name="Description")
+    date = models.DateTimeField(null=False,
+                                blank=True,
+                                verbose_name="Transaction date")
+
+    def save(self, *args, **kwargs):
+        if not self.date:
+            self.initial_date = datetime.datetime.now()
+
+        super(Transaction, self).save(*args, **kwargs)

@@ -21,3 +21,9 @@ class CategoryForm(forms.ModelForm):
     class Meta:
         model = models.Category
         fields = '__all__'
+
+
+class TransactionForm(forms.ModelForm):
+    class Meta:
+        model = models.Transaction
+        fields = '__all__'

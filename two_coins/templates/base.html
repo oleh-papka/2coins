@@ -58,6 +58,14 @@
                     Currencies
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="{% url 'transaction_list' %}"
+                   class="nav-link d-flex {% if "transaction" in request.resolver_match.url_name %} active {% else %} text-secondary {% endif %}"
+                        {% if "transaction" in request.resolver_match.url_name %} aria-current="page" {% endif %}>
+                    <span class="material-symbols-outlined me-3">receipt_long</span>
+                    Transactions
+                </a>
+            </li>
         </ul>
 
         <hr>

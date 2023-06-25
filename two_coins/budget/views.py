@@ -197,3 +197,67 @@ def category_delete(request, pk):
     return render(request, 'budget/category_delete.html',
                   {'object': cat,
                    'instance_name': 'Categories'})
+
+
+# Transactions
+
+class TransactionList(ListView):
+    model = models.Transaction
+    context_object_name = 'transaction_list'
+    template_name = "budget/transaction_list.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["instance_name"] = 'Transactions'
+        return context
+
+
+def transaction_add(request):
+    if request.method == "POST":
+        form = forms.TransactionForm(request.POST)
+
+        if form.is_valid():
+            form.save()
+            return redirect('transaction_list')
+        else:
+            print('NO')
+
+    categories = [(cat.id, cat.name) for cat in models.Category.objects.all()]
+    accounts = [(acct.id, acct.name) for acct in models.Account.objects.all()]
+
+    return render(request, 'budget/transaction_create.html',
+                  {'form': forms.TransactionForm,
+                   'txn_types': models.Transaction.TRANSACTION_TYPES_CHOICES,
+                   'categories': categories,
+                   'accounts': accounts,
+                   'instance_name': 'Transactions'})
+
+
+def transaction_edit(request, pk):
+    txn = models.Transaction.objects.get(pk=pk)
+
+    if request.method == "POST":
+        form = forms.TransactionForm(request.POST, instance=txn)
+
+        if form.is_valid():
+            form.save()
+            return redirect('transaction_list')
+        else:
+            print('NO')
+
+    return render(request, 'budget/transaction_edit.html',
+                  {'form': forms.TransactionForm(instance=txn),
+                   'object': txn,
+                   'instance_name': 'Transactions'})
+
+
+def transaction_delete(request, pk):
+    txn = models.Transaction.objects.get(pk=pk)
+
+    if request.method == "POST":
+        txn.delete()
+        return redirect('transaction_list')
+
+    return render(request, 'budget/transaction_delete.html',
+                  {'object': txn,
+                   'instance_name': 'Transactions'})

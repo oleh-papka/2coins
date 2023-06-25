@@ -1,0 +1,85 @@
+{% extends 'create_form.html' %}
+{% load static %}
+
+{% block custom_static %}
+    <link rel="stylesheet" href="{% static 'budget/css/accounts_create.css' %}">
+{% endblock %}
+
+{% block page-controls %}
+    <a href="{% url 'transaction_list' %}" type="button" class="btn btn-outline-secondary">Back
+        to {{ instance_name }}</a>
+{% endblock %}
+
+
+{% block form_block %}
+    <form action="{% url 'transaction_add' %}" method="post">
+        {% csrf_token %}
+
+        {% for field in form %}
+            {% if field.name == 'txn_type' %}
+                <div class="row mb-3">
+                    <label for="id_txn_type" class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <select class="form-select" id="id_txn_type" aria-label="txn_type select" name="txn_type">
+                            {% for opt in txn_types %}
+                                <option value="{{ opt.0 }}"
+                                        {% if forloop.first %}selected{% endif %}>{{ opt.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            {% elif field.name == 'date' %}
+                <div class="row mb-3">
+                    <label for="id_date"
+                           class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <input type="date" class="form-control" id="id_date" name="date"
+                               placeholder="{{ field.label }}">
+                    </div>
+                </div>
+            {% elif field.name == 'category' %}
+                <div class="row mb-3">
+                    <label for="id_category" class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <select class="form-select" id="id_category" aria-label="category select" name="category">
+                            {% for cat in categories %}
+                                <option value="{{ cat.0 }}"
+                                        {% if forloop.first %}selected{% endif %}>{{ cat.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            {% elif field.name == 'account' %}
+                <div class="row mb-3">
+                    <label for="id_account" class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <select class="form-select" id="id_category" aria-label="account select" name="account">
+                            {% for acct in accounts %}
+                                <option value="{{ acct.0 }}"
+                                        {% if forloop.first %}selected{% endif %}>{{ acct.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            {% else %}
+                <div class="row mb-3">
+                    <label for="id-{{ field.name }}"
+                           class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <input type="text" class="form-control" id="id-{{ field.name }}" name="{{ field.name }}"
+                               placeholder="{{ field.label }}">
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        <div class="d-flex justify-content-end column-gap-2 mt-4">
+            <a href="{% url 'transaction_list' %}" type="button" class="btn btn-outline-danger">Cancel</a>
+            <button class="btn btn-primary" type="submit">Create</button>
+        </div>
+    </form>
+{% endblock %}
+
+{% block custom_scripts %}
+    <script src="{% static 'budget/js/account_create.js' %}"></script>
+{% endblock %}

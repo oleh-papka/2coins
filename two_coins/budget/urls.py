@@ -20,4 +20,10 @@ urlpatterns = [
     path('category/add/', views.category_add, name='category_add'),
     path('category/<int:pk>/edit/', views.category_edit, name='category_edit'),
     path('category/<int:pk>/delete/', views.category_delete, name='category_delete'),
+
+    # Transactions
+    path('transaction/', views.TransactionList.as_view(), name='transaction_list'),
+    path('transaction/add/', views.transaction_add, name='transaction_add'),
+    path('transaction/<int:pk>/edit/', views.transaction_edit, name='transaction_edit'),
+    path('transaction/<int:pk>/delete/', views.transaction_delete, name='transaction_delete'),
 ]

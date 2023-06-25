@@ -6,24 +6,26 @@
 {% endblock %}
 
 {% block page-controls %}
-    <a href="{% url 'category_list' %}" type="button" class="btn btn-outline-secondary">Back
+    <a href="{% url 'transaction_list' %}" type="button" class="btn btn-outline-secondary">Back
         to {{ instance_name }}</a>
 {% endblock %}
 
 
 {% block form_block %}
-    <form action="{% url 'category_edit' object.id %}" method="post">
+    <form action="{% url 'transaction_edit' object.id %}" method="post">
         {% csrf_token %}
 
         {% for field in form %}
-            {% if field.name == 'color' %}
+            {% if field.name == 'ccy_type' %}
                 <div class="row mb-3">
-                    <label for="id_color"
-                           class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <label for="id_ccy_type" class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
-                        <input type="color" class="form-control form-control-color" id="id_color"
-                               value="{{ field.value }}" name="color"
-                               title="Choose your color" style="width: 5rem">
+                        <select class="form-select" id="id_ccy_type" aria-label="acct_type select" name="ccy_type">
+                            {% for opt in acct_types %}
+                                <option value="{{ opt.0 }}"
+                                        {% if opt.0 == field.value %}selected{% endif %}>{{ opt.1 }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                 </div>
             {% else %}
@@ -32,14 +34,14 @@
                            class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
                         <input type="text" class="form-control" id="id-{{ field.name }}" name="{{ field.name }}"
-                               placeholder="{{ field.label }}" value="{% if field.value %}{{ field.value }}{% endif %}">
+                               placeholder="{{ field.label }}" value="{{ field.value }}">
                     </div>
                 </div>
             {% endif %}
         {% endfor %}
 
         <div class="d-flex justify-content-end column-gap-2 mt-4">
-            <a href="{% url 'category_list' %}" type="button" class="btn btn-outline-danger">Cancel</a>
+            <a href="{% url 'transaction_list' %}" type="button" class="btn btn-outline-danger">Cancel</a>
             <button class="btn btn-primary" type="submit">Update</button>
         </div>
     </form>
