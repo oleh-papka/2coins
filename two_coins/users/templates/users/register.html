@@ -17,6 +17,23 @@
         integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
         crossorigin="anonymous"></script>
 
+{% if messages %}
+    {% for message in messages %}
+        <div class="toast-container position-fixed top-0 end-0 p-3">
+            <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header bg-danger">
+                    <strong class="me-auto text-white">Fuck!!!</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast"
+                            aria-label="Close"></button>
+                </div>
+                <div class="toast-body bg-danger-subtle">
+                    {{ message }}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+{% endif %}
+
 <div id="theme-switch" style="position: absolute; top: 1rem; left: 1rem;">
     <div class="form-check form-switch toggle-switch">
         <input class="form-check-input" type="checkbox" id="darkThemeSwitch">
@@ -24,25 +41,28 @@
     </div>
 </div>
 
+
 <div class="row">
     <div class="col-lg-6 d-flex justify-content-center p-0">
         <div id="login-group">
             <h1 class="mb-5">Register user</h1>
-            <form>
-                <div class="mb-3">
-                    <label for="inputEmail" class="form-label">Email address</label>
-                    <input type="email" class="form-control form-control" id="inputEmail"
-                           placeholder="name@example.com">
-                </div>
+            <form action="{% url 'register' %}" method="post">
+                {% csrf_token %}
 
                 <div class="mb-3">
-                    <label for="inputPassword" class="form-label">Password</label>
-                    <input type="password" id="inputPassword" class="form-control form-control">
+                    <label for="id_username" class="form-label">Username</label>
+                    <input type="text" required class="form-control form-control" id="id_username" name="username"
+                           autocomplete="username">
                 </div>
-
+                <div class="mb-3">
+                    <label for="id_password1" class="form-label">Password</label>
+                    <input type="password" required id="id_password1" class="form-control form-control" name="password1"
+                           autocomplete="new-password">
+                </div>
                 <div class="mb-5">
-                    <label for="inputPassword2" class="form-label">Password confirmation</label>
-                    <input type="password" id="inputPassword2" class="form-control form-control">
+                    <label for="id_password2" class="form-label">Password confirmation</label>
+                    <input type="password" required id="id_password2" class="form-control form-control" name="password2"
+                           autocomplete="new-password">
                 </div>
 
                 <div class="d-grid mb-4">
@@ -71,6 +91,12 @@
             document.documentElement.setAttribute('data-bs-theme', 'light');
         }
     });
+
+    window.onload = (event) => {
+        let myAlert = document.querySelector('.toast');
+        let bsAlert = new bootstrap.Toast(myAlert);
+        bsAlert.show();
+    };
 </script>
 
 </body>

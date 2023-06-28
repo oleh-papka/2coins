@@ -78,9 +78,10 @@ class Account(TimeStampMixin):
                             max_length=30,
                             verbose_name="Account name")
     currency = models.ForeignKey(Currency,
-                                 null=False,
+                                 null=True,
                                  blank=False,
-                                 on_delete=models.DO_NOTHING,
+                                 on_delete=models.SET_DEFAULT,
+                                 default=0,
                                  related_name="+")
     balance = models.IntegerField(null=False,
                                   blank=True,
@@ -145,15 +146,17 @@ class Transaction(TimeStampMixin):
     amount = models.IntegerField(null=False,
                                  blank=False,
                                  verbose_name="Amount")
-    category = models.ForeignKey(null=False,
+    category = models.ForeignKey(null=True,
                                  blank=False,
                                  to=Category,
-                                 on_delete=models.DO_NOTHING,
+                                 on_delete=models.SET_DEFAULT,  # TODO: create default values
+                                 default=0,
                                  verbose_name="Category")
-    account = models.ForeignKey(null=False,
+    account = models.ForeignKey(null=True,
                                 blank=False,
                                 to=Account,
-                                on_delete=models.DO_NOTHING,
+                                on_delete=models.SET_DEFAULT,
+                                default=0,
                                 verbose_name="Account")
     description = models.CharField(null=True,
                                    blank=True,
@@ -165,6 +168,6 @@ class Transaction(TimeStampMixin):
 
     def save(self, *args, **kwargs):
         if not self.date:
-            self.initial_date = datetime.datetime.now()
+            self.date = datetime.datetime.now()
 
         super(Transaction, self).save(*args, **kwargs)

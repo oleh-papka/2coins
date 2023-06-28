@@ -16,14 +16,47 @@
         {% csrf_token %}
 
         {% for field in form %}
-            {% if field.name == 'ccy_type' %}
+            {% if field.name == 'txn_type' %}
                 <div class="row mb-3">
-                    <label for="id_ccy_type" class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <label for="id_txn_type" class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
-                        <select class="form-select" id="id_ccy_type" aria-label="acct_type select" name="ccy_type">
-                            {% for opt in acct_types %}
+                        <select class="form-select" id="id_txn_type" aria-label="txn_type select" name="txn_type">
+                            {% for opt in txn_types %}
                                 <option value="{{ opt.0 }}"
-                                        {% if opt.0 == field.value %}selected{% endif %}>{{ opt.1 }}</option>
+                                        {% if opt.0 == form.txn_type.value %}selected{% endif %}>{{ opt.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            {% elif field.name == 'date' %}
+                <div class="row mb-3">
+                    <label for="id_date"
+                           class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <input type="date" class="form-control" id="id_date" name="date"
+                               placeholder="{{ field.label }}" value="{{ field.value|date:'Y-m-d' }}">
+                    </div>
+                </div>
+            {% elif field.name == 'category' %}
+                <div class="row mb-3">
+                    <label for="id_category" class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <select class="form-select" id="id_category" aria-label="category select" name="category">
+                            {% for cat in categories %}
+                                <option value="{{ cat.0 }}"
+                                        {% if cat.0 == form.category.value %}selected{% endif %}>{{ cat.1 }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            {% elif field.name == 'account' %}
+                <div class="row mb-3">
+                    <label for="id_account" class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <select class="form-select" id="id_category" aria-label="account select" name="account">
+                            {% for acct in accounts %}
+                                <option value="{{ acct.0 }}"
+                                        {% if acct.0 == form.account.value %}selected{% endif %}>{{ acct.1 }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -34,7 +67,7 @@
                            class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
                         <input type="text" class="form-control" id="id-{{ field.name }}" name="{{ field.name }}"
-                               placeholder="{{ field.label }}" value="{{ field.value }}">
+                               placeholder="{{ field.label }}" value="{% if field.value %}{{ field.value }}{% endif %}">
                     </div>
                 </div>
             {% endif %}

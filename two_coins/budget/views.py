@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 
 from django.shortcuts import render, redirect
@@ -68,10 +69,11 @@ def currency_delete(request, pk):
 
 # Accounts
 
-class AccountList(ListView):
+class AccountList(LoginRequiredMixin, ListView):
     model = models.Account
     context_object_name = 'account_list'
     template_name = "budget/account_list.html"
+    login_url = 'login'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -245,9 +247,15 @@ def transaction_edit(request, pk):
         else:
             print('NO')
 
+    categories = [(cat.id, cat.name) for cat in models.Category.objects.all()]
+    accounts = [(acct.id, acct.name) for acct in models.Account.objects.all()]
+
     return render(request, 'budget/transaction_edit.html',
                   {'form': forms.TransactionForm(instance=txn),
                    'object': txn,
+                   'txn_types': models.Transaction.TRANSACTION_TYPES_CHOICES,
+                   'categories': categories,
+                   'accounts': accounts,
                    'instance_name': 'Transactions'})
 
 
