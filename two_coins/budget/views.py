@@ -1,5 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse
+from django.contrib import messages
 
 from django.shortcuts import render, redirect
 from django.views.generic import ListView
@@ -26,12 +26,15 @@ def currency_add(request):
 
         if form.is_valid():
             form.save()
+            messages.success(request, f"Currency '{form.cleaned_data.get('name')}' created!")
             return redirect('currency_list')
         else:
-            print('NO')
+            messages.warning(request, "Something went wrong!")
+    else:
+        form = forms.CurrencyForm
 
     return render(request, 'budget/currency_create.html',
-                  {'form': forms.CurrencyForm,
+                  {'form': form,
                    'acct_types': models.Currency.MONEY_TYPES_CHOICES,
                    'instance_name': 'Currencies'})
 
@@ -44,12 +47,16 @@ def currency_edit(request, pk):
 
         if form.is_valid():
             form.save()
+            messages.success(request, f"Currency '{form.cleaned_data.get('name')}' updated!")
+
             return redirect('currency_list')
         else:
-            print('NO')
+            messages.warning(request, "Something went wrong!")
+    else:
+        form = forms.CurrencyForm(instance=curr)
 
     return render(request, 'budget/currency_edit.html',
-                  {'form': forms.CurrencyForm(instance=curr),
+                  {'form': form,
                    'object': curr,
                    'acct_types': models.Currency.MONEY_TYPES_CHOICES,
                    'instance_name': 'Currencies'})
@@ -60,6 +67,8 @@ def currency_delete(request, pk):
 
     if request.method == "POST":
         curr.delete()
+        messages.success(request, f"Currency '{curr.name}' deleted!")
+
         return redirect('currency_list')
 
     return render(request, 'budget/currency_delete.html',
@@ -91,41 +100,44 @@ def account(request, pk):
 
 
 def account_add(request):
+    currencies = [(curr.id, curr.abbr) for curr in models.Currency.objects.all()]
+
     if request.method == "POST":
         form = forms.AccountForm(request.POST)
 
         if form.is_valid():
             form.save()
+            messages.success(request, f"Account '{form.cleaned_data.get('name')}' created!")
             return redirect('account_list')
         else:
-            print('NO no no')
-        # return render(request, 'budget/account_list.html')
-
-    currencies = [(curr.id, curr.abbr) for curr in models.Currency.objects.all()]
+            messages.warning(request, "Something went wrong!")
+    else:
+        form = forms.AccountForm
 
     return render(request, 'budget/account_create.html',
-                  {'form': forms.AccountForm,
+                  {'form': form,
                    'currencies': currencies,
                    'instance_name': 'Accounts'})
 
 
 def account_edit(request, pk):
     acct = models.Account.objects.get(pk=pk)
+    currencies = [(curr.id, curr.abbr) for curr in models.Currency.objects.all()]
 
     if request.method == "POST":
         form = forms.AccountForm(request.POST, instance=acct)
-        print(form.data)
 
         if form.is_valid():
             form.save()
+            messages.success(request, f"Account '{form.cleaned_data.get('name')}' updated!")
             return redirect('account_list')
         else:
-            print('NO no no')
-
-    currencies = [(curr.id, curr.abbr) for curr in models.Currency.objects.all()]
+            messages.warning(request, "Something went wrong!")
+    else:
+        form = forms.AccountForm(instance=acct)
 
     return render(request, 'budget/account_edit.html',
-                  {'form': forms.AccountForm(instance=acct),
+                  {'form': form,
                    'object': acct,
                    'currencies': currencies,
                    'instance_name': 'Accounts'})
@@ -136,6 +148,7 @@ def account_delete(request, pk):
 
     if request.method == "POST":
         acct.delete()
+        messages.success(request, f"Account '{acct.name}' deleted!")
         return redirect('account_list')
 
     return render(request, 'budget/account_delete.html',
@@ -164,10 +177,12 @@ def category_add(request):
             form.save()
             return redirect('category_list')
         else:
-            print('NO')
+            messages.warning(request, "Something went wrong!")
+    else:
+        form = forms.CategoryForm
 
     return render(request, 'budget/category_create.html',
-                  {'form': forms.CategoryForm,
+                  {'form': form,
                    'instance_name': 'Categories'})
 
 
@@ -181,10 +196,12 @@ def category_edit(request, pk):
             form.save()
             return redirect('category_list')
         else:
-            print('NO')
+            messages.warning(request, "Something went wrong!")
+    else:
+        form = forms.CategoryForm(instance=cat)
 
     return render(request, 'budget/category_edit.html',
-                  {'form': forms.CategoryForm(instance=cat),
+                  {'form': form,
                    'object': cat,
                    'instance_name': 'Categories'})
 
@@ -215,6 +232,9 @@ class TransactionList(ListView):
 
 
 def transaction_add(request):
+    categories = [(cat.id, cat.name) for cat in models.Category.objects.all()]
+    accounts = [(acct.id, acct.name) for acct in models.Account.objects.all()]
+
     if request.method == "POST":
         form = forms.TransactionForm(request.POST)
 
@@ -222,13 +242,12 @@ def transaction_add(request):
             form.save()
             return redirect('transaction_list')
         else:
-            print('NO')
-
-    categories = [(cat.id, cat.name) for cat in models.Category.objects.all()]
-    accounts = [(acct.id, acct.name) for acct in models.Account.objects.all()]
+            messages.warning(request, "Something went wrong!")
+    else:
+        form = forms.TransactionForm
 
     return render(request, 'budget/transaction_create.html',
-                  {'form': forms.TransactionForm,
+                  {'form': form,
                    'txn_types': models.Transaction.TRANSACTION_TYPES_CHOICES,
                    'categories': categories,
                    'accounts': accounts,
@@ -237,6 +256,8 @@ def transaction_add(request):
 
 def transaction_edit(request, pk):
     txn = models.Transaction.objects.get(pk=pk)
+    categories = [(cat.id, cat.name) for cat in models.Category.objects.all()]
+    accounts = [(acct.id, acct.name) for acct in models.Account.objects.all()]
 
     if request.method == "POST":
         form = forms.TransactionForm(request.POST, instance=txn)
@@ -245,13 +266,12 @@ def transaction_edit(request, pk):
             form.save()
             return redirect('transaction_list')
         else:
-            print('NO')
-
-    categories = [(cat.id, cat.name) for cat in models.Category.objects.all()]
-    accounts = [(acct.id, acct.name) for acct in models.Account.objects.all()]
+            messages.warning(request, "Something went wrong!")
+    else:
+        form = forms.TransactionForm(instance=txn)
 
     return render(request, 'budget/transaction_edit.html',
-                  {'form': forms.TransactionForm(instance=txn),
+                  {'form': form,
                    'object': txn,
                    'txn_types': models.Transaction.TRANSACTION_TYPES_CHOICES,
                    'categories': categories,

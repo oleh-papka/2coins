@@ -1,0 +1,69 @@
+<div class="d-flex flex-column p-3 h-100 bg-body-secondary" id="side-nav">
+    <a href="/" class="d-flex align-items-center ms-3 text-decoration-none text-reset" id="logo">
+        <span class="fw-semibold fs-3">2coins</span>
+    </a>
+
+    <hr>
+
+    <ul class="nav nav-pills flex-column mb-auto row-gap-2">
+        <li class="nav-item">
+            <a href="/" class="nav-link text-secondary d-flex">
+                <span class="material-symbols-outlined me-3">dashboard</span>
+                Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{% url 'account_list' %}"
+               class="nav-link d-flex {% if "account" in request.resolver_match.url_name %} active {% else %} text-secondary {% endif %}"
+                    {% if "account" in request.resolver_match.url_name %} aria-current="page" {% endif %}>
+                <span class="material-symbols-outlined me-3">account_balance_wallet</span>
+                Accounts
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{% url 'category_list' %}"
+               class="nav-link d-flex {% if "category" in request.resolver_match.url_name %} active {% else %} text-secondary {% endif %}"
+                    {% if "category" in request.resolver_match.url_name %} aria-current="page" {% endif %}>
+                <span class="material-symbols-outlined me-3">category</span>
+                Categories
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{% url 'currency_list' %}"
+               class="nav-link d-flex {% if "currency" in request.resolver_match.url_name %} active {% else %} text-secondary {% endif %}"
+                    {% if "currency" in request.resolver_match.url_name %} aria-current="page" {% endif %}>
+                <span class="material-symbols-outlined me-3">paid</span>
+                Currencies
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="{% url 'transaction_list' %}"
+               class="nav-link d-flex {% if "transaction" in request.resolver_match.url_name %} active {% else %} text-secondary {% endif %}"
+                    {% if "transaction" in request.resolver_match.url_name %} aria-current="page" {% endif %}>
+                <span class="material-symbols-outlined me-3">receipt_long</span>
+                Transactions
+            </a>
+        </li>
+    </ul>
+
+    <hr>
+
+    <div class="nav-item dropdown ps-2">
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+           data-bs-toggle="dropdown" aria-expanded="false">
+            Theme
+        </a>
+        <ul class="dropdown-menu" aria-labelledby="navbarDropdown" id="ThemeChoice">
+            <button class="dropdown-item" onclick="go_light()">Light</button>
+            <button class="dropdown-item" onclick="go_dark()">Dark</button>
+        </ul>
+    </div>
+
+    <div class="mt-2">
+        {% if request.user.is_authenticated %}
+            <a type="button" class="btn btn-outline-primary w-100" href="{% url 'logout' %}">Logout</a>
+        {% else %}
+            <a type="button" class="btn btn-outline-primary w-100" href="{% url 'login' %}">Log in</a>
+        {% endif %}
+    </div>
+</div>

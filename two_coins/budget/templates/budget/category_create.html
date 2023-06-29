@@ -31,8 +31,12 @@
                     <label for="id-{{ field.name }}"
                            class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
-                        <input type="text" class="form-control" id="id-{{ field.name }}" name="{{ field.name }}"
+                        <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
+                               id="id-{{ field.name }}" name="{{ field.name }}"
                                placeholder="{{ field.label }}">
+                        <div class="invalid-feedback">
+                            {{ field.errors.as_text }}
+                        </div>
                     </div>
                 </div>
             {% endif %}

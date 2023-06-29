@@ -56,8 +56,8 @@ class Currency(TimeStampMixin):
                                 choices=MONEY_TYPES_CHOICES,
                                 default=FIAT,
                                 verbose_name="Currency type")
-    symbol = models.CharField(null=True,
-                              blank=True,
+    symbol = models.CharField(null=False,
+                              blank=False,
                               max_length=1,
                               verbose_name="Symbol",
                               unique=True)

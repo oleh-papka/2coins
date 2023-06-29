@@ -2,11 +2,12 @@
 
 {% block title %}2coins | Create {{ instance_name }}{% endblock %}
 
-
+{% block sidebar %}
+    {% include 'sidebar.html' %}
+{% endblock %}
 
 {% block content %}
     <div class="bg-body-tertiary rounded-4 p-4 mx-auto" id="form-card">
-
         {% block form_block %}
         {% endblock %}
     </div>

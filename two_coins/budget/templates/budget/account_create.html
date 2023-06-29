@@ -55,7 +55,8 @@
                     <label for="id_balance"
                            class="col-sm-3 align-self-center">{{ field.label }}</label>
                     <div class="col input-group">
-                        <input type="text" class="form-control" id="id_balance" placeholder="{{ field.label }}"
+                        <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
+                               id="id_balance" placeholder="{{ field.label }}"
                                name="balance">
                         <div class="input-group-text bg-body p-1">
                             <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">
@@ -63,6 +64,9 @@
                                     <option value="{{ opt.0 }}">{{ opt.1 }}</option>
                                 {% endfor %}
                             </select>
+                        </div>
+                        <div class="invalid-feedback">
+                            {{ field.errors.as_text }}
                         </div>
                     </div>
                 </div>
@@ -82,8 +86,12 @@
                     <label for="id-{{ field.name }}"
                            class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
-                        <input type="text" class="form-control" id="id-{{ field.name }}" name="{{ field.name }}"
+                        <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
+                               id="id-{{ field.name }}" name="{{ field.name }}"
                                placeholder="{{ field.label }}">
+                        <div class="invalid-feedback">
+                            {{ field.errors.as_text }}
+                        </div>
                     </div>
                 </div>
             {% endif %}
