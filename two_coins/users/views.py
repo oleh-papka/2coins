@@ -28,8 +28,8 @@ def login_view(request):
                 messages.error(request, "Invalid username or password.")
         else:
             messages.error(request, "Invalid username or password.")
-
-    form = AuthenticationForm()
+    else:
+        form = AuthenticationForm()
 
     return render(request, 'users/login.html', {'form': form})
 
@@ -48,9 +48,8 @@ def register_view(request):
             messages.info(request, f"Logged in as {username}.")
 
             return redirect('account_list')
-
-        for err in form.error_messages:
-            messages.error(request, err)
+        else:
+            messages.warning(request, "Something went wrong.")
 
         return redirect('register')
     else:
