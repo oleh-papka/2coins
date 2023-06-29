@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block sidebar %}
+    {% include 'sidebar.html' %}
+{% endblock %}
+
+{% block title %}2coins | Dashboard{% endblock %}
+
+{% block header %}
+{% endblock %}
+
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-4">
+                <canvas id="accounts_chart"></canvas>
+            </div>
+            <div class="col-8">
+                <canvas id="money_chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block custom_scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        const ctx = document.getElementById('accounts_chart').getContext('2d');
+
+        const doughnutChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ data_acct.labels|safe }},
+                datasets: [{
+                    label: 'Balance',
+                    data: {{ data_acct.data|safe }},
+                    backgroundColor: {{ data_acct.colors|safe }},
+                    hoverOffset: 4,
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: "right",
+                        align: "start"
+                    }
+                }
+            }
+        });
+
+        const ctx1 = document.getElementById('money_chart').getContext('2d');
+
+        const barChart = new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: {{ data_cat.labels|safe }},
+                datasets: [{
+                    label: 'Categories',
+                    data: {{ data_cat.data|safe }},
+                    backgroundColor: {{ data_cat.colors|safe }},
+                    borderRadius: 10
+                }]
+            }
+        });
+    </script>
+
+{% endblock %}

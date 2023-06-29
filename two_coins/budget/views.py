@@ -1,5 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
+from django.db.models import Sum
 
 from django.shortcuts import render, redirect
 from django.views.generic import ListView
@@ -289,3 +290,25 @@ def transaction_delete(request, pk):
     return render(request, 'budget/transaction_delete.html',
                   {'object': txn,
                    'instance_name': 'Transactions'})
+
+
+# Dashboard
+def dashboard(request):
+    class DataByAccount:
+        data = [acct.balance for acct in models.Account.objects.all()]
+        labels = [acct.name for acct in models.Account.objects.all()]
+        colors = [acct.color for acct in models.Account.objects.all()]
+
+    class DataByCategory:
+        transactions_by_category = models.Transaction.objects.values('category__name').annotate(
+            total_amount=Sum('amount'))
+
+        data = [item['total_amount'] for item in transactions_by_category]
+        labels = [item['category__name'] for item in transactions_by_category]
+        colors = [cat.color for cat in models.Category.objects.all()]
+
+    return render(request, 'budget/dashboard.html',
+                  {'instance_name': 'Dashboard',
+                   'data_acct': DataByAccount,
+                   'data_cat': DataByCategory,
+                   })

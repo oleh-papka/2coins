@@ -2,6 +2,9 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # Dashboard
+    path('', views.dashboard, name='dashboard'),
+
     # Currencies
     path('currency/', views.CurrencyList.as_view(), name='currency_list'),
     path('currency/add/', views.currency_add, name='currency_add'),

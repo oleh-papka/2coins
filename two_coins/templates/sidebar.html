@@ -7,7 +7,9 @@
 
     <ul class="nav nav-pills flex-column mb-auto row-gap-2">
         <li class="nav-item">
-            <a href="/" class="nav-link text-secondary d-flex">
+            <a href="{% url 'dashboard' %}"
+               class="nav-link d-flex {% if request.path_info == '/' %} active {% else %} text-secondary {% endif %}"
+                    {% if request.path_info == '/' %} aria-current="page" {% endif %}>
                 <span class="material-symbols-outlined me-3">dashboard</span>
                 Dashboard
             </a>
