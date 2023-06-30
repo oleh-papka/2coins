@@ -6,9 +6,6 @@ class CurrencyForm(forms.ModelForm):
     class Meta:
         model = models.Currency
         fields = '__all__'
-        widgets = {
-            'ccy_type': forms.Select
-        }
 
 
 class AccountForm(forms.ModelForm):

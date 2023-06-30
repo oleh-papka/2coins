@@ -13,7 +13,7 @@ from . import forms, models
 class CurrencyList(ListView):
     model = models.Currency
     context_object_name = 'currency_list'
-    template_name = "budget/currency_list.html"
+    template_name = "budget/currency/currency_list.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -34,7 +34,7 @@ def currency_add(request):
     else:
         form = forms.CurrencyForm
 
-    return render(request, 'budget/currency_create.html',
+    return render(request, 'budget/currency/currency_create.html',
                   {'form': form,
                    'acct_types': models.Currency.MONEY_TYPES_CHOICES,
                    'instance_name': 'Currencies'})
@@ -56,7 +56,7 @@ def currency_edit(request, pk):
     else:
         form = forms.CurrencyForm(instance=curr)
 
-    return render(request, 'budget/currency_edit.html',
+    return render(request, 'budget/currency/currency_edit.html',
                   {'form': form,
                    'object': curr,
                    'acct_types': models.Currency.MONEY_TYPES_CHOICES,
@@ -72,7 +72,7 @@ def currency_delete(request, pk):
 
         return redirect('currency_list')
 
-    return render(request, 'budget/currency_delete.html',
+    return render(request, 'budget/currency/currency_delete.html',
                   {'object': curr,
                    'instance_name': 'Currencies'})
 
@@ -82,7 +82,7 @@ def currency_delete(request, pk):
 class AccountList(LoginRequiredMixin, ListView):
     model = models.Account
     context_object_name = 'account_list'
-    template_name = "budget/account_list.html"
+    template_name = "budget/account/account_list.html"
     login_url = 'login'
 
     def get_context_data(self, **kwargs):
@@ -115,7 +115,7 @@ def account_add(request):
     else:
         form = forms.AccountForm
 
-    return render(request, 'budget/account_create.html',
+    return render(request, 'budget/account/account_create.html',
                   {'form': form,
                    'currencies': currencies,
                    'instance_name': 'Accounts'})
@@ -137,7 +137,7 @@ def account_edit(request, pk):
     else:
         form = forms.AccountForm(instance=acct)
 
-    return render(request, 'budget/account_edit.html',
+    return render(request, 'budget/account/account_edit.html',
                   {'form': form,
                    'object': acct,
                    'currencies': currencies,
@@ -152,7 +152,7 @@ def account_delete(request, pk):
         messages.success(request, f"Account '{acct.name}' deleted!")
         return redirect('account_list')
 
-    return render(request, 'budget/account_delete.html',
+    return render(request, 'budget/account/account_delete.html',
                   {'object': acct,
                    'instance_name': 'Accounts'})
 
@@ -162,7 +162,7 @@ def account_delete(request, pk):
 class CategoryList(ListView):
     model = models.Category
     context_object_name = 'category_list'
-    template_name = "budget/category_list.html"
+    template_name = "budget/category/category_list.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -182,7 +182,7 @@ def category_add(request):
     else:
         form = forms.CategoryForm
 
-    return render(request, 'budget/category_create.html',
+    return render(request, 'budget/category/category_create.html',
                   {'form': form,
                    'instance_name': 'Categories'})
 
@@ -201,7 +201,7 @@ def category_edit(request, pk):
     else:
         form = forms.CategoryForm(instance=cat)
 
-    return render(request, 'budget/category_edit.html',
+    return render(request, 'budget/category/category_edit.html',
                   {'form': form,
                    'object': cat,
                    'instance_name': 'Categories'})
@@ -214,7 +214,7 @@ def category_delete(request, pk):
         cat.delete()
         return redirect('category_list')
 
-    return render(request, 'budget/category_delete.html',
+    return render(request, 'budget/category/category_delete.html',
                   {'object': cat,
                    'instance_name': 'Categories'})
 
@@ -224,7 +224,7 @@ def category_delete(request, pk):
 class TransactionList(ListView):
     model = models.Transaction
     context_object_name = 'transaction_list'
-    template_name = "budget/transaction_list.html"
+    template_name = "budget/transaction/transaction_list.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -247,7 +247,7 @@ def transaction_add(request):
     else:
         form = forms.TransactionForm
 
-    return render(request, 'budget/transaction_create.html',
+    return render(request, 'budget/transaction/transaction_create.html',
                   {'form': form,
                    'txn_types': models.Transaction.TRANSACTION_TYPES_CHOICES,
                    'categories': categories,
@@ -271,7 +271,7 @@ def transaction_edit(request, pk):
     else:
         form = forms.TransactionForm(instance=txn)
 
-    return render(request, 'budget/transaction_edit.html',
+    return render(request, 'budget/transaction/transaction_edit.html',
                   {'form': form,
                    'object': txn,
                    'txn_types': models.Transaction.TRANSACTION_TYPES_CHOICES,
@@ -287,7 +287,7 @@ def transaction_delete(request, pk):
         txn.delete()
         return redirect('transaction_list')
 
-    return render(request, 'budget/transaction_delete.html',
+    return render(request, 'budget/transaction/transaction_delete.html',
                   {'object': txn,
                    'instance_name': 'Transactions'})
 
