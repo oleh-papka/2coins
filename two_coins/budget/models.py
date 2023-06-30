@@ -123,6 +123,11 @@ class Category(TimeStampMixin):
                              max_length=7,
                              default="#fcba03",
                              verbose_name="Category color")
+    icon = models.CharField(null=True,
+                            blank=True,
+                            max_length=30,
+                            verbose_name="Icon",
+                            help_text="Icon name from FontAwesome")
 
 
 class Transaction(TimeStampMixin):
