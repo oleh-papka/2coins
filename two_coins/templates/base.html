@@ -75,13 +75,11 @@
 <script>
     function go_dark() {
         document.documentElement.setAttribute('data-bs-theme', 'dark');
-        document.getElementById('label-light-theme').setAttribute('class', 'btn btn-outline-light');
         document.getElementById('btn-light-theme').checked = false;
     }
 
     function go_light() {
         document.documentElement.setAttribute('data-bs-theme', 'light');
-        document.getElementById('label-light-theme').setAttribute('class', 'btn btn-outline-secondary');
         document.getElementById('btn-dark-theme').checked = false;
     }
 

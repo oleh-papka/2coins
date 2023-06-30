@@ -14,34 +14,21 @@
 
 {% block content %}
     <div class="row">
+        <div class="col-8"></div>
         <div id="currency_table" class="col-3 mx-auto">
             <table class="table table-hover table align-middle">
-                {#            <thead class="table table-bordered">#}
-                {#            <tr>#}
-                {#                <th scope="col">Name</th>#}
-                {#                <th scope="col">Color</th>#}
-                {#                <th></th>#}
-                {#            </tr>#}
-                {#            </thead>#}
                 <tbody>
                 {% for object in object_list %}
                     <tr>
-                        <td class=""><i class="fa-solid fa-house-chimney fa-2xl"
-                                        style="color: {{ object.color }}"></i>
+                        <td class="text-center">
+                            <i class="fa-solid fa-house-chimney fa-xl" style="color: {{ object.color }}"></i>
                         </td>
                         <td class="text-center">{{ object.name }}</td>
-                        {#                        <td class="col-1 text-center">#}
-                        {#                            <div class="color-preview rounded-3" style="background-color: {{ object.color }};"></div>#}
-                        {#                        </td>#}
-                        <td class="text-end">
+                        <td class="text-center">
                             <a href="{% url 'category_edit' object.id %}"
-                               class="btn btn-outline-warning">
-                                <i class="bi bi-pencil-square"></i>
-                            </a>
+                               class="btn btn-sm btn-outline-warning">Edit</a>
                             <a href="{% url 'category_delete' object.id %}"
-                               class="btn btn-outline-danger">
-                                <i class="bi bi-trash"></i>
-                            </a>
+                               class="btn btn-sm btn-outline-danger">Delete</a>
                         </td>
                     </tr>
                 {% endfor %}
