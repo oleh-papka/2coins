@@ -21,7 +21,7 @@
                 {% for object in object_list %}
                     <tr>
                         <td class="text-center">
-                            <i class="fa-solid fa-house-chimney fa-xl" style="color: {{ object.color }}"></i>
+                            <i class="fa-solid fa-{{ object.icon }} fa-xl" style="color: {{ object.color }}"></i>
                         </td>
                         <td class="text-center">{{ object.name }}</td>
                         <td class="text-center">

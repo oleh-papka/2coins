@@ -101,7 +101,7 @@ def account(request, pk):
 
 
 def account_add(request):
-    currencies = [(curr.id, curr.abbr) for curr in models.Currency.objects.all()]
+    currencies = [(curr.id, curr.abbr, curr.symbol) for curr in models.Currency.objects.all()]
 
     if request.method == "POST":
         form = forms.AccountForm(request.POST)
