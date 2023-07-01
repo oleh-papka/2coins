@@ -99,6 +99,11 @@ class Account(TimeStampMixin):
                                        blank=True,
                                        default=None,
                                        verbose_name="Goal balance")
+    icon = models.CharField(null=True,
+                            blank=True,
+                            max_length=30,
+                            verbose_name="Icon",
+                            help_text="Icon name from FontAwesome")
 
     def save(self, *args, **kwargs):
         if not self.initial_date:
