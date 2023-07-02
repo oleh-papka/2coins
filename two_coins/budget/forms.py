@@ -12,6 +12,7 @@ class AccountForm(forms.ModelForm):
     class Meta:
         model = models.Account
         fields = '__all__'
+        # exclude = ('user',)
 
 
 class CategoryForm(forms.ModelForm):
