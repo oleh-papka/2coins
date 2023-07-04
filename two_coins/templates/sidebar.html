@@ -46,6 +46,14 @@
                 Transactions
             </a>
         </li>
+        <li class="nav-item">
+            <a href="{% url 'profile_edit' %}"
+               class="nav-link d-flex {% if "profile" in request.resolver_match.url_name %} active {% else %} text-secondary {% endif %}"
+                    {% if "profile_edit" in request.resolver_match.url_name %} aria-current="page" {% endif %}>
+                <span class="material-symbols-outlined me-3">manage_accounts</span>
+                Profile
+            </a>
+        </li>
     </ul>
 
     <hr>

@@ -24,6 +24,14 @@
                                        id="id_username" name="username"
                                        autocomplete="username">
                             </div>
+                        {% elif field.name == 'email' %}
+                            <div class="mb-3">
+                                <label for="id_email" class="form-label">E-mail</label>
+                                <input type="email" required
+                                       class="form-control {% if field.errors %}is-invalid{% endif %}"
+                                       id="id_email" name="email"
+                                       autocomplete="email">
+                            </div>
                         {% elif field.name == 'password1' %}
                             <div class="mb-3">
                                 <label for="id_password1" class="form-label">Password</label>

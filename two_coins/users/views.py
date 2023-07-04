@@ -1,19 +1,29 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm
 from django.shortcuts import render, redirect
-from django.views.generic import TemplateView
+from django.urls import reverse_lazy
+from django.views.generic import UpdateView
 
-from . import models
+from . import forms
+from .forms import CustomUserCreationForm
 
 
-class ProfileView(TemplateView):
-    model = models.Profile
-    template_name = 'users/profile.html'
+class ProfileEditView(UpdateView):
+    form_class = forms.ProfileForm
+    template_name = 'users/profile_edit.html'
+    success_url = reverse_lazy('profile_edit')
+
+    def get_object(self, queryset=None):
+        return self.request.user.profile
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['user'] = self.request.user
+        context['instance_name'] = 'Profile'
         return context
 
 
@@ -49,7 +59,7 @@ def login_view(request):
 
 def register_view(request):
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
 
         if form.is_valid():
             messages.success(request, "User created successfully!")
@@ -66,6 +76,6 @@ def register_view(request):
 
         return redirect('register')
     else:
-        form = UserCreationForm()
+        form = CustomUserCreationForm()
 
     return render(request, 'users/register.html', {'form': form})

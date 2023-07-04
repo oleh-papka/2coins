@@ -7,12 +7,12 @@
 
 {% block page-controls %}
     <a href="{% url 'dashboard' %}" type="button" class="btn btn-outline-secondary">Back
-        to {{ instance_name }}</a>
+        to Dashboard</a>
 {% endblock %}
 
 
 {% block form_block %}
-    <form action="{% url 'profile_edit' object.id %}" method="post">
+    <form action="{% url 'profile_edit' %}" method="post">
         {% csrf_token %}
 
         {% for field in form %}
@@ -34,7 +34,7 @@
         {% endfor %}
 
         <div class="d-flex justify-content-end column-gap-2 mt-4">
-            <a href="{% url 'profile_list' %}" type="button" class="btn btn-outline-danger">Cancel</a>
+            <a href="{% url 'dashboard' %}" type="button" class="btn btn-outline-danger">Cancel</a>
             <button class="btn btn-primary" type="submit">Update</button>
         </div>
     </form>
