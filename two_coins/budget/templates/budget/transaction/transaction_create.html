@@ -22,7 +22,7 @@
                         <select class="form-select" id="id_txn_type" aria-label="txn_type select" name="txn_type">
                             {% for opt in txn_types %}
                                 <option value="{{ opt.0 }}"
-                                        {% if forloop.first %}selected{% endif %}>{{ opt.1 }}</option>
+                                        {% if field.value == opt.0 or forloop.first %}selected{% endif %}>{{ opt.1 }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -43,7 +43,7 @@
                         <select class="form-select" id="id_category" aria-label="category select" name="category">
                             {% for cat in categories %}
                                 <option value="{{ cat.0 }}"
-                                        {% if forloop.first %}selected{% endif %}>{{ cat.1 }}</option>
+                                        {% if field.value == cat.1 or forloop.first %}selected{% endif %}>{{ cat.1 }}</option>
                             {% endfor %}
                         </select>
                     </div>

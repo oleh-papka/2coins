@@ -71,7 +71,7 @@ class CurrencyDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('currency_list')
 
     def form_valid(self, form):
-        messages.success(self.request, f"Currency '{form.cleaned_data.get('name')}' deleted!")
+        messages.success(self.request, f"Currency '{self.object.name}' deleted!")
         return super().form_valid(form)
 
 
@@ -144,7 +144,7 @@ class AccountDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('account_list')
 
     def form_valid(self, form):
-        messages.success(self.request, f"Account '{form.cleaned_data.get('name')}' deleted!")
+        messages.success(self.request, f"Account '{self.object.name}' deleted!")
         return super().form_valid(form)
 
 
@@ -201,7 +201,7 @@ class CategoryDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('category_list')
 
     def form_valid(self, form):
-        messages.success(self.request, f"Category '{form.cleaned_data.get('name')}' deleted!")
+        messages.success(self.request, f"Category '{self.object.name}' deleted!")
         return super().form_valid(form)
 
 
@@ -225,6 +225,12 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
     form_class = forms.TransactionForm
     template_name = 'budget/transaction/transaction_create.html'
     success_url = reverse_lazy('transaction_list')
+
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['txn_type'] = self.kwargs.get('txn_type')
+        initial['category'] = self.kwargs.get('category')
+        return initial
 
     def form_valid(self, form):
         messages.success(self.request, f"Transaction '{form.cleaned_data.get('amount')}' created!")
@@ -276,7 +282,7 @@ class TransactionDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('transaction_list')
 
     def form_valid(self, form):
-        messages.success(self.request, f"Transaction '{form.cleaned_data.get('name')}' deleted!")
+        messages.success(self.request, f"Transaction '{self.object.name}' deleted!")
         return super().form_valid(form)
 
 

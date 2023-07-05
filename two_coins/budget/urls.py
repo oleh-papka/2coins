@@ -27,6 +27,7 @@ urlpatterns = [
     # Transactions
     path('transaction/', views.TransactionList.as_view(), name='transaction_list'),
     path('transaction/add/', views.TransactionCreateView.as_view(), name='transaction_add'),
+    path('transaction/add/<txn_type>/<category>/', views.TransactionCreateView.as_view(), name='transaction_add'),
     path('transaction/<int:pk>/edit/', views.TransactionUpdateView.as_view(), name='transaction_edit'),
     path('transaction/<int:pk>/delete/', views.TransactionDeleteView.as_view(), name='transaction_delete'),
 ]
