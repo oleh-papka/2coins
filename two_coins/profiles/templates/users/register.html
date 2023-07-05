@@ -22,7 +22,8 @@
                                 <input type="text" required
                                        class="form-control {% if field.errors %}is-invalid{% endif %}"
                                        id="id_username" name="username"
-                                       autocomplete="username">
+                                       autocomplete="username"
+                                       {% if field.value %}value="{{ field.value }}"{% endif %}>
                             </div>
                         {% elif field.name == 'email' %}
                             <div class="mb-3">
@@ -30,7 +31,8 @@
                                 <input type="email" required
                                        class="form-control {% if field.errors %}is-invalid{% endif %}"
                                        id="id_email" name="email"
-                                       autocomplete="email">
+                                       autocomplete="email"
+                                       {% if field.value %}value="{{ field.value }}"{% endif %}>
                             </div>
                         {% elif field.name == 'password1' %}
                             <div class="mb-3">
@@ -38,7 +40,8 @@
                                 <input type="password" required id="id_password1"
                                        class="form-control {% if field.errors %}is-invalid{% endif %}"
                                        name="password1"
-                                       autocomplete="new-password">
+                                       autocomplete="new-password"
+                                       {% if field.value %}value="{{ field.value }}"{% endif %}>
                                 <small class="form-text">{{ field.help_text }}</small>
                             </div>
                         {% elif field.name == 'password2' %}
@@ -47,7 +50,8 @@
                                 <input type="password" required id="id_password2"
                                        class="form-control {% if field.errors %}is-invalid{% endif %}"
                                        name="password2"
-                                       autocomplete="new-password">
+                                       autocomplete="new-password"
+                                       {% if field.value %}value="{{ field.value }}"{% endif %}>
                                 <small class="form-text text-muted">{{ field.help_text }}</small>
                             </div>
                         {% endif %}

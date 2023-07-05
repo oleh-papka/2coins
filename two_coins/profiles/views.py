@@ -1,10 +1,11 @@
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LogoutView, LoginView
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
-from django.views.generic import UpdateView
+from django.views.generic import UpdateView, CreateView
 
 from . import forms
 from .forms import CustomUserCreationForm
@@ -29,34 +30,49 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
         return context
 
 
-def logout_view(request):
-    logout(request)
-    messages.info(request, f"Logged out.")
+class CustomLogoutView(LoginRequiredMixin, LogoutView):
+    next_page = reverse_lazy('login')
 
-    return redirect('login')
+    def get(self, request, *args, **kwargs):
+        messages.info(request, f"Logged out.")
+        return super().get(request, *args, **kwargs)
 
 
-def login_view(request):
-    if request.method == "POST":
-        form = AuthenticationForm(request, data=request.POST)
+class CustomLoginView(LoginView):
+    template_name = 'users/login.html'
+    form_class = AuthenticationForm
+    redirect_authenticated_user = True
 
-        if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(username=username, password=password)
+    def form_valid(self, form):
+        login(self.request, form.get_user())
+        messages.success(self.request, f"Logged in as {form.cleaned_data.get('username')}.")
+        return redirect("account_list")
 
-            if user is not None:
-                login(request, user)
-                messages.success(request, f"Logged in as {username}.")
-                return redirect("account_list")
-            else:
-                messages.error(request, "Invalid username or password.")
-        else:
-            messages.error(request, "Invalid username or password.")
-    else:
-        form = AuthenticationForm()
+    def form_invalid(self, form):
+        messages.error(self.request, "Invalid username or password.")
+        return self.render_to_response(self.get_context_data(form=form))
 
-    return render(request, 'users/login.html', {'form': form})
+
+class CustomRegisterView(CreateView):
+    form_class = CustomUserCreationForm
+    template_name = 'users/register.html'
+    success_url = reverse_lazy('account_list')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        username = form.cleaned_data.get('username')
+        password = form.cleaned_data.get('password1')
+        user = authenticate(username=username, password=password)
+
+        if user is not None:
+            login(self.request, user)
+            messages.success(self.request, "User created successfully!")
+            messages.info(self.request, f"Logged in as {username}.")
+        return response
+
+    def form_invalid(self, form):
+        messages.warning(self.request, "Something went wrong.")
+        return super().form_invalid(form)
 
 
 def register_view(request):

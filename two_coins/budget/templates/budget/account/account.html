@@ -1,6 +1,6 @@
 {% extends 'list_objects.html' %}
 
-{% block title %}2coins | {{ instance_name }}s{% endblock %}
+{% block title %}2coins | {{ object.name }}{% endblock %}
 
 {% block custom_static %}
     {% load static %}
@@ -8,7 +8,7 @@
 {% endblock %}
 
 {% block page-controls %}
-    <a href="{% url 'account_list' %}" type="button" class="btn btn-outline-secondary">Back to {{ instance_name }}s</a>
+    <a href="{% url 'account_list' %}" type="button" class="btn btn-outline-secondary">Back</a>
 {% endblock %}
 
 {% block content %}
