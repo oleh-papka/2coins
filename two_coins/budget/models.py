@@ -80,7 +80,7 @@ class Account(TimeStampMixin):
     currency = models.ForeignKey(Currency,
                                  null=True,
                                  blank=False,
-                                 on_delete=models.SET_DEFAULT,
+                                 on_delete=models.CASCADE,
                                  default=0,
                                  related_name="+")
     balance = models.IntegerField(null=False,
@@ -159,14 +159,12 @@ class Transaction(TimeStampMixin):
     category = models.ForeignKey(null=True,
                                  blank=False,
                                  to=Category,
-                                 on_delete=models.SET_DEFAULT,  # TODO: create default values
-                                 default=0,
+                                 on_delete=models.CASCADE,
                                  verbose_name="Category")
     account = models.ForeignKey(null=True,
                                 blank=False,
                                 to=Account,
-                                on_delete=models.SET_DEFAULT,
-                                default=0,
+                                on_delete=models.CASCADE,
                                 verbose_name="Account")
     description = models.CharField(null=True,
                                    blank=True,

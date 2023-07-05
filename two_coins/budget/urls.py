@@ -21,7 +21,7 @@ urlpatterns = [
     # Categories
     path('category/', views.CategoryList.as_view(), name='category_list'),
     path('category/add/', views.CategoryCreateView.as_view(), name='category_add'),
-    path('category/<int:pk>/edit/', views.CurrencyUpdateView.as_view(), name='category_edit'),
+    path('category/<int:pk>/edit/', views.CategoryUpdateView.as_view(), name='category_edit'),
     path('category/<int:pk>/delete/', views.CategoryDeleteView.as_view(), name='category_delete'),
 
     # Transactions
