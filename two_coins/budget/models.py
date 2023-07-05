@@ -3,6 +3,7 @@ import datetime
 from django.db import models
 
 from misc.models import TimeStampMixin
+from profiles.models import Profile
 
 
 class ColorChoices:
@@ -104,6 +105,8 @@ class Account(TimeStampMixin):
                             max_length=30,
                             verbose_name="Icon",
                             help_text="Icon name from FontAwesome")
+    profile = models.ForeignKey(Profile,
+                                on_delete=models.CASCADE)
 
     def save(self, *args, **kwargs):
         if not self.initial_date:
@@ -133,6 +136,8 @@ class Category(TimeStampMixin):
                             max_length=30,
                             verbose_name="Icon",
                             help_text="Icon name from FontAwesome")
+    profile = models.ForeignKey(Profile,
+                                on_delete=models.CASCADE)
 
 
 class Transaction(TimeStampMixin):

@@ -12,13 +12,14 @@ class AccountForm(forms.ModelForm):
     class Meta:
         model = models.Account
         fields = '__all__'
-        # exclude = ('user',)
+        exclude = ('profile',)
 
 
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = models.Category
         fields = '__all__'
+        exclude = ('profile',)
 
 
 class TransactionForm(forms.ModelForm):

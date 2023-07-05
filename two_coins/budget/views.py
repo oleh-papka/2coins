@@ -88,6 +88,10 @@ class AccountListView(LoginRequiredMixin, ListView):
         context["instance_name"] = 'Accounts'
         return context
 
+    def get_queryset(self):
+        profile = models.Profile.objects.get(user=self.request.user)
+        return super().get_queryset().filter(profile=profile)
+
 
 class AccountDetailView(LoginRequiredMixin, DetailView):
     login_url = 'login'
@@ -103,6 +107,9 @@ class AccountCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('account_list')
 
     def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.profile = models.Profile.objects.get(user=self.request.user)
+        self.object.save()
         messages.success(self.request, f"Account '{form.cleaned_data.get('name')}' created!")
         return super().form_valid(form)
 
@@ -161,6 +168,10 @@ class CategoryList(LoginRequiredMixin, ListView):
         context["instance_name"] = 'Categories'
         return context
 
+    def get_queryset(self):
+        profile = models.Profile.objects.get(user=self.request.user)
+        return super().get_queryset().filter(profile=profile)
+
 
 class CategoryCreateView(LoginRequiredMixin, CreateView):
     login_url = reverse_lazy('login')
@@ -170,6 +181,9 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('category_list')
 
     def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.profile = models.Profile.objects.get(user=self.request.user)
+        self.object.save()
         messages.success(self.request, f"Category '{form.cleaned_data.get('name')}' created!")
         return super().form_valid(form)
 
@@ -217,6 +231,10 @@ class TransactionList(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context["instance_name"] = 'Transactions'
         return context
+
+    def get_queryset(self):
+        profile = models.Profile.objects.get(user=self.request.user)
+        return super().get_queryset().filter(profile=profile)
 
 
 class TransactionCreateView(LoginRequiredMixin, CreateView):
