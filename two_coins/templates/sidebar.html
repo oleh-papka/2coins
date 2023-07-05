@@ -30,14 +30,16 @@
                 Categories
             </a>
         </li>
-        <li class="nav-item">
-            <a href="{% url 'currency_list' %}"
-               class="nav-link d-flex {% if "currency" in request.resolver_match.url_name %} active {% else %} text-secondary {% endif %}"
-                    {% if "currency" in request.resolver_match.url_name %} aria-current="page" {% endif %}>
-                <span class="material-symbols-outlined me-3">paid</span>
-                Currencies
-            </a>
-        </li>
+        {% if request.user.is_superuser %}
+            <li class="nav-item">
+                <a href="{% url 'currency_list' %}"
+                   class="nav-link d-flex {% if "currency" in request.resolver_match.url_name %} active {% else %} text-secondary {% endif %}"
+                        {% if "currency" in request.resolver_match.url_name %} aria-current="page" {% endif %}>
+                    <span class="material-symbols-outlined me-3">paid</span>
+                    Currencies
+                </a>
+            </li>
+        {% endif %}
         <li class="nav-item">
             <a href="{% url 'transaction_list' %}"
                class="nav-link d-flex {% if "transaction" in request.resolver_match.url_name %} active {% else %} text-secondary {% endif %}"
@@ -78,12 +80,7 @@
 
     <div class="mt-2">
         {% if request.user.is_authenticated %}
-            <div class="d-flex gap-2">
-                <div class="text-center px-2 align-self-center">
-                    {{ request.user }}
-                </div>
-                <a type="button" class="btn btn-outline-primary w-100" href="{% url 'logout' %}">Logout</a>
-            </div>
+            <a type="button" class="btn btn-outline-primary w-100" href="{% url 'logout' %}">Logout</a>
         {% else %}
             <a type="button" class="btn btn-outline-primary w-100" href="{% url 'login' %}">Log in</a>
         {% endif %}

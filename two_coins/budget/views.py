@@ -5,12 +5,14 @@ from django.db.models import Sum
 from django.shortcuts import render, redirect
 from django.views.generic import ListView
 
+from misc.views import AdminUserRequiredMixin
 from . import forms, models
 
 
 # Currencies
 
-class CurrencyList(ListView):
+class CurrencyList(LoginRequiredMixin, AdminUserRequiredMixin, ListView):
+    login_url = 'login'
     model = models.Currency
     context_object_name = 'currency_list'
     template_name = "budget/currency/currency_list.html"
@@ -80,10 +82,10 @@ def currency_delete(request, pk):
 # Accounts
 
 class AccountList(LoginRequiredMixin, ListView):
+    login_url = 'login'
     model = models.Account
     context_object_name = 'account_list'
     template_name = "budget/account/account_list.html"
-    login_url = 'login'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -159,7 +161,8 @@ def account_delete(request, pk):
 
 # Categories
 
-class CategoryList(ListView):
+class CategoryList(LoginRequiredMixin, ListView):
+    login_url = 'login'
     model = models.Category
     context_object_name = 'category_list'
     template_name = "budget/category/category_list.html"
@@ -221,7 +224,8 @@ def category_delete(request, pk):
 
 # Transactions
 
-class TransactionList(ListView):
+class TransactionList(LoginRequiredMixin, ListView):
+    login_url = 'login'
     model = models.Transaction
     context_object_name = 'transaction_list'
     template_name = "budget/transaction/transaction_list.html"

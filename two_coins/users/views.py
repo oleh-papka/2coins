@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views.generic import UpdateView
@@ -9,7 +10,8 @@ from . import forms
 from .forms import CustomUserCreationForm
 
 
-class ProfileEditView(UpdateView):
+class ProfileEditView(LoginRequiredMixin, UpdateView):
+    login_url = 'login'
     form_class = forms.ProfileForm
     template_name = 'users/profile_edit.html'
     success_url = reverse_lazy('profile_edit')
