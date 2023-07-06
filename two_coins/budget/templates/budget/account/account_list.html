@@ -2,11 +2,6 @@
 
 {% block title %}2coins | {{ instance_name }}s{% endblock %}
 
-{% block custom_static %}
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'budget/css/accounts.css' %}">
-{% endblock %}
-
 {% block page-controls %}
     <a href="{% url 'account_add' %}" type="button" class="btn btn-outline-success">Add new</a>
 {% endblock %}
@@ -14,35 +9,33 @@
 {% block content %}
     <div class="d-flex flex-wrap gap-4">
         {% for account in account_list %}
-            <div class="card rounded-4 border border-2">
+            <div class="card rounded-4 border-2 bg-body-secondary bg-opacity-25"
+                 style="min-width: 16rem; min-height: 10rem; border-color: {{ account.color }}60;">
+                <a href="{% url 'account' account.id %}" class="stretched-link text-reset"
+                   style="text-decoration: none;"></a>
                 <div class="card-body d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">
+                                {{ account.name }}
+                            </h5>
+                            <p class="text-body-secondary">lol</p>
+                        </div>
 
-                    <h5 class="card-title mb-0">
-                        <i class="{{ account.icon }} fa-xl me-2"
-                           style="color: {{ account.color }}"></i>
-                        {{ account.name }}
-                    </h5>
-
-                    <p class="card-text mt-auto ms-auto">
-                        {% load intspace %}
-                        {{ account.balance|intspace }} {{ account.currency.symbol }}
-                    </p>
-
-                    <div>
-                        <hr>
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <a href="{% url 'account' account.id %}"
-                                   class="btn btn-sm btn-outline-primary">View</a>
-                            </div>
-                            <div>
-                                <a href="{% url 'account_edit' account.id %}"
-                                   class="btn btn-sm btn-outline-warning">Edit</a>
-                                <a href="{% url 'account_delete' account.id %}"
-                                   class="btn btn-sm btn-outline-danger">Delete</a>
-                            </div>
+                        <div class="d-flex justify-content-center align-items-center rounded-3"
+                             style="width: 3rem; height: 3rem; background-color: {{ account.color }}2a">
+                            <i class="{{ account.icon }} fa-xl"
+                               style="color: {{ account.color }}"></i>
                         </div>
                     </div>
+
+
+                    <h4 class="card-text">
+                        {% load intspace %}
+                        {{ account.balance|intspace }} {{ account.currency.symbol }}
+                    </h4>
+
+
                 </div>
             </div>
         {% endfor %}

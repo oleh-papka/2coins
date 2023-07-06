@@ -233,8 +233,8 @@ class TransactionList(LoginRequiredMixin, ListView):
         return context
 
     def get_queryset(self):
-        profile = models.Profile.objects.get(user=self.request.user)
-        return super().get_queryset().filter(profile=profile)
+        account = models.Account.objects.get(profile__user=self.request.user)
+        return super().get_queryset().filter(account=account)
 
 
 class TransactionCreateView(LoginRequiredMixin, CreateView):

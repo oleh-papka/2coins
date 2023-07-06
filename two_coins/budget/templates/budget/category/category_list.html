@@ -16,7 +16,8 @@
         <div class="d-flex gap-4">
             {% for object in object_list %}
 
-                <div class="card rounded-3 border-1" style="background-color: {{ object.color }}10; min-width: 14rem">
+                <div class="card rounded-3 border-1"
+                     style="background-color: {{ object.color }}10; min-width: 15rem; border-color: {{ object.color }}AA">
                     <div class="card-body d-flex flex-column justify-content-between">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0 me-2">
@@ -30,6 +31,7 @@
                             <div class="dropdown">
                                 <a class="btn btn-sm btn-outline-secondary dropdown-toggle" href="#" role="button"
                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa-solid fa-ellipsis"></i>
                                 </a>
 
                                 <ul class="dropdown-menu">
@@ -47,14 +49,11 @@
                             </div>
                         </div>
 
-                        <div>
-                            <hr>
-                            <div class="d-flex gap-2">
-                                <a href="{% url 'transaction_add' '+' object.name %}"
-                                   class="btn btn-sm btn-outline-success w-100">Income</a>
-                                <a href="{% url 'transaction_add' '-' object.name %}"
-                                   class="btn btn-sm btn-outline-danger w-100">Expense</a>
-                            </div>
+                        <div class="mt-4 d-flex gap-2">
+                            <a href="{% url 'transaction_add' '+' object.name %}"
+                               class="btn btn-sm btn-outline-success w-100">Income</a>
+                            <a href="{% url 'transaction_add' '-' object.name %}"
+                               class="btn btn-sm btn-outline-danger w-100">Expense</a>
                         </div>
                     </div>
                 </div>
