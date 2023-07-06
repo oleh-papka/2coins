@@ -173,6 +173,12 @@ class CategoryList(LoginRequiredMixin, ListView):
         return super().get_queryset().filter(profile=profile)
 
 
+class CategoryDetailView(LoginRequiredMixin, DetailView):
+    login_url = 'login'
+    model = models.Category
+    template_name = "budget/category/category.html"
+
+
 class CategoryCreateView(LoginRequiredMixin, CreateView):
     login_url = reverse_lazy('login')
     model = models.Category
@@ -233,8 +239,8 @@ class TransactionList(LoginRequiredMixin, ListView):
         return context
 
     def get_queryset(self):
-        account = models.Account.objects.get(profile__user=self.request.user)
-        return super().get_queryset().filter(account=account)
+        profile = models.Profile.objects.get(user=self.request.user)
+        return super().get_queryset().filter(account__profile=profile)
 
 
 class TransactionCreateView(LoginRequiredMixin, CreateView):

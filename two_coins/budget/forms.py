@@ -18,8 +18,7 @@ class AccountForm(forms.ModelForm):
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = models.Category
-        fields = '__all__'
-        exclude = ('profile',)
+        fields = ['cat_type', 'name', 'color', 'icon']
 
 
 class TransactionForm(forms.ModelForm):

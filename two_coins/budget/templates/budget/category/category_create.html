@@ -25,6 +25,18 @@
                                title="Choose your color" style="width: 5rem">
                     </div>
                 </div>
+            {% elif field.name == 'cat_type' %}
+                <div class="row mb-3">
+                    <label for="id_cat_type" class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <select class="form-select" id="id_cat_type" aria-label="category select" name="cat_type">
+                            {% for value, name in form.fields.cat_type.choices %}
+                                <option value="{{ value }}"
+                                        {% if field.value == value or forloop.first %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
             {% else %}
                 <div class="row mb-3">
                     <label for="id-{{ field.name }}"

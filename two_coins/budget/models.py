@@ -107,6 +107,10 @@ class Account(TimeStampMixin):
                             help_text="Icon name from FontAwesome")
     profile = models.ForeignKey(Profile,
                                 on_delete=models.CASCADE)
+    description = models.CharField(null=True,
+                                   blank=True,
+                                   max_length=30,
+                                   verbose_name="Description")
 
     def save(self, *args, **kwargs):
         if not self.initial_date:
@@ -122,15 +126,22 @@ class Category(TimeStampMixin):
     Model for storing transaction category.
     """
 
+    INCOME = "+"
+    EXPENSE = "-"
+    CATEGORY_TYPES_CHOICES = [
+        (EXPENSE, "Expense"),
+        (INCOME, "Income"),
+    ]
+
     name = models.CharField(null=False,
                             blank=False,
                             max_length=30,
-                            verbose_name="Category name")
+                            verbose_name="Name")
     color = models.CharField(null=False,
                              blank=True,
                              max_length=7,
                              default="#fcba03",
-                             verbose_name="Category color")
+                             verbose_name="Color")
     icon = models.CharField(null=True,
                             blank=True,
                             max_length=30,
@@ -138,6 +149,12 @@ class Category(TimeStampMixin):
                             help_text="Icon name from FontAwesome")
     profile = models.ForeignKey(Profile,
                                 on_delete=models.CASCADE)
+    cat_type = models.CharField(null=False,
+                                blank=False,
+                                max_length=1,
+                                choices=CATEGORY_TYPES_CHOICES,
+                                default=EXPENSE,
+                                verbose_name="Category type")
 
 
 class Transaction(TimeStampMixin):

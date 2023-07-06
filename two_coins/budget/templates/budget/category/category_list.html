@@ -12,52 +12,92 @@
 {% endblock %}
 
 {% block content %}
-    <div class="row">
-        <div class="d-flex gap-4">
-            {% for object in object_list %}
+    <div class="col-6">
+        <ul class="nav nav-pills mb-4" id="pills-tab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="pills-expenses-tab" data-bs-toggle="pill"
+                        data-bs-target="#pills-expenses"
+                        type="button" role="tab" aria-controls="pills-expenses" aria-selected="true">Expenses
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="pills-income-tab" data-bs-toggle="pill" data-bs-target="#pills-income"
+                        type="button" role="tab" aria-controls="pills-income" aria-selected="false">Income
+                </button>
+            </li>
+        </ul>
+        <div class="tab-content" id="pills-tabContent">
+            <div class="tab-pane show active" id="pills-expenses" role="tabpanel"
+                 aria-labelledby="pills-expenses-tab"
+                 tabindex="0">
+                <div class="row">
+                    <div class="d-flex flex-wrap gap-4 justify-content-between">
+                        {% for object in object_list %}
+                            {% if object.cat_type == '-' %}
+                                <div class="card rounded-2 border-1 border-danger"
+                                     style="min-width: 13rem;">
+                                    <div class="card-body d-flex flex-column justify-content-between">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <a href="{% url 'category' object.id %}" style="text-decoration: none;"
+                                               class="text-reset">
+                                                <h5 class="card-title mb-0 me-2 d-flex align-items-center">
+                                                    <div class="d-flex justify-content-center align-items-center rounded-3 me-2"
+                                                         style="width: 2.5rem; height: 2.5rem; background-color: {{ object.color }}2a">
+                                                        {% if object.icon %}
+                                                            <i class="{{ object.icon }}"
+                                                               style="color: {{ object.color }}"></i>
+                                                        {% endif %}
+                                                    </div>
+                                                    {{ object.name }}
+                                                </h5>
+                                            </a>
+                                        </div>
 
-                <div class="card rounded-3 border-1"
-                     style="background-color: {{ object.color }}10; min-width: 15rem; border-color: {{ object.color }}AA">
-                    <div class="card-body d-flex flex-column justify-content-between">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0 me-2">
-                                {% if object.icon %}
-                                    <i class="{{ object.icon }} fa me-2"
-                                       style="color: {{ object.color }}"></i>
-                                {% endif %}
-                                {{ object.name }}
-                            </h5>
-
-                            <div class="dropdown">
-                                <a class="btn btn-sm btn-outline-secondary dropdown-toggle" href="#" role="button"
-                                   data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fa-solid fa-ellipsis"></i>
-                                </a>
-
-                                <ul class="dropdown-menu">
-                                    <li>
-                                        <a class="dropdown-item" href="{% url 'category_edit' object.id %}"
-                                           style="color: #FFC007">
-                                            <i class="fa-regular fa-pen-to-square me-2"></i>Edit</a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="{% url 'category_delete' object.id %}"
-                                           style="color: #DC3444">
-                                            <i class="fa-regular fa-trash-can me-2"></i>Delete</a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <div class="mt-4 d-flex gap-2">
-                            <a href="{% url 'transaction_add' '+' object.name %}"
-                               class="btn btn-sm btn-outline-success w-100">Income</a>
-                            <a href="{% url 'transaction_add' '-' object.name %}"
-                               class="btn btn-sm btn-outline-danger w-100">Expense</a>
-                        </div>
+                                        <div class="mt-3 d-flex gap-2">
+                                            <a href="{% url 'transaction_add' '-' object.name %}"
+                                               class="btn btn-sm btn-outline-danger w-100">Add expense</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
                     </div>
                 </div>
-            {% endfor %}
+            </div>
+            <div class="tab-pane" id="pills-income" role="tabpanel" aria-labelledby="pills-income-tab"
+                 tabindex="0">
+                <div class="row">
+                    <div class="d-flex flex-wrap gap-4 justify-content-between">
+                        {% for object in object_list %}
+                            {% if object.cat_type == '+' %}
+                                <div class="card rounded-2 border-1 border-success"
+                                     style="width: 13rem;">
+                                    <div class="card-body d-flex flex-column justify-content-between">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <a href="{% url 'category' object.id %}" style="text-decoration: none;"
+                                               class="text-reset">
+                                                <h5 class="card-title mb-0 me-2 d-flex align-items-center">
+                                                    <div class="d-flex justify-content-center align-items-center rounded-3 me-2"
+                                                         style="width: 2.5rem; height: 2.5rem; background-color: {{ object.color }}2a">
+                                                        {% if object.icon %}
+                                                            <i class="{{ object.icon }}"
+                                                               style="color: {{ object.color }}"></i>
+                                                        {% endif %}
+                                                    </div>
+                                                    {{ object.name }}
+                                                </h5>
+                                            </a>
+                                        </div>
+
+                                        <a href="{% url 'transaction_add' '+' object.name %}"
+                                           class="btn btn-sm btn-outline-success w-100 mt-3">Add income</a>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}
