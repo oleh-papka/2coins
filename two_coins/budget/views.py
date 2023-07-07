@@ -186,6 +186,11 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
     template_name = 'budget/category/category_create.html'
     success_url = reverse_lazy('category_list')
 
+    def get_initial(self):
+        initial = super().get_initial()
+        initial['cat_type'] = self.kwargs.get('cat_type')
+        return initial
+
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.profile = models.Profile.objects.get(user=self.request.user)

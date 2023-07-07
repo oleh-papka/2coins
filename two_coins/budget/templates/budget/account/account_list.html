@@ -4,17 +4,13 @@
 
 {% block custom_static %}
     {% load static %}
-    <link rel="stylesheet" href="{% static 'budget/css/accounts.css' %}">
-{% endblock %}
-
-{% block page-controls %}
-    <a href="{% url 'account_add' %}" type="button" class="btn btn-outline-success">Add new</a>
+    <link rel="stylesheet" href="{% static 'budget/css/hover.css' %}">
 {% endblock %}
 
 {% block content %}
     <div class="d-flex flex-wrap gap-4 justify-content-between">
         {% for account in account_list %}
-            <div class="card rounded-4 border border-2 bg-body-secondary bg-opacity-25 zoom"
+            <div class="card rounded-4 border border-2 bg-body-secondary bg-opacity-25 hover"
                  style="min-width: 16rem; min-height: 10rem;">
                 <a href="{% url 'account' account.id %}" class="stretched-link text-reset"
                    style="text-decoration: none;"></a>

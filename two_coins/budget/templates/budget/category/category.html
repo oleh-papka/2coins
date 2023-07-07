@@ -2,71 +2,128 @@
 
 {% block title %}2coins | {{ object.name }}{% endblock %}
 
-{% block page-controls %}
-    <a href="{% url 'category_list' %}" type="button" class="btn btn-outline-secondary">Back</a>
-{% endblock %}
+{% block body %}
+    <div class="w-100 vh-100" id="main-content">
+        <div class="row m-0 vh-100 d-flex">
+            <div class="d-flex h-100 flex-column align-items-center p-4" style="max-width: 30rem">
 
-{% block content %}
-    <div class="col-4">
-        <div class="d-flex justify-content-between">
-            <div class="card rounded-2 border-2 {% if object.cat_type == '-' %}border-danger-subtle{% else %}border-success-subtle{% endif %}"
-                 style="min-width: 16rem;">
-                <div class="card-body d-flex flex-column justify-content-between">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0 me-2 d-flex align-items-center">
-                            <div class="d-flex justify-content-center align-items-center rounded-3 me-2"
-                                 style="width: 2.5rem; height: 2.5rem; background-color: {{ object.color }}2a">
-                                {% if object.icon %}
-                                    <i class="{{ object.icon }}"
-                                       style="color: {{ object.color }}"></i>
-                                {% endif %}
+                <div class="card w-100 border-2 rounded-2 bg-body-secondary bg-opacity-25">
+                    <div class="card-body d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="card-title mb-0 me-2 d-flex align-items-center">
+                                <div class="d-flex justify-content-center align-items-center rounded-3 me-2"
+                                     style="width: 3rem; height: 3rem; background-color: {{ object.color }}2a">
+                                    {% if object.icon %}
+                                        <i class="{{ object.icon }} fa-xl"
+                                           style="color: {{ object.color }}"></i>
+                                    {% endif %}
+                                </div>
+                                <h4>
+                                    {{ object.name }}
+                                </h4>
                             </div>
-                            {{ object.name }}
-                        </h5>
+                        </div>
 
-                                            <div class="dropdown align-self-center">
-                                                <a class="btn btn-sm btn-outline-secondary dropdown-toggle" href="#" role="button"
-                                                   data-bs-toggle="dropdown" aria-expanded="false">
-                                                    <i class="fa-solid fa-ellipsis"></i>
-                                                </a>
+                        <div class="d-flex gap-2 align-items-center">
+                            <a class="btn btn-outline-warning"
+                               href="{% url 'category_edit' object.id %}">
+                                <i class="fa-regular fa-pen-to-square me-2"></i>
+                                Edit
+                            </a>
 
-                                                <ul class="dropdown-menu">
-                                                    <li>
-                                                        <a class="dropdown-item" href="{% url 'category_edit' object.id %}"
-                                                           style="color: #FFC007">
-                                                            <i class="fa-regular fa-pen-to-square me-2"></i>Edit</a>
-                                                    </li>
-                                                    <li>
-                                                        <a class="dropdown-item" href="{% url 'category_delete' object.id %}"
-                                                           style="color: #DC3444">
-                                                            <i class="fa-regular fa-trash-can me-2"></i>Delete</a>
-                                                    </li>
-                                                </ul>
-                                            </div>
+                            <a class="btn btn-outline-danger"
+                               href="{% url 'category_delete' object.id %}">
+                                <i class="fa-regular fa-trash-can me-2"></i>
+                                Delete
+                            </a>
+                        </div>
                     </div>
+                </div>
 
-                    <div class="mt-3 d-flex gap-2">
-                        {% if object.cat_type == '-' %}
-                            <a href="{% url 'transaction_add' '-' object.name %}"
-                               class="btn btn-sm btn-outline-danger w-100">Add expense</a>
-                        {% elif object.cat_type == '+' %}
-                            <a href="{% url 'transaction_add' '+' object.name %}"
-                               class="btn btn-sm btn-outline-success w-100">Add Income</a>
-                        {% endif %}
+                <div class="px-4 mt-3 w-100 d-flex flex-column overflow-y-scroll">
+                    {% for i in 'asdf' %}
+                        <div class="mb-3 border border-2 rounded p-2 d-flex justify-content-between">
+                            <div class="card-title mb-0 me-2 d-flex align-items-center">
+                                {% if object.cat_type == '-' %}
+                                    <div class="d-flex justify-content-center align-items-center rounded-circle me-2"
+                                         style="width: 2.5rem; height: 2.5rem; background-color: #DC34442A">
+                                        <i class="fa-solid fa-minus text-danger"></i>
+                                    </div>
+                                {% else %}
+                                    <div class="d-flex justify-content-center align-items-center rounded-circle me-2"
+                                         style="width: 2.5rem; height: 2.5rem; background-color: #1987532A">
+                                        <i class="fa-solid fa-plus text-success"
+                                           style="color: {{ object.color }}"></i>
+                                    </div>
+                                {% endif %}
+
+                                <div class="d-flex flex-column">
+                                    <p>
+                                        Description
+                                    </p>
+                                    <p>
+                                        <small class="text-muted">01.06.2023</small>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-column align-items-end justify-content-center ms-auto me-3">
+                                {% if object.cat_type == '-' %}
+                                    <strong class="m-0 text-danger">
+                                        - 1 000 $
+                                    </strong>
+                                {% else %}
+                                    <strong class="m-0 text-success">
+                                        + 1 000 $
+                                    </strong>
+                                {% endif %}
+                                <small class="text-muted">2000 $</small>
+                            </div>
+
+                            <div class="d-flex gap-3 align-items-center">
+                                <div class="vr"></div>
+
+                                <div class="dropdown">
+                                    <a class="btn btn-outline-secondary dropdown-toggle"
+                                       href="#" role="button"
+                                       data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fa-solid fa-ellipsis"></i>
+                                    </a>
+
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item text-warning" href="#">
+                                                <i class="fa-regular fa-pen-to-square me-2"></i>
+                                                Edit
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="#">
+                                                <i class="fa-regular fa-trash-can me-2"></i>
+                                                Delete
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="px-4 w-100 d-flex">
+                    <div class="p-2 w-100 card border-2 rounded-2 bg-body-secondary bg-opacity-25">
+                        <div class="card-body d-flex justify-content-center bg-body-tertiary bg-opacity-50">
+                            <a href="{% url 'transaction_add' object.cat_type object.name %}"
+                               class="stretched-link"></a>
+                            <i class="fa-solid fa-plus fa-xl text-secondary"></i>
+                        </div>
                     </div>
                 </div>
             </div>
 
-
-            <div class="d-flex flex-column justify-content-evenly">
-                <a class="btn btn-outline-warning" href="{% url 'category_edit' object.id %}">
-                    <i class="fa-regular fa-pen-to-square me-2"></i>
-                    Edit
-                </a>
-                <a class="btn btn-outline-danger" href="{% url 'category_delete' object.id %}">
-                    <i class="fa-regular fa-trash-can me-2"></i>
-                    Delete
-                </a>
+            <div class="d-flex h-100 col">
+                <div class="m-4 h-100">
+                </div>
             </div>
         </div>
     </div>

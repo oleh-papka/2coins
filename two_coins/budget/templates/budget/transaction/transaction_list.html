@@ -7,10 +7,6 @@
     <link rel="stylesheet" href="{% static 'budget/css/currency_list.css' %}">
 {% endblock %}
 
-{% block page-controls %}
-    <a href="{% url 'transaction_add' %}" type="button" class="btn btn-outline-success">Add new</a>
-{% endblock %}
-
 {% block content %}
     <div id="currency_table" class="mx-auto">
         <table class="table table-hover table align-middle">

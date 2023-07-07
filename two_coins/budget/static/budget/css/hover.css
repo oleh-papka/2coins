@@ -1,8 +1,8 @@
-.zoom:hover {
-  transform: scale(1.05);
+.hover:hover {
+  transform: scale(105%);
   transition: transform 200ms ease-in-out;
 }
 
-.zoom {
+.hover {
   transition: transform 200ms ease-in-out;
 }

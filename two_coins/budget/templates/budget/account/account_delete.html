@@ -5,11 +5,6 @@
     <link rel="stylesheet" href="{% static 'budget/css/accounts_create.css' %}">
 {% endblock %}
 
-{% block page-controls %}
-    <a href="{% url 'account_list' %}" type="button" class="btn btn-outline-secondary">Back</a>
-{% endblock %}
-
-
 {% block form_block %}
     <form action="" method="post">
         {% csrf_token %}
