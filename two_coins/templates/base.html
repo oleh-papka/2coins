@@ -22,7 +22,7 @@
 <body>
 <div class="w-100 h-100 d-flex flex-row" id="content-wrapper">
     {% if messages %}
-        <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3">
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
             {% for message in messages %}
                 <div class="toast {% if message.tags %}bg-{{ message.tags }}-subtle{% endif %}" role="alert"
                      aria-live="assertive" aria-atomic="true">
@@ -54,7 +54,7 @@
 
     <div class="d-flex flex-column w-100">
         {% block body %}
-            <div class="w-100 overflow-y-scroll p-4" id="main-content">
+            <div class="w-100 overflow-y-scroll p-4">
                 {% block content %}
 
                 {% endblock %}

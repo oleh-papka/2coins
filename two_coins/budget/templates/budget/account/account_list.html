@@ -7,38 +7,53 @@
     <link rel="stylesheet" href="{% static 'budget/css/hover.css' %}">
 {% endblock %}
 
-{% block content %}
-    <div class="d-flex flex-wrap gap-4 justify-content-between">
-        {% for account in account_list %}
-            <div class="card rounded-4 border border-2 bg-body-secondary bg-opacity-25 hover"
-                 style="min-width: 16rem; min-height: 10rem;">
-                <a href="{% url 'account' account.id %}" class="stretched-link text-reset"
-                   style="text-decoration: none;"></a>
-                <div class="card-body d-flex flex-column justify-content-between">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title mb-1">
-                                {{ account.name }}
-                            </h5>
-                            <small class="text-body-secondary">Description</small>
-                        </div>
+{% block body %}
+    <div class="w-100 vh-100">
 
-                        <div class="d-flex justify-content-center align-items-center rounded-3"
-                             style="width: 3rem; height: 3rem; background-color: {{ account.color }}2a">
-                            <i class="{{ account.icon }} fa-xl"
-                               style="color: {{ account.color }}"></i>
+        <div class="row m-0 vh-100 d-flex">
+            <div class="d-flex h-100 flex-column align-items-center p-4 col-5">
+
+                <div class="d-flex flex-wrap gap-4 justify-content-between">
+                    {% for account in account_list %}
+                        <div class="card rounded-4 border border-2 bg-body-secondary bg-opacity-25 hover"
+                             style="min-width: 16rem; min-height: 10rem;">
+                            <a href="{% url 'account' account.id %}" class="stretched-link text-reset"
+                               style="text-decoration: none;"></a>
+                            <div class="card-body d-flex flex-column justify-content-between">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h5 class="card-title mb-1">
+                                            {{ account.name }}
+                                        </h5>
+                                        <small class="text-body-secondary">Description</small>
+                                    </div>
+
+                                    <div class="d-flex justify-content-center align-items-center rounded-3"
+                                         style="width: 3rem; height: 3rem; background-color: {{ account.color }}2a">
+                                        <i class="{{ account.icon }} fa-xl"
+                                           style="color: {{ account.color }}"></i>
+                                    </div>
+                                </div>
+
+                                <h4 class="card-text">
+                                    {% load intspace %}
+                                    {{ account.balance|intspace }} {{ account.currency.symbol }}
+                                </h4>
+
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <div class="card rounded-4 border border-2 bg-body-secondary bg-opacity-25 hover"
+                         style="min-width: 16rem; min-height: 5rem;">
+                        <div class="card-body d-flex justify-content-center align-items-center">
+                            <a href="{% url 'account_add' %}" class="stretched-link"></a>
+                            <i class="fa-solid fa-plus fa-2xl text-secondary"></i>
                         </div>
                     </div>
 
-
-                    <h4 class="card-text">
-                        {% load intspace %}
-                        {{ account.balance|intspace }} {{ account.currency.symbol }}
-                    </h4>
-
-
                 </div>
             </div>
-        {% endfor %}
+        </div>
     </div>
 {% endblock %}

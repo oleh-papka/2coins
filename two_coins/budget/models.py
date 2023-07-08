@@ -156,6 +156,9 @@ class Category(TimeStampMixin):
                                 default=EXPENSE,
                                 verbose_name="Category type")
 
+    def get_transactions(self, user):
+        return Transaction.objects.filter(category=self, account__profile__user=user).order_by('-date')
+
 
 class Transaction(TimeStampMixin):
     """

@@ -1,6 +1,9 @@
+from collections import defaultdict
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum
+from django.db.models.functions import TruncDate
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView, DeleteView
 
@@ -178,6 +181,11 @@ class CategoryDetailView(LoginRequiredMixin, DetailView):
     model = models.Category
     template_name = "budget/category/category.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['transactions'] = self.get_object().get_transactions(self.request.user)
+        return context
+
 
 class CategoryCreateView(LoginRequiredMixin, CreateView):
     login_url = reverse_lazy('login')
@@ -235,12 +243,17 @@ class CategoryDeleteView(LoginRequiredMixin, DeleteView):
 class TransactionList(LoginRequiredMixin, ListView):
     login_url = 'login'
     model = models.Transaction
-    context_object_name = 'transaction_list'
     template_name = "budget/transaction/transaction_list.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["instance_name"] = 'Transactions'
+        transaction_dict = defaultdict(list)
+        transactions = models.Transaction.objects.all().order_by('-date').annotate(truncated_date=TruncDate('date'))
+
+        for transaction in transactions:
+            transaction_dict[transaction.truncated_date].append(transaction)
+
+        context['transaction_dict'] = dict(transaction_dict)
         return context
 
     def get_queryset(self):
