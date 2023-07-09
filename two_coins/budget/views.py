@@ -285,8 +285,10 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context['categories'] = [(cat.id, cat.name) for cat in models.Category.objects.all()]
-        context['accounts'] = [(acct.id, acct.name) for acct in models.Account.objects.all()]
+        context['categories'] = [(cat.id, cat.name) for cat in
+                                 models.Category.objects.filter(profile__user=self.request.user).all()]
+        context['accounts'] = [(acct.id, acct.name) for acct in
+                               models.Account.objects.filter(profile__user=self.request.user).all()]
         context['txn_types'] = models.Transaction.TRANSACTION_TYPES_CHOICES
 
         return context
@@ -310,8 +312,10 @@ class TransactionUpdateView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context['categories'] = [(cat.id, cat.name) for cat in models.Category.objects.all()]
-        context['accounts'] = [(acct.id, acct.name) for acct in models.Account.objects.all()]
+        context['categories'] = [(cat.id, cat.name) for cat in
+                                 models.Category.objects.filter(profile__user=self.request.user).all()]
+        context['accounts'] = [(acct.id, acct.name) for acct in
+                               models.Account.objects.filter(profile__user=self.request.user).all()]
         context['txn_types'] = models.Transaction.TRANSACTION_TYPES_CHOICES
 
         return context
@@ -334,24 +338,24 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     login_url = 'login'
     template_name = 'budget/dashboard.html'
 
-    data_acct = {
-        'data': [acct.balance for acct in models.Account.objects.all()],
-        'labels': [acct.name for acct in models.Account.objects.all()],
-        'colors': [acct.color for acct in models.Account.objects.all()]
-    }
-
-    transactions_by_category = models.Transaction.objects.values('category__name').annotate(
-        total_amount=Sum('amount'))
-
-    data_cat = {
-        'data': [item['total_amount'] for item in transactions_by_category],
-        'labels': [item['category__name'] for item in transactions_by_category],
-        'colors': [cat.color for cat in models.Category.objects.all()]
-    }
-
     def get_context_data(self, **kwargs):
+        data_acct = {
+            'data': [acct.balance for acct in models.Account.objects.filter(profile__user=self.request.user).all()],
+            'labels': [acct.name for acct in models.Account.objects.filter(profile__user=self.request.user).all()],
+            'colors': [acct.color for acct in models.Account.objects.filter(profile__user=self.request.user).all()]
+        }
+
+        transactions_by_category = models.Transaction.objects.values('category__name').annotate(
+            total_amount=Sum('amount'))
+
+        data_cat = {
+            'data': [item['total_amount'] for item in transactions_by_category],
+            'labels': [item['category__name'] for item in transactions_by_category],
+            'colors': [cat.color for cat in models.Category.objects.all()]
+        }
+
         context = super().get_context_data(**kwargs)
-        context['data_acct'] = self.data_acct
-        context['data_cat'] = self.data_cat
+        context['data_acct'] = data_acct
+        context['data_cat'] = data_cat
 
         return context

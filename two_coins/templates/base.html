@@ -71,11 +71,25 @@
     function go_dark() {
         document.documentElement.setAttribute('data-bs-theme', 'dark');
         document.getElementById('btn-light-theme').checked = false;
+
+        const scrollboxElement = document.querySelector('.scrollbox');
+
+        if (scrollboxElement) {
+            scrollboxElement.classList.remove('scrollbox');
+            scrollboxElement.classList.add('scrollbox-dark');
+        }
     }
 
     function go_light() {
         document.documentElement.setAttribute('data-bs-theme', 'light');
         document.getElementById('btn-dark-theme').checked = false;
+
+        const scrollboxElement = document.querySelector('.scrollbox-dark');
+
+        if (scrollboxElement) {
+            scrollboxElement.classList.remove('scrollbox-dark');
+            scrollboxElement.classList.add('scrollbox');
+        }
     }
 
     const toastElList = [].slice.call(document.querySelectorAll('.toast'));

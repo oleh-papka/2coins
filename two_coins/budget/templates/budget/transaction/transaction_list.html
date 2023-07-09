@@ -5,6 +5,7 @@
 {% block custom_static %}
     {% load static %}
     <link rel="stylesheet" href="{% static 'budget/css/currency_list.css' %}">
+    <link rel="stylesheet" href="{% static 'scroll_shadow.css' %}">
 {% endblock %}
 
 
@@ -12,8 +13,7 @@
     <div class="w-100 vh-100">
         <div class="row m-0 vh-100 d-flex">
             <div class="d-flex h-100 flex-column align-items-center p-4" style="max-width: 30rem">
-
-                <div class="m-3 w-100 d-flex flex-column overflow-y-scroll">
+                <div class="m-3 w-100 h-100 d-flex flex-column overflow-y-scroll scrollbox">
                     {% for date, txns in transaction_dict.items %}
                         <h6 class="m-0">{{ date }}</h6>
                         <hr>
