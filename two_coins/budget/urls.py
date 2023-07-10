@@ -21,7 +21,6 @@ urlpatterns = [
     # Categories
     path('category/', views.CategoryList.as_view(), name='category_list'),
     path('category/add/', views.CategoryCreateView.as_view(), name='category_add'),
-    path('category/add/<cat_type>/', views.CategoryCreateView.as_view(), name='category_add'),
     path('category/<int:pk>/', views.CategoryDetailView.as_view(), name='category'),
     path('category/<int:pk>/edit/', views.CategoryUpdateView.as_view(), name='category_edit'),
     path('category/<int:pk>/delete/', views.CategoryDeleteView.as_view(), name='category_delete'),
@@ -29,7 +28,6 @@ urlpatterns = [
     # Transactions
     path('transaction/', views.TransactionList.as_view(), name='transaction_list'),
     path('transaction/add/', views.TransactionCreateView.as_view(), name='transaction_add'),
-    path('transaction/add/<txn_type>/<category>/', views.TransactionCreateView.as_view(), name='transaction_add'),
     path('transaction/<int:pk>/edit/', views.TransactionUpdateView.as_view(), name='transaction_edit'),
     path('transaction/<int:pk>/delete/', views.TransactionDeleteView.as_view(), name='transaction_delete'),
 ]

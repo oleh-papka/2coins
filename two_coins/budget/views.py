@@ -238,7 +238,10 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
 
     def get_initial(self):
         initial = super().get_initial()
-        initial['cat_type'] = self.kwargs.get('cat_type')
+
+        if cat_type := self.request.GET.get('cat_type'):
+            initial['cat_type'] = '-' if cat_type == 'expense' else '+'
+
         return initial
 
     def form_valid(self, form):
@@ -317,8 +320,12 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
 
     def get_initial(self):
         initial = super().get_initial()
-        initial['txn_type'] = self.kwargs.get('txn_type')
-        initial['category'] = self.kwargs.get('category')
+
+        if txn_type := self.request.GET.get('txn_type'):
+            initial['txn_type'] = '-' if txn_type == 'expense' or '-' else '+'
+
+        initial['category'] = self.request.GET.get('category')
+
         return initial
 
     def form_valid(self, form):
