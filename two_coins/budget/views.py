@@ -83,12 +83,20 @@ class CurrencyDeleteView(LoginRequiredMixin, DeleteView):
 class AccountListView(LoginRequiredMixin, ListView):
     login_url = 'login'
     model = models.Account
-    context_object_name = 'account_list'
     template_name = "budget/account/account_list.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["instance_name"] = 'Accounts'
+
+        accounts = self.object_list
+        for account in accounts:
+            txn_sum = models.Transaction.objects.filter(account=account).aggregate(Sum('amount'))['amount__sum']
+            txn_sum = 0 if txn_sum is None else txn_sum
+            account.total = account.balance + txn_sum
+
+        context['accounts_list'] = accounts
+
         return context
 
     def get_queryset(self):
@@ -100,6 +108,28 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
     login_url = 'login'
     model = models.Account
     template_name = 'budget/account/account.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        txn_sum = models.Transaction.objects.filter(account=self.object).aggregate(Sum('amount'))['amount__sum']
+        txn_sum = 0 if txn_sum is None else txn_sum
+        self.object.total = self.object.balance + txn_sum
+
+        transaction_dict = defaultdict(list)
+        transactions = models.Transaction.objects.filter(account=self.object).order_by('-date').annotate(
+            truncated_date=TruncDate('date'))
+
+        for transaction in transactions:
+            transaction_dict[transaction.truncated_date].append(transaction)
+
+        res = dict()
+        for k, v in dict(transaction_dict).items():
+            res[k] = {'total': sum([i.amount for i in v]), 'txns': v}
+
+        context['transaction_dict'] = dict(res)
+
+        return context
 
 
 class AccountCreateView(LoginRequiredMixin, CreateView):
@@ -183,7 +213,19 @@ class CategoryDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['transactions'] = self.get_object().get_transactions(self.request.user)
+        transaction_dict = defaultdict(list)
+        transactions = self.get_object().get_transactions_by_category(self.request.user).annotate(
+            truncated_date=TruncDate('date'))
+
+        for transaction in transactions:
+            transaction_dict[transaction.truncated_date].append(transaction)
+
+        res = dict()
+        for k, v in dict(transaction_dict).items():
+            res[k] = {'total': sum([i.amount for i in v]), 'txns': v}
+
+        context['transaction_dict'] = dict(res)
+
         return context
 
 
@@ -248,12 +290,17 @@ class TransactionList(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         transaction_dict = defaultdict(list)
-        transactions = models.Transaction.objects.all().order_by('-date').annotate(truncated_date=TruncDate('date'))
+        transactions = models.Transaction.objects.filter(account__profile__user=self.request.user).order_by(
+            '-date').annotate(truncated_date=TruncDate('date'))
 
         for transaction in transactions:
             transaction_dict[transaction.truncated_date].append(transaction)
 
-        context['transaction_dict'] = dict(transaction_dict)
+        res = dict()
+        for k, v in dict(transaction_dict).items():
+            res[k] = {'total': sum([i.amount for i in v]), 'txns': v}
+
+        context['transaction_dict'] = dict(res)
         return context
 
     def get_queryset(self):
@@ -328,7 +375,7 @@ class TransactionDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('transaction_list')
 
     def form_valid(self, form):
-        messages.success(self.request, f"Transaction '{self.object.name}' deleted!")
+        messages.success(self.request, f"Transaction '{self.object.amount}' deleted!")
         return super().form_valid(form)
 
 

@@ -1,6 +1,5 @@
 .scrollbox {
     overflow: auto;
-    margin: 50px auto;
     background: /* Shadow covers */ linear-gradient(white 30%, rgba(255, 255, 255, 0)), linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%, /* Shadows */ radial-gradient(50% 0, farthest-side, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)), radial-gradient(50% 100%, farthest-side, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)) 0 100%;
     background: /* Shadow covers */ linear-gradient(white 30%, rgba(255, 255, 255, 0)), linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%, /* Shadows */ radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)), radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0)) 0 100%;
     background-repeat: no-repeat;
@@ -12,7 +11,6 @@
 
 .scrollbox-dark {
     overflow: auto;
-    margin: 50px auto;
     background: /* Shadow covers */ linear-gradient(#212529 30%, rgba(33, 37, 41, 0)), linear-gradient(rgba(33, 37, 41, 0), #212529 70%) 0 100%, /* Shadows */ radial-gradient(50% 0, farthest-side, rgba(255, 255, 255, .2), rgba(255, 255, 255, 0)), radial-gradient(50% 100%, farthest-side, rgba(255, 255, 255, .2), rgba(255, 255, 255, 0)) 0 100%;
     background: /* Shadow covers */ linear-gradient(#212529 30%, rgba(33, 37, 41, 0)), linear-gradient(rgba(33, 37, 41, 0), #212529 70%) 0 100%, /* Shadows */ radial-gradient(farthest-side at 50% 0, rgba(255, 255, 255, .2), rgba(255, 255, 255, 0)), radial-gradient(farthest-side at 50% 100%, rgba(255, 255, 255, .2), rgba(255, 255, 255, 0)) 0 100%;
     background-repeat: no-repeat;

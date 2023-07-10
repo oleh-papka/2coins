@@ -84,10 +84,10 @@ class Account(TimeStampMixin):
                                  on_delete=models.CASCADE,
                                  default=0,
                                  related_name="+")
-    balance = models.IntegerField(null=False,
-                                  blank=True,
-                                  default=0,
-                                  verbose_name="Balance")
+    balance = models.FloatField(null=False,
+                                blank=True,
+                                default=0,
+                                verbose_name="Balance")
     initial_date = models.DateTimeField(null=False,
                                         blank=True,
                                         verbose_name="Initial date")
@@ -96,10 +96,10 @@ class Account(TimeStampMixin):
                              max_length=7,
                              default="#fcba03",
                              verbose_name="Account color")
-    goal_balance = models.IntegerField(null=True,
-                                       blank=True,
-                                       default=None,
-                                       verbose_name="Goal balance")
+    goal_balance = models.FloatField(null=True,
+                                     blank=True,
+                                     default=None,
+                                     verbose_name="Goal balance")
     icon = models.CharField(null=True,
                             blank=True,
                             max_length=30,
@@ -156,7 +156,7 @@ class Category(TimeStampMixin):
                                 default=EXPENSE,
                                 verbose_name="Category type")
 
-    def get_transactions(self, user):
+    def get_transactions_by_category(self, user):
         return Transaction.objects.filter(category=self, account__profile__user=user).order_by('-date')
 
 
@@ -178,9 +178,9 @@ class Transaction(TimeStampMixin):
                                 choices=TRANSACTION_TYPES_CHOICES,
                                 default=EXPENSE,
                                 verbose_name="Transaction type")
-    amount = models.IntegerField(null=False,
-                                 blank=False,
-                                 verbose_name="Amount")
+    amount = models.FloatField(null=False,
+                               blank=False,
+                               verbose_name="Amount")
     category = models.ForeignKey(null=True,
                                  blank=False,
                                  to=Category,
@@ -202,5 +202,7 @@ class Transaction(TimeStampMixin):
     def save(self, *args, **kwargs):
         if not self.date:
             self.date = datetime.datetime.now()
+
+        self.amount = abs(self.amount) if self.txn_type == self.INCOME else - abs(self.amount)
 
         super(Transaction, self).save(*args, **kwargs)
