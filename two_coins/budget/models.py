@@ -174,7 +174,9 @@ class Transaction(TimeStampMixin):
         # (TRANSFER, "Transfer"), # TODO: money transfer between accounts
     ]
 
-    txn_type = models.CharField(max_length=2,
+    txn_type = models.CharField(null=False,
+                                blank=True,
+                                max_length=2,
                                 choices=TRANSACTION_TYPES_CHOICES,
                                 default=EXPENSE,
                                 verbose_name="Transaction type")
@@ -202,6 +204,9 @@ class Transaction(TimeStampMixin):
     def save(self, *args, **kwargs):
         if not self.date:
             self.date = datetime.datetime.now()
+
+        if self.category:
+            self.txn_type = self.category.cat_type
 
         self.amount = abs(self.amount) if self.txn_type == self.INCOME else - abs(self.amount)
 

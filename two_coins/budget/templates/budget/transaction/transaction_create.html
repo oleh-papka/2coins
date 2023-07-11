@@ -6,22 +6,60 @@
 {% endblock %}
 
 {% block form_block %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        {% if category %}
+            <a href="{% url 'category' category.id %}"
+               style="text-decoration: none;"
+               class="text-reset">
+                <h5 class="card-title mb-0 d-flex align-items-center">
+                    <div class="d-flex justify-content-center align-items-center rounded-3 me-2"
+                         style="width: 2.5rem; height: 2.5rem; background-color: {{ category.color }}2a">
+                        {% if category.icon %}
+                            <i class="{{ category.icon }}"
+                               style="color: {{ category.color }}"></i>
+                        {% endif %}
+                    </div>
+                    {{ category.name }} transaction:
+                </h5>
+            </a>
+        {% elif account %}
+            <a href="{% url 'account' account.id %}"
+               style="text-decoration: none;"
+               class="text-reset">
+                <h5 class="card-title mb-0 d-flex align-items-center">
+                    <div class="d-flex justify-content-center align-items-center rounded-3 me-2"
+                         style="width: 2.5rem; height: 2.5rem; background-color: {{ account.color }}2a">
+                        {% if account.icon %}
+                            <i class="{{ account.icon }}"
+                               style="color: {{ account.color }}"></i>
+                        {% endif %}
+                    </div>
+                    {{ account.name }} transaction:
+                </h5>
+            </a>
+        {% else %}
+            <h5>Adding transaction:</h5>
+        {% endif %}
+    </div>
+
     <form action="{% url 'transaction_add' %}" method="post">
         {% csrf_token %}
 
         {% for field in form %}
             {% if field.name == 'txn_type' %}
-                <div class="row mb-3">
-                    <label for="id_txn_type" class="col-sm-3 col-form-label">{{ field.label }}</label>
-                    <div class="col">
-                        <select class="form-select" id="id_txn_type" aria-label="txn_type select" name="txn_type">
-                            {% for opt in txn_types %}
-                                <option value="{{ opt.0 }}"
-                                        {% if field.value == opt.0 or forloop.first %}selected{% endif %}>{{ opt.1 }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
+                {#                {% if not category or not account %}#}
+                {#                    <div class="row mb-3">#}
+                {#                        <label for="id_txn_type" class="col-sm-3 col-form-label">{{ field.label }}</label>#}
+                {#                        <div class="col">#}
+                {#                            <select class="form-select" id="id_txn_type" aria-label="txn_type select" name="txn_type">#}
+                {#                                {% for opt in txn_types %}#}
+                {#                                    <option value="{{ opt.0 }}"#}
+                {#                                            {% if field.value == opt.0 or forloop.first %}selected{% endif %}>{{ opt.1 }}</option>#}
+                {#                                {% endfor %}#}
+                {#                            </select>#}
+                {#                        </div>#}
+                {#                    </div>#}
+                {#                {% endif %}#}
             {% elif field.name == 'date' %}
                 <div class="row mb-3">
                     <label for="id_date"
@@ -32,7 +70,7 @@
                     </div>
                 </div>
             {% elif field.name == 'category' %}
-                <div class="row mb-3">
+                <div class="row mb-3" {% if category %}style="display: none" {% endif %}>
                     <label for="id_category" class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
                         <select class="form-select" id="id_category" aria-label="category select" name="category">
@@ -44,7 +82,7 @@
                     </div>
                 </div>
             {% elif field.name == 'account' %}
-                <div class="row mb-3">
+                <div class="row mb-3" {% if account %}style="display: none" {% endif %}>
                     <label for="id_account" class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
                         <select class="form-select" id="id_category" aria-label="account select" name="account">

@@ -147,7 +147,7 @@
         <div class="w-100 d-flex mt-3">
             <div class="p-2 mx-3 w-100 card border-2 rounded-2 hover">
                 <div class="card-body d-flex justify-content-center">
-                    <a href="{% url 'transaction_add' %}"
+                    <a href="{% url 'transaction_add' %}?account={{ account.id }}"
                        class="stretched-link"></a>
                     <i class="fa-solid fa-plus fa-xl text-secondary"></i>
                 </div>

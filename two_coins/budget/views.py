@@ -321,10 +321,13 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
     def get_initial(self):
         initial = super().get_initial()
 
-        if txn_type := self.request.GET.get('txn_type'):
-            initial['txn_type'] = '-' if txn_type == 'expense' or '-' else '+'
+        if cat_id := self.request.GET.get('category'):
+            cat = models.Category.objects.get(id=cat_id)
+            initial['category'] = cat.name
 
-        initial['category'] = self.request.GET.get('category')
+        if acct_id := self.request.GET.get('account'):
+            acct = models.Account.objects.get(id=acct_id)
+            initial['account'] = acct.name
 
         return initial
 
@@ -339,11 +342,18 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        if cat_id := self.request.GET.get('category'):
+            cat = models.Category.objects.get(id=cat_id)
+            context['category'] = cat
+
+        if acct_id := self.request.GET.get('account'):
+            acct = models.Account.objects.get(id=acct_id)
+            context['account'] = acct
+
         context['categories'] = [(cat.id, cat.name) for cat in
                                  models.Category.objects.filter(profile__user=self.request.user).all()]
         context['accounts'] = [(acct.id, acct.name) for acct in
                                models.Account.objects.filter(profile__user=self.request.user).all()]
-        context['txn_types'] = models.Transaction.TRANSACTION_TYPES_CHOICES
 
         return context
 

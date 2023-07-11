@@ -54,7 +54,7 @@
                                             </div>
 
                                             <div class="mt-3 d-flex gap-2">
-                                                <a href="{% url 'transaction_add' %}?txn_type=expense&category={{ object.name }}"
+                                                <a href="{% url 'transaction_add' %}?category={{ object.id }}"
                                                    class="btn btn-sm btn-outline-danger w-100">Add expense</a>
                                             </div>
                                         </div>
@@ -72,7 +72,8 @@
                             </div>
                         </div>
                     </div>
-                    <div class="tab-pane overflow-y-scroll" id="pills-income" role="tabpanel"
+
+                    <div class="tab-pane" id="pills-income" role="tabpanel"
                          aria-labelledby="pills-income-tab"
                          tabindex="0">
                         <div class="d-flex flex-wrap gap-4 p-2 justify-content-center">
@@ -98,7 +99,7 @@
                                                 </a>
                                             </div>
 
-                                            <a href="{% url 'transaction_add' %}?txn_type=income&category={{ object.name }}"
+                                            <a href="{% url 'transaction_add' %}?category={{ object.id }}"
                                                class="btn btn-sm btn-outline-success w-100 mt-3">Add income</a>
                                         </div>
                                     </div>
@@ -120,6 +121,9 @@
 
             <div class="d-flex h-100 col">
                 <div class="m-4 h-100">
+
+
+
                 </div>
             </div>
         </div>
