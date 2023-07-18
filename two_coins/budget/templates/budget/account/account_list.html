@@ -56,8 +56,41 @@
 
             <div class="d-flex h-100 col">
                 <div class="m-4 h-100">
+                    <canvas id="accounts_chart"></canvas>
                 </div>
             </div>
         </div>
     </div>
+{% endblock %}
+
+
+{% block custom_scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        const ctx = document.getElementById('accounts_chart').getContext('2d');
+
+        const doughnutChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ data_acct.labels|safe }},
+                datasets: [{
+                    label: 'Balance',
+                    data: {{ data_acct.data|safe }},
+                    backgroundColor: {{ data_acct.colors|safe }},
+                    hoverOffset: 4,
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: "right",
+                        align: "start"
+                    }
+                }
+            }
+        });
+    </script>
+
 {% endblock %}

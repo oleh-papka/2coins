@@ -2,13 +2,21 @@ from collections import defaultdict
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Sum
-from django.db.models.functions import TruncDate
+from django.db.models import Sum, F, FloatField
+from django.db.models.functions import TruncDate, Coalesce, Cast
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView, DeleteView
 
 from misc.views import AdminUserRequiredMixin
 from . import forms, models
+
+
+def get_template_chart_data(query_data):
+    res = {'data': [], 'labels': [], 'colors': []}
+    for dct in query_data:
+        for k in dct.keys():
+            res[k].append(dct[k])
+    return res
 
 
 # Currencies
@@ -86,16 +94,26 @@ class AccountListView(LoginRequiredMixin, ListView):
     template_name = "budget/account/account_list.html"
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["instance_name"] = 'Accounts'
+        data_acct_query = (
+            models.Account.objects
+            .filter(profile__user=self.request.user)
+            .annotate(
+                data=Coalesce(Sum('transaction__amount'), 0.0) + Cast(F('balance'), output_field=FloatField())
+            )
+            .annotate(labels=F('name'))
+            .annotate(colors=F('color'))
+            .values('data', 'labels', 'colors')
+        )
 
         accounts = self.object_list
+
         for account in accounts:
             txn_sum = models.Transaction.objects.filter(account=account).aggregate(Sum('amount'))['amount__sum']
-            txn_sum = 0 if txn_sum is None else txn_sum
-            account.total = account.balance + txn_sum
+            account.total = account.balance + txn_sum if txn_sum else account.balance
 
+        context = super().get_context_data(**kwargs)
         context['accounts_list'] = accounts
+        context['data_acct'] = get_template_chart_data(data_acct_query)
 
         return context
 
@@ -403,23 +421,28 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'budget/dashboard.html'
 
     def get_context_data(self, **kwargs):
-        data_acct = {
-            'data': [acct.balance for acct in models.Account.objects.filter(profile__user=self.request.user).all()],
-            'labels': [acct.name for acct in models.Account.objects.filter(profile__user=self.request.user).all()],
-            'colors': [acct.color for acct in models.Account.objects.filter(profile__user=self.request.user).all()]
-        }
+        data_cat_query = (
+            models.Category.objects
+            .filter(profile__user=self.request.user)
+            .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
+            .annotate(labels=F('name'))
+            .annotate(colors=F('color'))
+            .values('labels', 'colors', 'data')
+        )
 
-        transactions_by_category = models.Transaction.objects.values('category__name').annotate(
-            total_amount=Sum('amount'))
-
-        data_cat = {
-            'data': [item['total_amount'] for item in transactions_by_category],
-            'labels': [item['category__name'] for item in transactions_by_category],
-            'colors': [cat.color for cat in models.Category.objects.all()]
-        }
+        data_acct_query = (
+            models.Account.objects
+            .filter(profile__user=self.request.user)
+            .annotate(
+                data=Coalesce(Sum('transaction__amount'), 0.0) + Cast(F('balance'), output_field=FloatField())
+            )
+            .annotate(labels=F('name'))
+            .annotate(colors=F('color'))
+            .values('data', 'labels', 'colors')
+        )
 
         context = super().get_context_data(**kwargs)
-        context['data_acct'] = data_acct
-        context['data_cat'] = data_cat
+        context['data_acct'] = get_template_chart_data(data_acct_query)
+        context['data_cat'] = get_template_chart_data(data_cat_query)
 
         return context
