@@ -282,8 +282,6 @@ class CategoryDetailView(LoginRequiredMixin, DetailView):
         context['transaction_dict'] = dict(res)
         context['data_cat'] = data_cat
 
-        print(data_cat)
-
         return context
 
 
@@ -358,10 +356,15 @@ class TransactionList(LoginRequiredMixin, ListView):
             transaction_dict[transaction.truncated_date].append(transaction)
 
         res = dict()
+        data_txn = {'data': [], 'labels': []}
+
         for k, v in dict(transaction_dict).items():
             res[k] = {'total': sum([i.amount for i in v]), 'txns': v}
+            data_txn['data'].append(abs(res[k]['total']))
+            data_txn['labels'].append(res[k]['txns'][0].created_at.strftime("%m/%d"))
 
         context['transaction_dict'] = dict(res)
+        context['data_txn'] = data_txn
         return context
 
     def get_queryset(self):
