@@ -145,7 +145,18 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
         for k, v in dict(transaction_dict).items():
             res[k] = {'total': sum([i.amount for i in v]), 'txns': v}
 
+        data_acct_query = (
+            models.Category.objects
+            .filter(profile__user=self.request.user)
+            .filter(transaction__account=self.object)
+            .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
+            .annotate(labels=F('name'))
+            .annotate(colors=F('color'))
+            .values('data', 'labels', 'colors')
+        )
+
         context['transaction_dict'] = dict(res)
+        context['data_acct'] = get_template_chart_data(data_acct_query)
 
         return context
 
@@ -216,7 +227,27 @@ class CategoryList(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["instance_name"] = 'Categories'
+
+        data_income_categories_query = (
+            models.Category.objects
+            .filter(profile__user=self.request.user, cat_type=models.Category.INCOME)
+            .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
+            .annotate(labels=F('name'))
+            .annotate(colors=F('color'))
+            .values('data', 'labels', 'colors')
+        )
+        data_expense_categories_query = (
+            models.Category.objects
+            .filter(profile__user=self.request.user, cat_type=models.Category.EXPENSE)
+            .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
+            .annotate(labels=F('name'))
+            .annotate(colors=F('color'))
+            .values('data', 'labels', 'colors')
+        )
+
+        context['data_income'] = get_template_chart_data(data_income_categories_query)
+        context['data_expense'] = get_template_chart_data(data_expense_categories_query)
+
         return context
 
     def get_queryset(self):
@@ -239,10 +270,19 @@ class CategoryDetailView(LoginRequiredMixin, DetailView):
             transaction_dict[transaction.truncated_date].append(transaction)
 
         res = dict()
+        data_cat = {'data': [], 'labels': []}
+
         for k, v in dict(transaction_dict).items():
             res[k] = {'total': sum([i.amount for i in v]), 'txns': v}
+            data_cat['data'].append(abs(res[k]['total']))
+            data_cat['labels'].append(res[k]['txns'][0].created_at.strftime("%m/%d"))
+
+        data_cat['color'] = self.object.color
 
         context['transaction_dict'] = dict(res)
+        context['data_cat'] = data_cat
+
+        print(data_cat)
 
         return context
 
