@@ -188,12 +188,45 @@ class AccountCreateView(LoginRequiredMixin, CreateView):
 class AccountUpdateView(LoginRequiredMixin, UpdateView):
     login_url = reverse_lazy('login')
     model = models.Account
-    form_class = forms.AccountForm
+    form_class = forms.AccountUpdateForm
     template_name = 'budget/account/account_edit.html'
     success_url = reverse_lazy('account_list')
 
+    def get_initial(self):
+        initial = super().get_initial()
+
+        initial['new_balance'] = (
+            models.Account.objects
+            .filter(profile__user=self.request.user, pk=self.object.id)
+            .annotate(real_balance=Coalesce(Sum(F('transaction__amount')), 0.0) + Cast(F('balance'),
+                                                                                       output_field=FloatField()))
+            .values('real_balance')
+        )[0]['real_balance']
+
+        return initial
+
     def form_valid(self, form):
         messages.success(self.request, f"Account '{form.cleaned_data.get('name')}' updated!")
+
+        new_balance = form.cleaned_data['new_balance']
+        real_balance = (
+            models.Account.objects
+            .filter(profile__user=self.request.user, pk=self.object.id)
+            .annotate(real_balance=Coalesce(Sum(F('transaction__amount')), 0.0) + Cast(F('balance'),
+                                                                                       output_field=FloatField()))
+            .values('real_balance')
+        )[0]['real_balance']
+
+        if new_balance != real_balance:
+            txn_amount = new_balance - real_balance
+
+            models.Transaction.objects.create(
+                category=models.Category.objects.get(cat_type=models.Category.OTHER),
+                account=self.object,
+                txn_type=models.Transaction.INCOME if txn_amount > 0 else models.Transaction.EXPENSE,
+                amount=txn_amount
+            )
+
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -228,7 +261,7 @@ class CategoryList(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        data_income_categories_query = (
+        income_categories_query = (
             models.Category.objects
             .filter(profile__user=self.request.user, cat_type=models.Category.INCOME)
             .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
@@ -236,7 +269,17 @@ class CategoryList(LoginRequiredMixin, ListView):
             .annotate(colors=F('color'))
             .values('data', 'labels', 'colors')
         )
-        data_expense_categories_query = (
+        income_other_query = (
+            models.Category.objects
+            .filter(profile__user=self.request.user,
+                    cat_type=models.Category.OTHER,
+                    transaction__txn_type=models.Transaction.INCOME)
+            .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
+            .annotate(labels=F('name'))
+            .annotate(colors=F('color'))
+            .values('data', 'labels', 'colors')
+        )
+        expense_categories_query = (
             models.Category.objects
             .filter(profile__user=self.request.user, cat_type=models.Category.EXPENSE)
             .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
@@ -244,9 +287,21 @@ class CategoryList(LoginRequiredMixin, ListView):
             .annotate(colors=F('color'))
             .values('data', 'labels', 'colors')
         )
+        expense_other_query = (
+            models.Category.objects
+            .filter(profile__user=self.request.user,
+                    cat_type=models.Category.OTHER,
+                    transaction__txn_type=models.Transaction.EXPENSE)
+            .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
+            .annotate(labels=F('name'))
+            .annotate(colors=F('color'))
+            .values('data', 'labels', 'colors')
+        )
+        data_income = income_categories_query | income_other_query
+        data_expense = expense_categories_query | expense_other_query
 
-        context['data_income'] = get_template_chart_data(data_income_categories_query)
-        context['data_expense'] = get_template_chart_data(data_expense_categories_query)
+        context['data_income'] = get_template_chart_data(data_income)
+        context['data_expense'] = get_template_chart_data(data_expense)
 
         return context
 

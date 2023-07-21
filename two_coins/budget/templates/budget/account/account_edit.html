@@ -31,14 +31,14 @@
                     </div>
                 </div>
             {% elif field.name == 'currency' %}
-            {% elif field.name == 'balance' %}
+            {% elif field.name == 'new_balance' %}
                 <div class="row mb-3">
-                    <label for="id_balance"
+                    <label for="id_new_balance"
                            class="col-sm-3 align-self-center">{{ field.label }}</label>
                     <div class="col input-group">
                         <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
-                               id="id_balance" placeholder="{{ field.label }}"
-                               name="balance" value="{{ field.value }}">
+                               id="id_new_balance" placeholder="{{ field.label }}"
+                               name="new_balance" value="{{ field.value }}">
                         <div class="input-group-text bg-body p-1">
                             <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">
                                 {% for opt in currencies %}

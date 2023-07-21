@@ -1,4 +1,5 @@
 from django import forms
+
 from . import models
 
 
@@ -13,6 +14,15 @@ class AccountForm(forms.ModelForm):
         model = models.Account
         fields = '__all__'
         exclude = ('profile',)
+
+
+class AccountUpdateForm(forms.ModelForm):
+    new_balance = forms.FloatField()
+
+    class Meta:
+        model = models.Account
+        fields = ['name', 'new_balance', 'color', 'icon', 'goal_balance', 'description']
+        exclude = ('profile', 'balance')
 
 
 class CategoryForm(forms.ModelForm):

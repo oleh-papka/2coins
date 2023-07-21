@@ -1,6 +1,7 @@
 import datetime
 
 from django.db import models
+from django.utils import timezone
 
 from misc.models import TimeStampMixin
 from profiles.models import Profile
@@ -114,9 +115,15 @@ class Account(TimeStampMixin):
 
     def save(self, *args, **kwargs):
         if not self.initial_date:
-            self.initial_date = datetime.datetime.now()
+            self.initial_date = timezone.now()
         if not self.balance:
             self.balance = 0
+
+        Category.objects.get_or_create(name='Other',
+                                       cat_type=Category.OTHER,
+                                       profile=self.profile,
+                                       icon="fa-solid fa-ellipsis",
+                                       color="#787878")
 
         super(Account, self).save(*args, **kwargs)
 
@@ -128,6 +135,7 @@ class Category(TimeStampMixin):
 
     INCOME = "+"
     EXPENSE = "-"
+    OTHER = ":"
     CATEGORY_TYPES_CHOICES = [
         (EXPENSE, "Expense"),
         (INCOME, "Income"),
@@ -205,7 +213,7 @@ class Transaction(TimeStampMixin):
         if not self.date:
             self.date = datetime.datetime.now()
 
-        if self.category:
+        if self.category and self.category.cat_type != Category.OTHER:
             self.txn_type = self.category.cat_type
 
         self.amount = abs(self.amount) if self.txn_type == self.INCOME else - abs(self.amount)
