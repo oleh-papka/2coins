@@ -9,7 +9,7 @@ from django.views.generic import UpdateView, CreateView
 
 from . import forms
 from .forms import CustomUserCreationForm
-from budget.models import Currency
+from budget.models import Currency, Account
 
 
 class ProfileEditView(LoginRequiredMixin, UpdateView):
@@ -29,6 +29,7 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['currencies'] = Currency.objects.all()
+        context['curr_block'] = True if Account.objects.filter(profile__user=self.request.user) else False
 
         return context
 

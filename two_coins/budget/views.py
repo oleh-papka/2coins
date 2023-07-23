@@ -144,7 +144,8 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
 
         res = dict()
         for k, v in dict(transaction_dict).items():
-            res[k] = {'total': sum([i.amount for i in v]), 'txns': v}
+            res[k] = {'total': sum([i.amount_default_currency if i.amount_default_currency else i.amount for i in v]),
+                      'txns': v}
 
         data_acct_query = (
             models.Category.objects
@@ -182,7 +183,8 @@ class AccountCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['currencies'] = [(curr.id, curr.abbr, curr.symbol) for curr in models.Currency.objects.all()]
+        context['currencies'] = models.Currency.objects.all()
+        context['profile'] = Profile.objects.get(user=self.request.user)
         return context
 
 
@@ -329,7 +331,8 @@ class CategoryDetailView(LoginRequiredMixin, DetailView):
         data_cat = {'data': [], 'labels': []}
 
         for k, v in dict(transaction_dict).items():
-            res[k] = {'total': sum([i.amount for i in v]), 'txns': v}
+            res[k] = {'total': sum([i.amount_default_currency if i.amount_default_currency else i.amount for i in v]),
+                      'txns': v}
             data_cat['data'].append(abs(res[k]['total']))
             data_cat['labels'].append(res[k]['txns'][0].created_at.strftime("%m/%d"))
 
@@ -455,7 +458,6 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
 
     def form_invalid(self, form):
         messages.warning(self.request, "Something went wrong!")
-        print(form.errors)
         return super().form_invalid(form)
 
     def get_context_data(self, **kwargs):
@@ -468,6 +470,7 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
         if acct_id := self.request.GET.get('account'):
             acct = models.Account.objects.get(id=acct_id)
             context['account'] = acct
+            context['currency'] = acct.currency
 
         context['categories'] = [(cat.id, cat.name) for cat in
                                  models.Category.objects.filter(profile__user=self.request.user).all()]
@@ -501,7 +504,8 @@ class TransactionUpdateView(LoginRequiredMixin, UpdateView):
                                  models.Category.objects.filter(profile__user=self.request.user).all()]
         context['accounts'] = [(acct.id, acct.name) for acct in
                                models.Account.objects.filter(profile__user=self.request.user).all()]
-        context['txn_types'] = models.Transaction.TRANSACTION_TYPES_CHOICES
+        context['currencies'] = models.Currency.objects.all()
+        context['profile'] = Profile.objects.get(user=self.request.user)
 
         return context
 

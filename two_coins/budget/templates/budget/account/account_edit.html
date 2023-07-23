@@ -30,7 +30,6 @@
                                placeholder="{{ field.label }}" value="{{ field.value|date:'Y-m-d' }}">
                     </div>
                 </div>
-            {% elif field.name == 'currency' %}
             {% elif field.name == 'new_balance' %}
                 <div class="row mb-3">
                     <label for="id_new_balance"
@@ -39,17 +38,10 @@
                         <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
                                id="id_new_balance" placeholder="{{ field.label }}"
                                name="new_balance" value="{{ field.value }}">
-                        <div class="input-group-text bg-body p-1">
-                            <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">
-                                {% for opt in currencies %}
-                                    <option value="{{ opt.0 }}"
-                                            {% if opt.0 == form.currency.value %}selected{% endif %}>{{ opt.1 }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="invalid-feedback">
-                            {{ field.errors.as_text }}
-                        </div>
+                        <span class="input-group-text">{{ object.currency.abbr }}&nbsp;&nbsp;{{ object.currency.symbol }}</span>
+                    </div>
+                    <div class="invalid-feedback">
+                        {{ field.errors.as_text }}
                     </div>
                 </div>
             {% else %}

@@ -89,9 +89,21 @@
                                 </div>
 
                                 <div class="d-flex flex-column align-items-end justify-content-center ms-auto me-3">
-                                    <strong class="m-0 {% if txn.txn_type == '-' %}text-danger{% else %}text-success{% endif %}">
-                                        {% if txn.amount > 0 %}+{% endif %}{{ txn.amount|intspace }} {{ txn.account.currency.symbol }}
-                                    </strong>
+                                    {% if txn.amount_default_currency %}
+                                        <strong class="m-0 {% if txn.txn_type == '-' %}text-danger{% else %}text-success{% endif %}">
+                                            {% if txn.amount > 0 %}
+                                                +{% endif %}{{ txn.amount|intspace }} {{ txn.account.currency.symbol }}
+                                        </strong>
+                                        <small class="m-0 text-secondary">
+                                            {% if txn.amount > 0 %}
+                                                +{% endif %}{{ txn.amount_default_currency|intspace }} {{ txn.account.currency.symbol }}
+                                        </small>
+                                    {% else %}
+                                        <strong class="m-0 {% if txn.txn_type == '-' %}text-danger{% else %}text-success{% endif %}">
+                                            {% if txn.amount > 0 %}
+                                                +{% endif %}{{ txn.amount|intspace }} {{ txn.account.currency.symbol }}
+                                        </strong>
+                                    {% endif %}
                                 </div>
 
                                 <div class="d-flex gap-3 align-items-center">

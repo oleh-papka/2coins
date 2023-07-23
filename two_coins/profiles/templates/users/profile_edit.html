@@ -20,16 +20,21 @@
                     <label for="id-{{ field.name }}"
                            class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
-                        <select class="form-select {% if field.errors %}is-invalid{% endif %}" id="id_{{ field.name }}"
+                        <select class="form-select {% if field.errors %}is-invalid{% endif %}"
+                                {% if curr_block %}disabled{% endif %} id="id_{{ field.name }}"
                                 aria-label="acct_type select" name="{{ field.name }}">
                             {% for curr in currencies %}
-                                <option value="{{ curr.id }}">{{ curr.abbr }}&nbsp;&nbsp;{{ curr.symbol }}</option>
+                                <option value="{{ curr.id }}"
+                                        {% if object.main_currency == curr %}selected{% endif %}>{{ curr.abbr }}&nbsp;&nbsp;{{ curr.symbol }}</option>
                             {% endfor %}
                         </select>
-
                         {% if field.help_text %}
                             <small class="text-muted ms-1">{{ field.help_text }}</small>
                         {% endif %}
+                        {% if curr_block %}
+                            <small class="text-muted ms-1">Ensure profile has no linked accounts before changing the main currency.</small>
+                        {% endif %}
+
                         <div class="invalid-feedback">
                             {{ field.errors.as_text }}
                         </div>

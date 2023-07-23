@@ -54,14 +54,15 @@
                                name="balance">
                         <div class="input-group-text bg-body p-1">
                             <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">
-                                {% for opt in currencies %}
-                                    <option value="{{ opt.0 }}">{{ opt.2 }}&nbsp;&nbsp;{{ opt.1 }}</option>
+                                {% for curr in currencies %}
+                                    <option value="{{ curr.id }}" {% if curr == profile.main_currency %}selected{% endif %}>{{ curr.abbr }}&nbsp;&nbsp;{{ curr.symbol }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="invalid-feedback">
                             {{ field.errors.as_text }}
                         </div>
+
                     </div>
                 </div>
                 {#            {% elif field.name == 'balance_usd' %}#}

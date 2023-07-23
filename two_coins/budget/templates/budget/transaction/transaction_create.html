@@ -74,10 +74,14 @@
                     <label for="id_category" class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
                         <select class="form-select" id="id_category" aria-label="category select" name="category">
-                            {% for cat in categories %}
-                                <option value="{{ cat.0 }}"
-                                        {% if field.value == cat.1 or forloop.first %}selected{% endif %}>{{ cat.1 }}</option>
-                            {% endfor %}
+                            {% if category %}
+                                <option value="{{ category.id }}" selected>{{ category.name }}</option>
+                            {% else %}
+                                {% for cat in categories %}
+                                    <option value="{{ cat.0 }}"
+                                            {% if field.value == cat.1 or forloop.first %}selected{% endif %}>{{ cat.1 }}</option>
+                                {% endfor %}
+                            {% endif %}
                         </select>
                     </div>
                 </div>
@@ -86,10 +90,14 @@
                     <label for="id_account" class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
                         <select class="form-select" id="id_category" aria-label="account select" name="account">
-                            {% for acct in accounts %}
-                                <option value="{{ acct.0 }}"
-                                        {% if forloop.first %}selected{% endif %}>{{ acct.1 }}</option>
-                            {% endfor %}
+                            {% if account %}
+                                <option value="{{ account.id }}" selected>{{ account.name }}</option>
+                            {% else %}
+                                {% for acct in accounts %}
+                                    <option value="{{ acct.0 }}"
+                                            {% if forloop.first %}selected{% endif %}>{{ acct.1 }}</option>
+                                {% endfor %}
+                            {% endif %}
                         </select>
                     </div>
                 </div>
@@ -120,7 +128,8 @@
                             <select class="form-select" id="id_currency" aria-label="acct_type select"
                                     name="currency">
                                 {% for curr in currencies %}
-                                    <option value="{{ curr.id }}">{{ curr.abbr }}&nbsp;&nbsp;{{ curr.symbol }}</option>
+                                    <option value="{{ curr.id }}"
+                                            {% if curr == currency  or curr == profile.main_currency %}selected{% endif %}>{{ curr.abbr }}&nbsp;&nbsp;{{ curr.symbol }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -168,6 +177,4 @@
             }
         });
     </script>
-
-
 {% endblock %}

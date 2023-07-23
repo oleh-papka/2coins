@@ -22,7 +22,6 @@ class AccountUpdateForm(forms.ModelForm):
     class Meta:
         model = models.Account
         fields = ['name', 'new_balance', 'color', 'icon', 'goal_balance', 'description']
-        exclude = ('profile', 'balance')
 
 
 class CategoryForm(forms.ModelForm):
