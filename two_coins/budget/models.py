@@ -4,7 +4,6 @@ from django.db import models
 from django.utils import timezone
 
 from misc.models import TimeStampMixin
-from profiles.models import Profile
 
 
 class ColorChoices:
@@ -60,7 +59,7 @@ class Currency(TimeStampMixin):
                                 verbose_name="Currency type")
     symbol = models.CharField(null=False,
                               blank=False,
-                              max_length=1,
+                              max_length=2,
                               verbose_name="Symbol",
                               unique=True)
     abbr = models.CharField(null=False,
@@ -83,7 +82,6 @@ class Account(TimeStampMixin):
                                  null=True,
                                  blank=False,
                                  on_delete=models.CASCADE,
-                                 default=0,
                                  related_name="+")
     balance = models.FloatField(null=False,
                                 blank=True,
@@ -106,7 +104,7 @@ class Account(TimeStampMixin):
                             max_length=30,
                             verbose_name="Icon",
                             help_text="Icon name from FontAwesome")
-    profile = models.ForeignKey(Profile,
+    profile = models.ForeignKey('profiles.Profile',
                                 on_delete=models.CASCADE)
     description = models.CharField(null=True,
                                    blank=True,
@@ -155,7 +153,7 @@ class Category(TimeStampMixin):
                             max_length=30,
                             verbose_name="Icon",
                             help_text="Icon name from FontAwesome")
-    profile = models.ForeignKey(Profile,
+    profile = models.ForeignKey('profiles.Profile',
                                 on_delete=models.CASCADE)
     cat_type = models.CharField(null=False,
                                 blank=False,
@@ -170,7 +168,7 @@ class Category(TimeStampMixin):
 
 class Transaction(TimeStampMixin):
     """
-    Model for storing one transaction with account
+    Model for storing one transaction within an account
     """
 
     INCOME = "+"
@@ -191,6 +189,14 @@ class Transaction(TimeStampMixin):
     amount = models.FloatField(null=False,
                                blank=False,
                                verbose_name="Amount")
+    currency = models.ForeignKey(Currency,
+                                 null=True,
+                                 blank=True,
+                                 on_delete=models.CASCADE,
+                                 related_name="+")
+    amount_default_currency = models.FloatField(null=True,
+                                                blank=True,
+                                                verbose_name="Amount in default currency")
     category = models.ForeignKey(null=True,
                                  blank=False,
                                  to=Category,
@@ -217,5 +223,8 @@ class Transaction(TimeStampMixin):
             self.txn_type = self.category.cat_type
 
         self.amount = abs(self.amount) if self.txn_type == self.INCOME else - abs(self.amount)
+        if self.amount_default_currency:
+            self.amount_default_currency = abs(self.amount_default_currency) if self.txn_type == self.INCOME else - abs(
+                self.amount_default_currency)
 
         super(Transaction, self).save(*args, **kwargs)

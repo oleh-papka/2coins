@@ -15,21 +15,43 @@
         {% csrf_token %}
 
         {% for field in form %}
-            <div class="row mb-3">
-                <label for="id-{{ field.name }}"
-                       class="col-sm-3 col-form-label">{{ field.label }}</label>
-                <div class="col">
-                    <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
-                           id="id-{{ field.name }}" name="{{ field.name }}"
-                           placeholder="{{ field.label }}" value="{% if field.value %}{{ field.value }}{% endif %}">
-                    {% if field.help_text %}
-                        <small class="text-muted ms-1">{{ field.help_text }}</small>
-                    {% endif %}
-                    <div class="invalid-feedback">
-                        {{ field.errors.as_text }}
+            {% if field.name == 'main_currency' %}
+                <div class="row mb-3">
+                    <label for="id-{{ field.name }}"
+                           class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <select class="form-select {% if field.errors %}is-invalid{% endif %}" id="id_{{ field.name }}"
+                                aria-label="acct_type select" name="{{ field.name }}">
+                            {% for curr in currencies %}
+                                <option value="{{ curr.id }}">{{ curr.abbr }}&nbsp;&nbsp;{{ curr.symbol }}</option>
+                            {% endfor %}
+                        </select>
+
+                        {% if field.help_text %}
+                            <small class="text-muted ms-1">{{ field.help_text }}</small>
+                        {% endif %}
+                        <div class="invalid-feedback">
+                            {{ field.errors.as_text }}
+                        </div>
                     </div>
                 </div>
-            </div>
+            {% else %}
+                <div class="row mb-3">
+                    <label for="id-{{ field.name }}"
+                           class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
+                               id="id-{{ field.name }}" name="{{ field.name }}"
+                               placeholder="{{ field.label }}" value="{% if field.value %}{{ field.value }}{% endif %}">
+                        {% if field.help_text %}
+                            <small class="text-muted ms-1">{{ field.help_text }}</small>
+                        {% endif %}
+                        <div class="invalid-feedback">
+                            {{ field.errors.as_text }}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
         {% endfor %}
 
         <div class="d-flex justify-content-end column-gap-2 mt-4">

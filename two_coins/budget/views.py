@@ -9,6 +9,7 @@ from django.views.generic import ListView, DetailView, TemplateView, CreateView,
 
 from misc.views import AdminUserRequiredMixin
 from . import forms, models
+from profiles.models import Profile
 
 
 def get_template_chart_data(query_data):
@@ -118,7 +119,7 @@ class AccountListView(LoginRequiredMixin, ListView):
         return context
 
     def get_queryset(self):
-        profile = models.Profile.objects.get(user=self.request.user)
+        profile = Profile.objects.get(user=self.request.user)
         return super().get_queryset().filter(profile=profile)
 
 
@@ -170,7 +171,7 @@ class AccountCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
-        self.object.profile = models.Profile.objects.get(user=self.request.user)
+        self.object.profile = Profile.objects.get(user=self.request.user)
         self.object.save()
         messages.success(self.request, f"Account '{form.cleaned_data.get('name')}' created!")
         return super().form_valid(form)
@@ -306,7 +307,7 @@ class CategoryList(LoginRequiredMixin, ListView):
         return context
 
     def get_queryset(self):
-        profile = models.Profile.objects.get(user=self.request.user)
+        profile = Profile.objects.get(user=self.request.user)
         return super().get_queryset().filter(profile=profile)
 
 
@@ -357,7 +358,7 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
-        self.object.profile = models.Profile.objects.get(user=self.request.user)
+        self.object.profile = Profile.objects.get(user=self.request.user)
         self.object.save()
         messages.success(self.request, f"Category '{form.cleaned_data.get('name')}' created!")
         return super().form_valid(form)
@@ -414,7 +415,8 @@ class TransactionList(LoginRequiredMixin, ListView):
         data_txn = {'data': [], 'labels': []}
 
         for k, v in dict(transaction_dict).items():
-            res[k] = {'total': sum([i.amount for i in v]), 'txns': v}
+            res[k] = {'total': sum([i.amount_default_currency if i.amount_default_currency else i.amount for i in v]),
+                      'txns': v}
             data_txn['data'].append(abs(res[k]['total']))
             data_txn['labels'].append(res[k]['txns'][0].created_at.strftime("%m/%d"))
 
@@ -423,7 +425,7 @@ class TransactionList(LoginRequiredMixin, ListView):
         return context
 
     def get_queryset(self):
-        profile = models.Profile.objects.get(user=self.request.user)
+        profile = Profile.objects.get(user=self.request.user)
         return super().get_queryset().filter(account__profile=profile)
 
 
@@ -453,6 +455,7 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
 
     def form_invalid(self, form):
         messages.warning(self.request, "Something went wrong!")
+        print(form.errors)
         return super().form_invalid(form)
 
     def get_context_data(self, **kwargs):
@@ -470,6 +473,8 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
                                  models.Category.objects.filter(profile__user=self.request.user).all()]
         context['accounts'] = [(acct.id, acct.name) for acct in
                                models.Account.objects.filter(profile__user=self.request.user).all()]
+        context['currencies'] = models.Currency.objects.all()
+        context['profile'] = Profile.objects.get(user=self.request.user)
 
         return context
 

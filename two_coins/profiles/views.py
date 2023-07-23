@@ -9,6 +9,7 @@ from django.views.generic import UpdateView, CreateView
 
 from . import forms
 from .forms import CustomUserCreationForm
+from budget.models import Currency
 
 
 class ProfileEditView(LoginRequiredMixin, UpdateView):
@@ -22,11 +23,13 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         form.instance.user = self.request.user
+        messages.success(self.request, "User updated successfully!")
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['instance_name'] = 'Profile'
+        context['currencies'] = Currency.objects.all()
+
         return context
 
 
