@@ -20,6 +20,9 @@ def get_ccy_abbrs() -> list:
 
 def currency_converter(amount: float, from_ccy: str, to_ccy: str) -> float:
     base_privat_ccys = ('USD', 'EUR', 'UAH')
+    from_ccy = from_ccy.upper()
+    to_ccy = to_ccy.upper()
+
     if from_ccy in base_privat_ccys and to_ccy in base_privat_ccys:
         resp = requests.get(f"https://api.privatbank.ua/p24api/pubinfo?exchange&coursid=11")
 

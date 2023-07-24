@@ -1,15 +1,18 @@
+import json
 from collections import defaultdict
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum, F, FloatField
 from django.db.models.functions import TruncDate, Coalesce, Cast
+from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView, DeleteView
 
 from misc.views import AdminUserRequiredMixin
 from . import forms, models
 from profiles.models import Profile
+from .utils import currency_converter
 
 
 def get_template_chart_data(query_data):
@@ -31,6 +34,7 @@ class CurrencyList(LoginRequiredMixin, AdminUserRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["instance_name"] = 'Currencies'
+        context['currencies'] = models.Currency.objects.all()
         return context
 
 
@@ -553,3 +557,13 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context['data_cat'] = get_template_chart_data(data_cat_query)
 
         return context
+
+
+# Currency converter
+def currency_converter_req(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        res = currency_converter(float(data['amount']), data['from_ccy'], data['to_ccy'])
+
+        response_data = {"result": res}
+        return JsonResponse(response_data)
