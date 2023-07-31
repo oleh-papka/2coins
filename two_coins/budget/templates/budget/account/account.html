@@ -146,13 +146,15 @@
                                         </a>
 
                                         <ul class="dropdown-menu dropdown-menu-end">
-                                            <li>
-                                                <a class="dropdown-item text-warning"
-                                                   href="{% url 'transaction_edit' txn.id %}">
-                                                    <i class="fa-regular fa-pen-to-square me-2"></i>
-                                                    Edit
-                                                </a>
-                                            </li>
+                                            {% if txn.txn_type != '>' %}
+                                                <li>
+                                                    <a class="dropdown-item text-warning"
+                                                       href="{% url 'transaction_edit' txn.id %}">
+                                                        <i class="fa-regular fa-pen-to-square me-2"></i>
+                                                        Edit
+                                                    </a>
+                                                </li>
+                                            {% endif %}
                                             <li>
                                                 <a class="dropdown-item text-danger"
                                                    href="{% url 'transaction_delete' txn.id %}">

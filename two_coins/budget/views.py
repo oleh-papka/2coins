@@ -517,14 +517,17 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
         if acct_id := self.request.GET.get('account'):
             acct = models.Account.objects.get(id=acct_id)
             context['account'] = acct
-            context['currency'] = acct.currency
+            current_account_currency = acct.currency
+            context['currency'] = current_account_currency
 
         if self.request.GET.get('transfer'):
             context['transfer'] = True
             context['category'] = models.Category.objects.filter(profile__user=self.request.user).get(
                 cat_type=models.Category.TRANSFER)
             context['accounts'] = [acct for acct in
-                                   models.Account.objects.filter(profile__user=self.request.user).all() if
+                                   models.Account.objects.filter(
+                                       Q(profile__user=self.request.user) & Q(currency=current_account_currency)).all()
+                                   if
                                    acct.id != int(acct_id)]
         else:
             context['accounts'] = models.Account.objects.filter(profile__user=self.request.user).all()
