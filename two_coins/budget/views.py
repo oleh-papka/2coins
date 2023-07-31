@@ -3,13 +3,12 @@ from collections import defaultdict
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Sum, F, FloatField
+from django.db.models import Sum, F, FloatField, Q
 from django.db.models.functions import TruncDate, Coalesce, Cast
 from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView, DeleteView
 
-from misc.views import AdminUserRequiredMixin
 from . import forms, models
 from profiles.models import Profile
 from .utils import currency_converter
@@ -25,7 +24,7 @@ def get_template_chart_data(query_data):
 
 # Currencies
 
-class CurrencyList(LoginRequiredMixin, AdminUserRequiredMixin, ListView):
+class CurrencyList(LoginRequiredMixin, ListView):
     login_url = 'login'
     model = models.Currency
     context_object_name = 'currency_list'
@@ -113,8 +112,21 @@ class AccountListView(LoginRequiredMixin, ListView):
         accounts = self.object_list
 
         for account in accounts:
-            txn_sum = models.Transaction.objects.filter(account=account).aggregate(Sum('amount'))['amount__sum']
-            account.total = account.balance + txn_sum if txn_sum else account.balance
+            grand_total = 0
+            txns = models.Transaction.objects.filter(Q(account=account) | Q(transfer_account=account))
+
+            for txn in txns:
+                if txn.amount_default_currency:
+                    amount_temp = txn.amount_default_currency
+                else:
+                    amount_temp = txn.amount
+
+                if txn.txn_type == '>' and txn.transfer_account != account:
+                    grand_total -= amount_temp
+                else:
+                    grand_total += amount_temp
+
+            account.total = account.balance + grand_total
 
         context = super().get_context_data(**kwargs)
         context['accounts_list'] = accounts
@@ -135,20 +147,40 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        txn_sum = models.Transaction.objects.filter(account=self.object).aggregate(Sum('amount'))['amount__sum']
-        txn_sum = 0 if txn_sum is None else txn_sum
-        self.object.total = self.object.balance + txn_sum
-
+        grand_total = 0
         transaction_dict = defaultdict(list)
-        transactions = models.Transaction.objects.filter(account=self.object).order_by('-date').annotate(
+        transactions = models.Transaction.objects.filter(
+            Q(account=self.object) | Q(transfer_account=self.object)).order_by('-date').annotate(
             truncated_date=TruncDate('date'))
 
         for transaction in transactions:
+            if transaction.amount_default_currency:
+                amount_temp = transaction.amount_default_currency
+            else:
+                amount_temp = transaction.amount
+
+            if transaction.txn_type == '>' and transaction.transfer_account != self.object:
+                transaction.negative = True
+                grand_total -= amount_temp
+            else:
+                grand_total += amount_temp
+
             transaction_dict[transaction.truncated_date].append(transaction)
+
+        self.object.total = self.object.balance + grand_total
 
         res = dict()
         for k, v in dict(transaction_dict).items():
-            res[k] = {'total': sum([i.amount_default_currency if i.amount_default_currency else i.amount for i in v]),
+            total = 0
+            for i in v:
+                if i.amount_default_currency:
+                    total += i.amount_default_currency
+                elif i.txn_type == '>' and i.transfer_account != self.object:
+                    total -= i.amount_default_currency if i.amount_default_currency else i.amount
+                else:
+                    total += i.amount
+
+            res[k] = {'total': total,
                       'txns': v}
 
         data_acct_query = (
@@ -422,8 +454,19 @@ class TransactionList(LoginRequiredMixin, ListView):
         data_txn = {'data': [], 'labels': []}
 
         for k, v in dict(transaction_dict).items():
-            res[k] = {'total': sum([i.amount_default_currency if i.amount_default_currency else i.amount for i in v]),
-                      'txns': v}
+            total = 0
+            for i in v:
+                if i.amount_default_currency:
+                    total += i.amount_default_currency
+                elif i.txn_type == '>':
+                    pass
+                else:
+                    total += i.amount
+
+            res[k] = {
+                'total': total,
+                'txns': v
+            }
             data_txn['data'].append(abs(res[k]['total']))
             data_txn['labels'].append(res[k]['txns'][0].created_at.strftime("%m/%d"))
 
@@ -476,10 +519,19 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
             context['account'] = acct
             context['currency'] = acct.currency
 
-        context['categories'] = [(cat.id, cat.name) for cat in
-                                 models.Category.objects.filter(profile__user=self.request.user).all()]
-        context['accounts'] = [(acct.id, acct.name) for acct in
-                               models.Account.objects.filter(profile__user=self.request.user).all()]
+        if self.request.GET.get('transfer'):
+            context['transfer'] = True
+            context['category'] = models.Category.objects.filter(profile__user=self.request.user).get(
+                cat_type=models.Category.TRANSFER)
+            context['accounts'] = [acct for acct in
+                                   models.Account.objects.filter(profile__user=self.request.user).all() if
+                                   acct.id != int(acct_id)]
+        else:
+            context['accounts'] = models.Account.objects.filter(profile__user=self.request.user).all()
+            context['categories'] = [(cat.id, cat.name) for cat in
+                                     models.Category.objects.filter(profile__user=self.request.user).all() if
+                                     cat.cat_type in models.Category.BASIC_CATEGORY_TYPES]
+
         context['currencies'] = models.Currency.objects.all()
         context['profile'] = Profile.objects.get(user=self.request.user)
 

@@ -31,7 +31,7 @@
                             </div>
                         </div>
 
-                        {% if category.cat_type != ":" %}
+                        {% if object.cat_type in object.BASIC_CATEGORY_TYPES %}
                             <div class="d-flex gap-2 align-items-center">
                                 <a class="btn btn-outline-warning"
                                    href="{% url 'category_edit' object.id %}">
@@ -55,7 +55,11 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <h6 class="m-0">{{ date }}</h6>
 
-                            {% if val.total > 0 %}
+                            {% if val.total == 0 or object.cat_type == '>' %}
+                                <strong class="text-secondary">
+                                    {{ val.total|intspace }} {{ val.txns.0.account.currency.symbol }}
+                                </strong>
+                            {% elif val.total > 0 %}
                                 <strong class="text-success">
                                     +{{ val.total|intspace }} {{ val.txns.0.account.currency.symbol }}
                                 </strong>
@@ -81,10 +85,18 @@
                                     <div class="d-flex flex-column">
                                         <p class="m-0">
                                             {{ txn.account.name }}
+                                            {% if txn.description %}
+                                                <small class="text-secondary">({{ txn.description|default_if_none:"" }})</small>
+                                            {% endif %}
                                         </p>
-                                        {% if txn.description %}
-                                            <small class="text-muted">{{ txn.description|default_if_none:"" }}</small>
-                                        {% endif %}
+                                        <small class="m-0 text-secondary">
+                                            <i class="{{ txn.account.icon }}"></i>
+                                            {{ txn.account.name|default_if_none:"" }}
+                                            {% if txn.transfer_account %}
+                                                → <i class="{{ txn.transfer_account.icon }}"></i>
+                                                {{ txn.transfer_account.name|default_if_none:"" }}
+                                            {% endif %}
+                                        </small>
                                     </div>
                                 </div>
 
@@ -99,8 +111,8 @@
                                                 +{% endif %}{{ txn.amount_default_currency|intspace }} {{ txn.account.currency.symbol }}
                                         </small>
                                     {% else %}
-                                        <strong class="m-0 {% if txn.txn_type == '-' %}text-danger{% else %}text-success{% endif %}">
-                                            {% if txn.amount > 0 %}
+                                        <strong class="m-0 {% if txn.txn_type == '-' %}text-danger{% elif txn.txn_type == '>' %}text-secondary{% else %}text-success{% endif %}">
+                                            {% if txn.amount > 0 and txn.txn_type == '+' %}
                                                 +{% endif %}{{ txn.amount|intspace }} {{ txn.account.currency.symbol }}
                                         </strong>
                                     {% endif %}
@@ -142,16 +154,17 @@
                         {% endif %}
                     {% endfor %}
                 </div>
-
-                <div class="w-100 d-flex mt-3">
-                    <div class="p-2 mx-3 w-100 card border-2 rounded-2 hover">
-                        <div class="card-body d-flex justify-content-center">
-                            <a href="{% url 'transaction_add' %}?category={{ object.id }}"
-                               class="stretched-link"></a>
-                            <i class="fa-solid fa-plus fa-xl text-secondary"></i>
+                {% if object.cat_type in object.BASIC_CATEGORY_TYPES %}
+                    <div class="w-100 d-flex mt-3">
+                        <div class="p-2 mx-3 w-100 card border-2 rounded-2 hover">
+                            <div class="card-body d-flex justify-content-center">
+                                <a href="{% url 'transaction_add' %}?category={{ object.id }}"
+                                   class="stretched-link"></a>
+                                <i class="fa-solid fa-plus fa-xl text-secondary"></i>
+                            </div>
                         </div>
                     </div>
-                </div>
+                {% endif %}
             </div>
 
             <div class="d-flex h-100 col">

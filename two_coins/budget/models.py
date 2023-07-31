@@ -117,12 +117,6 @@ class Account(TimeStampMixin):
         if not self.balance:
             self.balance = 0
 
-        Category.objects.get_or_create(name='Other',
-                                       cat_type=Category.OTHER,
-                                       profile=self.profile,
-                                       icon="fa-solid fa-ellipsis",
-                                       color="#787878")
-
         super(Account, self).save(*args, **kwargs)
 
 
@@ -134,9 +128,15 @@ class Category(TimeStampMixin):
     INCOME = "+"
     EXPENSE = "-"
     OTHER = ":"
+    TRANSFER = ">"
     CATEGORY_TYPES_CHOICES = [
         (EXPENSE, "Expense"),
         (INCOME, "Income"),
+    ]
+
+    BASIC_CATEGORY_TYPES = [
+        EXPENSE,
+        INCOME
     ]
 
     name = models.CharField(null=False,
@@ -150,7 +150,7 @@ class Category(TimeStampMixin):
                              verbose_name="Color")
     icon = models.CharField(null=True,
                             blank=True,
-                            max_length=30,
+                            max_length=50,
                             verbose_name="Icon",
                             help_text="Icon name from FontAwesome")
     profile = models.ForeignKey('profiles.Profile',
@@ -173,11 +173,10 @@ class Transaction(TimeStampMixin):
 
     INCOME = "+"
     EXPENSE = "-"
-    # TRANSFER = ">"
+    TRANSFER = ">"
     TRANSACTION_TYPES_CHOICES = [
         (EXPENSE, "Expense"),
         (INCOME, "Income"),
-        # (TRANSFER, "Transfer"), # TODO: money transfer between accounts
     ]
 
     txn_type = models.CharField(null=False,
@@ -207,9 +206,15 @@ class Transaction(TimeStampMixin):
                                 to=Account,
                                 on_delete=models.CASCADE,
                                 verbose_name="Account")
+    transfer_account = models.ForeignKey(null=True,
+                                         blank=True,
+                                         to=Account,
+                                         on_delete=models.CASCADE,
+                                         verbose_name="Transfer to account",
+                                         related_name='transfer_transactions')
     description = models.CharField(null=True,
                                    blank=True,
-                                   max_length=30,
+                                   max_length=50,
                                    verbose_name="Description")
     date = models.DateTimeField(null=False,
                                 blank=True,
@@ -217,12 +222,13 @@ class Transaction(TimeStampMixin):
 
     def save(self, *args, **kwargs):
         if not self.date:
-            self.date = datetime.datetime.now()
+            self.date = timezone.now()
 
         if self.category and self.category.cat_type != Category.OTHER:
             self.txn_type = self.category.cat_type
 
-        self.amount = abs(self.amount) if self.txn_type == self.INCOME else - abs(self.amount)
+        self.amount = abs(self.amount) if self.txn_type == self.INCOME or self.txn_type == self.TRANSFER else - abs(
+            self.amount)
         if self.amount_default_currency:
             self.amount_default_currency = abs(self.amount_default_currency) if self.txn_type == self.INCOME else - abs(
                 self.amount_default_currency)

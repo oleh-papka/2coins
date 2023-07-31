@@ -7,7 +7,7 @@
 
 {% block form_block %}
     <div class="d-flex justify-content-between align-items-center mb-4">
-        {% if category %}
+        {% if category and category.cat_type != '>' %}
             <a href="{% url 'category' category.id %}"
                style="text-decoration: none;"
                class="text-reset">
@@ -34,7 +34,11 @@
                                style="color: {{ account.color }}"></i>
                         {% endif %}
                     </div>
-                    {{ account.name }} transaction:
+                    {% if transfer %}
+                        Transfer from {{ account.name }}:
+                    {% else %}
+                        {{ account.name }} transaction:
+                    {% endif %}
                 </h5>
             </a>
         {% else %}
@@ -70,11 +74,13 @@
                     </div>
                 </div>
             {% elif field.name == 'category' %}
-                <div class="row mb-3" {% if category %}style="display: none" {% endif %}>
+                <div class="row mb-3" {% if category or transfer %}style="display: none" {% endif %}>
                     <label for="id_category" class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
                         <select class="form-select" id="id_category" aria-label="category select" name="category">
                             {% if category %}
+                                <option value="{{ category.id }}" selected>{{ category.name }}</option>
+                            {% elif transfer %}
                                 <option value="{{ category.id }}" selected>{{ category.name }}</option>
                             {% else %}
                                 {% for cat in categories %}
@@ -86,16 +92,16 @@
                     </div>
                 </div>
             {% elif field.name == 'account' %}
-                <div class="row mb-3" {% if account %}style="display: none" {% endif %}>
+                <div class="row mb-3" {% if account or transfer %}style="display: none" {% endif %}>
                     <label for="id_account" class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
-                        <select class="form-select" id="id_category" aria-label="account select" name="account">
+                        <select class="form-select" id="id_account" aria-label="account select" name="account">
                             {% if account %}
                                 <option value="{{ account.id }}" selected>{{ account.name }}</option>
                             {% else %}
                                 {% for acct in accounts %}
-                                    <option value="{{ acct.0 }}"
-                                            {% if forloop.first %}selected{% endif %}>{{ acct.1 }}</option>
+                                    <option value="{{ acct.id }}"
+                                            {% if forloop.first %}selected{% endif %}>{{ acct.name }}</option>
                                 {% endfor %}
                             {% endif %}
                         </select>
@@ -138,6 +144,23 @@
                         {{ field.errors.as_text }}
                     </div>
                 </div>
+            {% elif field.name == 'transfer_account' %}
+                <div class="row mb-3" {% if not transfer %}style="display: none"{% endif %}>
+                    <label for="id_transfer_account" class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        {% if transfer %}
+                            <select class="form-select" id="id_transfer_account" aria-label="transfer_account select"
+                                    name="transfer_account">
+                                {% for acct in accounts %}
+                                    {% if account != acct %}
+                                        <option value="{{ acct.id }}"
+                                                {% if forloop.first %}selected{% endif %}>{{ acct.name }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        {% endif %}
+                    </div>
+                </div>
             {% else %}
                 <div class="row mb-3">
                     <label for="id-{{ field.name }}"
@@ -164,11 +187,11 @@
 {% block custom_scripts %}
     <script src="{% static 'budget/js/account_create.js' %}"></script>
     <script>
-        const select = document.getElementById('id_currency');
+        const currency_select = document.getElementById('id_currency');
         const defaultCurrencyDiv = document.getElementById('amount_default_currency_field');
 
-        select.addEventListener('change', () => {
-            if (select.value === select.options[0].value) {
+        currency_select.addEventListener('change', () => {
+            if (currency_select.value === currency_select.options[0].value) {
                 // First option selected, hide div
                 defaultCurrencyDiv.classList.add('visually-hidden');
             } else {

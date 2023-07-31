@@ -25,6 +25,10 @@
                                 <strong class="text-success">
                                     +{{ val.total|intspace }} {{ val.txns.0.account.currency.symbol }}
                                 </strong>
+                            {% elif val.total == 0 %}
+                                <strong class="text-secondary">
+                                    {{ val.total|intspace }} {{ val.txns.0.account.currency.symbol }}
+                                </strong>
                             {% else %}
                                 <strong class="text-danger">
                                     {{ val.total|intspace }} {{ val.txns.0.account.currency.symbol }}
@@ -54,8 +58,11 @@
                                         <small class="m-0 text-secondary">
                                             <i class="{{ txn.account.icon }}"></i>
                                             {{ txn.account.name|default_if_none:"" }}
+                                            {% if txn.transfer_account %}
+                                                → <i class="{{ txn.transfer_account.icon }}"></i>
+                                                {{ txn.transfer_account.name|default_if_none:"" }}
+                                            {% endif %}
                                         </small>
-
                                     </div>
                                 </div>
 
@@ -70,8 +77,8 @@
                                                 +{% endif %}{{ txn.amount_default_currency|intspace }} {{ txn.account.currency.symbol }}
                                         </small>
                                     {% else %}
-                                        <strong class="m-0 {% if txn.txn_type == '-' %}text-danger{% else %}text-success{% endif %}">
-                                            {% if txn.amount > 0 %}
+                                        <strong class="m-0 {% if txn.txn_type == '-' %}text-danger{% elif txn.txn_type == '>' %}text-secondary{% else %}text-success{% endif %}">
+                                            {% if txn.amount > 0 and txn.txn_type == '+' %}
                                                 +{% endif %}{{ txn.amount|intspace }} {{ txn.account.currency.symbol }}
                                         </strong>
                                     {% endif %}
