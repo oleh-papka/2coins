@@ -68,6 +68,37 @@
 
 <script src="{% static 'bootstrap/js/bootstrap.js' %}"></script>
 <script>
+    // Function to get a cookie by name
+    function getCookie(name) {
+        var nameEQ = name + '=';
+        var ca = document.cookie.split(';');
+        for (var i = 0; i < ca.length; i++) {
+            var c = ca[i];
+            while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+        }
+        return null;
+    }
+
+    function changeTheme(theme) {
+        if (theme === 'dark') {
+            go_dark();
+            document.getElementById('btn-light-theme').checked = false;
+            document.getElementById('btn-dark-theme').checked = true;
+        } else {
+            go_light();
+            document.getElementById('btn-dark-theme').checked = false;
+            document.getElementById('btn-light-theme').checked = true;
+        }
+
+        document.cookie = 'theme=' + theme + '; path=/';
+    }
+
+    var theme = getCookie('theme');
+    if (theme) {
+        changeTheme(theme);
+    }
+
     function go_dark() {
         document.documentElement.setAttribute('data-bs-theme', 'dark');
         document.getElementById('btn-light-theme').checked = false;
@@ -78,6 +109,8 @@
             scrollboxElement.classList.remove('scrollbox');
             scrollboxElement.classList.add('scrollbox-dark');
         }
+
+        document.cookie = 'theme=dark; path=/';
     }
 
     function go_light() {
@@ -90,6 +123,8 @@
             scrollboxElement.classList.remove('scrollbox-dark');
             scrollboxElement.classList.add('scrollbox');
         }
+
+        document.cookie = 'theme=light; path=/';
     }
 
     const toastElList = [].slice.call(document.querySelectorAll('.toast'));
