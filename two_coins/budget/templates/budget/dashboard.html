@@ -57,8 +57,16 @@
                 datasets: [{
                     label: 'Categories',
                     data: {{ data_cat.data|safe }},
-                    backgroundColor: {{ data_cat.colors|safe }},
-                    borderRadius: 10
+                    borderColor: {{ data_cat.colors|safe }},
+
+                    backgroundColor: [
+                        {% for color in data_cat.colors %}
+                            "{{ color }}2a",
+                        {% endfor %}
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 5,
+                    borderSkipped: false,
                 }]
             }
         });

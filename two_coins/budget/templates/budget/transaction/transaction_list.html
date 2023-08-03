@@ -17,28 +17,28 @@
             <div class="d-flex h-100 flex-column align-items-center p-4" style="max-width: 33rem">
 
                 <div class="p-3 w-100 d-flex flex-column overflow-y-scroll scrollbox">
-                    {% for date, val in transaction_dict.items %}
+                    {% for txn_group in transactions %}
                         <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="m-0">{{ date }}</h6>
+                            <h6 class="m-0">{{ txn_group.date }}</h6>
 
-                            {% if val.total > 0 %}
+                            {% if txn_group.total > 0 %}
                                 <strong class="text-success">
-                                    +{{ val.total|intspace }} {{ val.txns.0.account.currency.symbol }}
+                                    +{{ txn_group.total|intspace }} {{ txn_group.txns.0.account.currency.symbol }}
                                 </strong>
-                            {% elif val.total == 0 %}
+                            {% elif txn_group.total == 0 %}
                                 <strong class="text-secondary">
-                                    {{ val.total|intspace }} {{ val.txns.0.account.currency.symbol }}
+                                    {{ txn_group.total|intspace }} {{ txn_group.txns.0.account.currency.symbol }}
                                 </strong>
                             {% else %}
                                 <strong class="text-danger">
-                                    {{ val.total|intspace }} {{ val.txns.0.account.currency.symbol }}
+                                    {{ txn_group.total|intspace }} {{ txn_group.txns.0.account.currency.symbol }}
                                 </strong>
                             {% endif %}
                         </div>
 
                         <hr>
 
-                        {% for txn in val.txns %}
+                        {% for txn in txn_group.txns %}
                             <div class="mb-3 mx-2 border border-2 rounded p-2 d-flex justify-content-between">
                                 <div class="card-title mb-0 me-2 d-flex align-items-center">
 
@@ -133,7 +133,7 @@
             </div>
 
             <div class="d-flex h-100 col">
-                <div class="m-4 w-100">
+                <div class="m-4 w-100 p-4">
                     <canvas id="txn_chart"></canvas>
                 </div>
             </div>
@@ -153,14 +153,22 @@
             type: 'bar',
             data: {
                 labels: {{ data_txn.labels|safe }},
-                datasets: [{
-                    data: {{ data_txn.data|safe }},
-                }]
+                datasets: {{ data_txn.datasets|safe }}
             },
             options: {
                 plugins: {
                     legend: {
                         legend: {display: false},
+                    }
+                },
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true,
+                    },
+                    y: {
+                        stacked: true
                     }
                 }
             }

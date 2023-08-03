@@ -131,7 +131,7 @@
                          tabindex="0">
                         <div class="d-flex flex-wrap gap-4 p-2 justify-content-center">
                             {% for object in object_list %}
-                                {% if object.cat_type != '-' and object.cat_type != '+'  %}
+                                {% if object.cat_type != '-' and object.cat_type != '+' %}
                                     <div class="card rounded-2 border-2 bg-body-secondary bg-opacity-25 hover"
                                          style="width: 14rem; height: 7.6rem">
                                         <div class="card-body d-flex flex-column justify-content-between">
@@ -166,10 +166,12 @@
             </div>
 
             <div class="d-flex h-100 col">
-                <div class="m-4">
+                <div class="m-4 w-100 d-flex justify-content-center" style="max-height: 400px;">
                     <canvas id="expense_chart"></canvas>
 
                     <canvas id="income_chart" class="visually-hidden"></canvas>
+
+                    <canvas id="special_chart" class="visually-hidden"></canvas>
                 </div>
             </div>
         </div>
@@ -197,8 +199,8 @@
                 plugins: {
                     legend: {
                         display: true,
-                        position: "right",
-                        align: "start"
+                        position: "bottom",
+                        align: "center"
                     }
                 }
             }
@@ -221,8 +223,32 @@
                 plugins: {
                     legend: {
                         display: true,
-                        position: "right",
-                        align: "start"
+                        position: "bottom",
+                        align: "center"
+                    }
+                }
+            }
+        });
+
+        const ctx3 = document.getElementById('special_chart').getContext('2d');
+
+        const doughnutChart3 = new Chart(ctx3, {
+            type: 'doughnut',
+            data: {
+                labels: {{ data_special.labels|safe }},
+                datasets: [{
+                    label: 'Balance',
+                    data: {{ data_special.data|safe }},
+                    backgroundColor: {{ data_special.colors|safe }},
+                    hoverOffset: 4,
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: "bottom",
+                        align: "center"
                     }
                 }
             }
@@ -230,17 +256,19 @@
 
         function showIncome() {
             document.getElementById("expense_chart").classList.add("visually-hidden");
+            document.getElementById("special_chart").classList.add("visually-hidden");
             document.getElementById("income_chart").classList.remove("visually-hidden");
         }
 
         function showExpense() {
             document.getElementById("income_chart").classList.add("visually-hidden");
+            document.getElementById("special_chart").classList.add("visually-hidden");
             document.getElementById("expense_chart").classList.remove("visually-hidden");
         }
 
         function showSpecial() {
             document.getElementById("income_chart").classList.add("visually-hidden");
-            document.getElementById("expense_chart").classList.add("expense_chart");
+            document.getElementById("expense_chart").classList.add("visually-hidden");
             document.getElementById("special_chart").classList.remove("visually-hidden");
         }
     </script>

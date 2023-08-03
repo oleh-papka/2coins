@@ -336,11 +336,24 @@ class CategoryList(LoginRequiredMixin, ListView):
             .annotate(colors=F('color'))
             .values('data', 'labels', 'colors')
         )
+        transfer_query = (
+            models.Category.objects
+            .filter(profile__user=self.request.user,
+                    cat_type=models.Category.TRANSFER,
+                    transaction__txn_type=models.Transaction.TRANSFER)
+            .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
+            .annotate(labels=F('name'))
+            .annotate(colors=F('color'))
+            .values('data', 'labels', 'colors')
+        )
+
         data_income = income_categories_query | income_other_query
         data_expense = expense_categories_query | expense_other_query
+        data_special = income_other_query | expense_other_query | transfer_query
 
         context['data_income'] = get_template_chart_data(data_income)
         context['data_expense'] = get_template_chart_data(data_expense)
+        context['data_special'] = get_template_chart_data(data_special)
 
         return context
 
@@ -370,9 +383,11 @@ class CategoryDetailView(LoginRequiredMixin, DetailView):
             res[k] = {'total': sum([i.amount_default_currency if i.amount_default_currency else i.amount for i in v]),
                       'txns': v}
             data_cat['data'].append(abs(res[k]['total']))
-            data_cat['labels'].append(res[k]['txns'][0].created_at.strftime("%m/%d"))
+            data_cat['labels'].append(k.strftime("%d/%m"))
 
         data_cat['color'] = self.object.color
+        data_cat['data'].reverse()
+        data_cat['labels'].reverse()
 
         context['transaction_dict'] = dict(res)
         context['data_cat'] = data_cat
@@ -443,35 +458,76 @@ class TransactionList(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        transaction_dict = defaultdict(list)
-        transactions = models.Transaction.objects.filter(account__profile__user=self.request.user).order_by(
+        transactions_data = models.Transaction.objects.filter(account__profile__user=self.request.user).order_by(
             '-date').annotate(truncated_date=TruncDate('date'))
+        category_ids = models.Transaction.objects.filter(account__profile__user=self.request.user).values_list(
+            'category', flat=True).distinct()
+        categories_data = models.Category.objects.filter(profile__user=self.request.user).filter(id__in=category_ids)
+        transactions = []
 
-        for transaction in transactions:
-            transaction_dict[transaction.truncated_date].append(transaction)
+        temp_date = transactions_data[0].truncated_date
+        temp_total = 0
+        temp_txns = []
 
-        res = dict()
-        data_txn = {'data': [], 'labels': []}
-
-        for k, v in dict(transaction_dict).items():
-            total = 0
-            for i in v:
-                if i.amount_default_currency:
-                    total += i.amount_default_currency
-                elif i.txn_type == '>':
-                    pass
-                else:
-                    total += i.amount
-
-            res[k] = {
-                'total': total,
-                'txns': v
+        categories = {}
+        for cat in categories_data:
+            categories[cat] = {
+                "label": cat.name,
+                "data": [0],
+                "backgroundColor": str(cat.color) + '2a',
+                "borderColor": str(cat.color),
+                "borderWidth": 2,
+                "borderRadius": 5,
             }
-            data_txn['data'].append(abs(res[k]['total']))
-            data_txn['labels'].append(res[k]['txns'][0].created_at.strftime("%m/%d"))
 
-        context['transaction_dict'] = dict(res)
-        context['data_txn'] = data_txn
+        for txn in transactions_data:
+            if txn.truncated_date != temp_date:
+                transactions.append({
+                    'date': temp_date,
+                    'total': temp_total,
+                    'txns': temp_txns
+                })
+
+                temp_date = txn.truncated_date
+                temp_total = 0
+                temp_txns = [txn]
+
+                for cat, data in categories.items():
+                    if cat == txn.category:
+                        data['data'].append(txn.amount_default_currency if txn.amount_default_currency else txn.amount)
+                    else:
+                        data['data'].append(0)
+            else:
+                temp_txns.append(txn)
+
+                for cat, data in categories.items():
+                    if cat == txn.category:
+                        data['data'][-1] += txn.amount_default_currency if txn.amount_default_currency else txn.amount
+
+            if txn.amount_default_currency:
+                amount = txn.amount_default_currency
+            elif txn.txn_type == '>':
+                amount = 0
+            else:
+                amount = txn.amount
+
+            temp_total += amount
+        else:
+            transactions.append({
+                'date': temp_date,
+                'total': temp_total,
+                'txns': temp_txns
+            })
+
+        for i in categories.values():
+            i["data"] = i["data"][::-1]
+
+        context["data_txn"] = {
+            "labels": [i['date'].strftime("%d/%m") for i in transactions][::-1],
+            "datasets": [i for i in categories.values()]
+        }
+        context["transactions"] = transactions
+
         return context
 
     def get_queryset(self):
