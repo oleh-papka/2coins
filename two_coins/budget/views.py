@@ -146,42 +146,81 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        grand_total = 0
-        transaction_dict = defaultdict(list)
-        transactions = models.Transaction.objects.filter(
+        transactions_data = models.Transaction.objects.filter(
             Q(account=self.object) | Q(transfer_account=self.object)).order_by('-date').annotate(
             truncated_date=TruncDate('date'))
+        category_ids = models.Category.objects.filter(profile__user=self.request.user).values_list('id', flat=True)
+        categories_data = models.Category.objects.filter(profile__user=self.request.user).filter(id__in=category_ids)
+        transactions = []
 
-        for transaction in transactions:
-            if transaction.amount_default_currency:
-                amount_temp = transaction.amount_default_currency
+        temp_date = transactions_data[0].truncated_date if transactions_data else None
+        temp_total = 0
+        temp_txns = []
+        grand_total = self.object.balance
+
+        categories = {}
+        for cat in categories_data:
+            categories[cat] = {
+                "label": cat.name,
+                "data": [0],
+                "backgroundColor": str(cat.color) + '2a',
+                "borderColor": str(cat.color),
+                "borderWidth": 2,
+                "borderRadius": 5,
+            }
+
+        for txn in transactions_data:
+            if txn.truncated_date != temp_date:
+                transactions.append({
+                    'date': temp_date,
+                    'total': temp_total,
+                    'txns': temp_txns
+                })
+
+                grand_total += temp_total
+
+                temp_date = txn.truncated_date
+                temp_total = 0
+                temp_txns = [txn]
+
+                for cat, data in categories.items():
+                    if cat == txn.category:
+                        data['data'].append(txn.amount_default_currency if txn.amount_default_currency else txn.amount)
+                    else:
+                        data['data'].append(0)
             else:
-                amount_temp = transaction.amount
+                temp_txns.append(txn)
 
-            if transaction.txn_type == '>' and transaction.transfer_account != self.object:
-                transaction.negative = True
-                grand_total -= amount_temp
-            else:
-                grand_total += amount_temp
+                for cat, data in categories.items():
+                    if cat == txn.category:
+                        data['data'][-1] += txn.amount_default_currency if txn.amount_default_currency else txn.amount
 
-            transaction_dict[transaction.truncated_date].append(transaction)
-
-        self.object.total = self.object.balance + grand_total
-
-        res = dict()
-        for k, v in dict(transaction_dict).items():
-            total = 0
-            for i in v:
-                if i.amount_default_currency:
-                    total += i.amount_default_currency
-                elif i.txn_type == '>' and i.transfer_account != self.object:
-                    total -= i.amount_default_currency if i.amount_default_currency else i.amount
+            if txn.txn_type == '>':
+                if txn.transfer_account != self.object:
+                    if txn.amount_default_currency:
+                        txn.amount_default_currency = -txn.amount_default_currency
+                        amount = txn.amount_default_currency
+                    else:
+                        txn.amount = -txn.amount
+                        amount = txn.amount
                 else:
-                    total += i.amount
+                    amount = txn.amount_default_currency if txn.amount_default_currency else txn.amount
+            elif txn.amount_default_currency:
+                amount = txn.amount_default_currency
+            else:
+                amount = txn.amount
 
-            res[k] = {'total': total,
-                      'txns': v}
+            temp_total += amount
+
+        else:
+            if transactions_data:
+                transactions.append({
+                    'date': temp_date,
+                    'total': temp_total,
+                    'txns': temp_txns
+                })
+
+                grand_total += temp_total
 
         data_acct_query = (
             models.Category.objects
@@ -193,8 +232,17 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
             .values('data', 'labels', 'colors')
         )
 
-        context['transaction_dict'] = dict(res)
+        for i in categories.values():
+            i["data"] = i["data"][::-1]
+
+        context["data_txn"] = {
+            "labels": [i['date'].strftime("%d/%m") for i in transactions][::-1],
+            "datasets": [i for i in categories.values()]
+        }
+
         context['data_acct'] = get_template_chart_data(data_acct_query)
+        context["transactions"] = transactions
+        context['grad_total'] = grand_total
 
         return context
 
