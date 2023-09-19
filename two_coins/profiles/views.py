@@ -5,11 +5,21 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LogoutView, LoginView
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
-from django.views.generic import UpdateView, CreateView
+from django.views.generic import UpdateView, CreateView, TemplateView
 
 from . import forms
 from .forms import CustomUserCreationForm
 from budget.models import Currency, Account
+
+
+class ProfileView(TemplateView):
+    template_name = 'users/profile.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['profile'] = self.request.user.profile
+
+        return context
 
 
 class ProfileEditView(LoginRequiredMixin, UpdateView):

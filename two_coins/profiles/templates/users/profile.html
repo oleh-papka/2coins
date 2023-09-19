@@ -1,0 +1,31 @@
+{% extends 'list_objects.html' %}
+{% load static %}
+
+{% block custom_static %}
+    <link rel="stylesheet" href="{% static 'profiles/profile.css' %}">
+{% endblock %}
+
+
+{% block body %}
+    <div class="w-100 overflow-y-scroll p-4 d-flex justify-content-center">
+
+        <div id="profile-card" class="d-flex flex-column align-items-center mt-5 bg-body-secondary bg-opacity-75 rounded-4 p-4">
+            <div id="profile-picture">
+                <img src="{% static 'imgs/default_profile_picture.webp' %}" alt="profile picture">
+            </div>
+
+            <div class="my-3">
+                <h3 class="text-center">{{ profile.username }}</h3>
+                <p class="text-center">{{ profile.bio }}</p>
+                <hr>
+                <p><b>E-mail:</b> {{ profile.email }}</p>
+                <p><b>Main currency:</b> {{ profile.main_currency.abbr }} {{ profile.main_currency.symbol }}</p>
+            </div>
+
+            <a href="{% url 'profile_edit' %}" class="btn btn-outline-warning px-4">
+                Edit Profile info
+            </a>
+        </div>
+
+    </div>
+{% endblock %}
