@@ -711,7 +711,10 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             .values('data', 'labels', 'colors')
         )
 
+        last_txns = models.Transaction.objects.filter(account__profile__user=self.request.user).order_by('date')[:5]
+
         context = super().get_context_data(**kwargs)
+        context['last_txns'] = last_txns
         context['data_acct'] = get_template_chart_data(data_acct_query)
         context['data_cat'] = get_template_chart_data(data_cat_query)
 
