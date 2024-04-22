@@ -1,5 +1,3 @@
-import datetime
-
 from django.db import models
 from django.utils import timezone
 
@@ -36,7 +34,7 @@ class ColorChoices:
     )
 
 
-class Currency(TimeStampMixin):
+class Currency(models.Model):
     """
     Currencies for an account supports both fiat money and cryptocurrencies.
     """

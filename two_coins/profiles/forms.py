@@ -25,4 +25,4 @@ class CustomUserCreationForm(UserCreationForm):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = models.Profile
-        fields = ['email', 'username', 'bio', 'main_currency']
+        fields = ['email', 'username', 'main_currency']

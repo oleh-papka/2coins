@@ -13,8 +13,6 @@ class Profile(models.Model):
     username = models.CharField(max_length=200,
                                 blank=False,
                                 null=False)
-    bio = models.TextField(null=True,
-                           blank=True)
     main_currency = models.ForeignKey('budget.Currency',
                                       null=True,
                                       blank=True,

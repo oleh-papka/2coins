@@ -1,5 +1,6 @@
 import json
 from collections import defaultdict
+from datetime import datetime
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -513,7 +514,7 @@ class TransactionList(LoginRequiredMixin, ListView):
         categories_data = models.Category.objects.filter(profile__user=self.request.user).filter(id__in=category_ids)
         transactions = []
 
-        temp_date = transactions_data[0].truncated_date
+        temp_date = transactions_data[0].truncated_date if transactions_data else datetime.now()
         temp_total = 0
         temp_txns = []
 
