@@ -19,7 +19,7 @@
                 <p class="text-center">{{ profile.bio }}</p>
                 <hr>
                 <p><b>E-mail:</b> {{ profile.email }}</p>
-                <p><b>Main currency:</b> {{ profile.main_currency.abbr }} {{ profile.main_currency.symbol }}</p>
+                <p><b>Timezone:</b> {{ profile.timezone }}</p>
             </div>
 
             <a href="{% url 'profile_edit' %}" class="btn btn-outline-warning px-4">

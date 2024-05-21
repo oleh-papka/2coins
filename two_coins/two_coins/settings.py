@@ -9,11 +9,10 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-from django.contrib.messages import constants as message_constants
-
+import os
 from pathlib import Path
 
-import os
+from django.contrib.messages import constants as message_constants
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -43,7 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'bootstrap5',
+    'rest_framework',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -136,3 +136,17 @@ MESSAGE_TAGS = {message_constants.DEBUG: 'debug',
                 message_constants.SUCCESS: 'success',
                 message_constants.WARNING: 'warning',
                 message_constants.ERROR: 'danger', }
+
+REST_FRAMEWORK = {
+    # YOUR SETTINGS
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': '2coins API',
+    'DESCRIPTION': 'Your project description',
+    'VERSION': '0.0.1',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
+
+AUTH_USER_MODEL = 'profiles.CustomUser'

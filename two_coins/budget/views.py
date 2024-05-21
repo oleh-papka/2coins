@@ -1,4 +1,3 @@
-import json
 from collections import defaultdict
 from datetime import datetime
 
@@ -6,89 +5,19 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum, F, FloatField, Q
 from django.db.models.functions import TruncDate, Coalesce, Cast
-from django.http import JsonResponse
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView, DeleteView
 
-from . import forms, models
 from profiles.models import Profile
-from .utils import currency_converter
+from . import forms, models
 
 
 def get_template_chart_data(query_data):
-    res = {'data': [], 'labels': [], 'colors': []}
+    res = {'data': [], 'labels': []}
     for dct in query_data:
         for k in dct.keys():
             res[k].append(dct[k])
     return res
-
-
-# Currencies
-
-class CurrencyList(LoginRequiredMixin, ListView):
-    login_url = 'login'
-    model = models.Currency
-    context_object_name = 'currency_list'
-    template_name = "budget/currency/currency_list.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["instance_name"] = 'Currencies'
-        context['currencies'] = models.Currency.objects.all()
-        return context
-
-
-class CurrencyCreateView(LoginRequiredMixin, CreateView):
-    login_url = reverse_lazy('login')
-    model = models.Currency
-    form_class = forms.CurrencyForm
-    template_name = 'budget/currency/currency_create.html'
-    success_url = reverse_lazy('currency_list')
-
-    def form_valid(self, form):
-        messages.success(self.request, f"Currency '{form.cleaned_data.get('name')}' created!")
-        return super().form_valid(form)
-
-    def form_invalid(self, form):
-        messages.warning(self.request, "Something went wrong!")
-        return super().form_invalid(form)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['acct_types'] = models.Currency.MONEY_TYPES_CHOICES
-        return context
-
-
-class CurrencyUpdateView(LoginRequiredMixin, UpdateView):
-    login_url = reverse_lazy('login')
-    model = models.Currency
-    form_class = forms.CurrencyForm
-    template_name = 'budget/currency/currency_edit.html'
-    success_url = reverse_lazy('currency_list')
-
-    def form_valid(self, form):
-        messages.success(self.request, f"Currency '{form.cleaned_data.get('name')}' updated!")
-        return super().form_valid(form)
-
-    def form_invalid(self, form):
-        messages.warning(self.request, "Something went wrong!")
-        return super().form_invalid(form)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['acct_types'] = models.Currency.MONEY_TYPES_CHOICES
-        return context
-
-
-class CurrencyDeleteView(LoginRequiredMixin, DeleteView):
-    login_url = reverse_lazy('login')
-    model = models.Currency
-    template_name = 'budget/currency/currency_delete.html'
-    success_url = reverse_lazy('currency_list')
-
-    def form_valid(self, form):
-        messages.success(self.request, f"Currency '{self.object.name}' deleted!")
-        return super().form_valid(form)
 
 
 # Accounts
@@ -106,8 +35,7 @@ class AccountListView(LoginRequiredMixin, ListView):
                 data=Coalesce(Sum('transaction__amount'), 0.0) + Cast(F('balance'), output_field=FloatField())
             )
             .annotate(labels=F('name'))
-            .annotate(colors=F('color'))
-            .values('data', 'labels', 'colors')
+            .values('data', 'labels')
         )
 
         accounts = self.object_list
@@ -229,8 +157,7 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
             .filter(transaction__account=self.object)
             .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
             .annotate(labels=F('name'))
-            .annotate(colors=F('color'))
-            .values('data', 'labels', 'colors')
+            .values('data', 'labels')
         )
 
         for i in categories.values():
@@ -354,8 +281,7 @@ class CategoryList(LoginRequiredMixin, ListView):
             .filter(profile__user=self.request.user, cat_type=models.Category.INCOME)
             .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
             .annotate(labels=F('name'))
-            .annotate(colors=F('color'))
-            .values('data', 'labels', 'colors')
+            .values('data', 'labels')
         )
         income_other_query = (
             models.Category.objects
@@ -364,16 +290,14 @@ class CategoryList(LoginRequiredMixin, ListView):
                     transaction__txn_type=models.Transaction.INCOME)
             .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
             .annotate(labels=F('name'))
-            .annotate(colors=F('color'))
-            .values('data', 'labels', 'colors')
+            .values('data', 'labels')
         )
         expense_categories_query = (
             models.Category.objects
             .filter(profile__user=self.request.user, cat_type=models.Category.EXPENSE)
             .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
             .annotate(labels=F('name'))
-            .annotate(colors=F('color'))
-            .values('data', 'labels', 'colors')
+            .values('data', 'labels')
         )
         expense_other_query = (
             models.Category.objects
@@ -382,8 +306,7 @@ class CategoryList(LoginRequiredMixin, ListView):
                     transaction__txn_type=models.Transaction.EXPENSE)
             .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
             .annotate(labels=F('name'))
-            .annotate(colors=F('color'))
-            .values('data', 'labels', 'colors')
+            .values('data', 'labels')
         )
         transfer_query = (
             models.Category.objects
@@ -392,8 +315,7 @@ class CategoryList(LoginRequiredMixin, ListView):
                     transaction__txn_type=models.Transaction.TRANSFER)
             .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
             .annotate(labels=F('name'))
-            .annotate(colors=F('color'))
-            .values('data', 'labels', 'colors')
+            .values('data', 'labels')
         )
 
         data_income = income_categories_query | income_other_query
@@ -434,7 +356,6 @@ class CategoryDetailView(LoginRequiredMixin, DetailView):
             data_cat['data'].append(abs(res[k]['total']))
             data_cat['labels'].append(k.strftime("%d/%m"))
 
-        data_cat['color'] = self.object.color
         data_cat['data'].reverse()
         data_cat['labels'].reverse()
 
@@ -606,6 +527,16 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         messages.success(self.request, f"Transaction '{form.cleaned_data.get('amount')}' created!")
+        amount = form.cleaned_data.get('amount')
+
+        account = form.cleaned_data.get('account')
+        account.balance += abs(amount) if form.cleaned_data.get('txn_type') == "+" or form.cleaned_data.get(
+            'txn_type') == '>' else - abs(
+            amount)
+        account.save()
+
+        messages.info(self.request, f'Updated balance of account!\nYour new balance is {account.balance}')
+
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -697,8 +628,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             .filter(profile__user=self.request.user)
             .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
             .annotate(labels=F('name'))
-            .annotate(colors=F('color'))
-            .values('labels', 'colors', 'data')
+            .values('labels', 'data')
         )
 
         data_acct_query = (
@@ -708,8 +638,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
                 data=Coalesce(Sum('transaction__amount'), 0.0) + Cast(F('balance'), output_field=FloatField())
             )
             .annotate(labels=F('name'))
-            .annotate(colors=F('color'))
-            .values('data', 'labels', 'colors')
+            .values('data', 'labels')
         )
 
         last_txns = models.Transaction.objects.filter(account__profile__user=self.request.user).order_by('date')[:5]
@@ -720,13 +649,3 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context['data_cat'] = get_template_chart_data(data_cat_query)
 
         return context
-
-
-# Currency converter
-def currency_converter_req(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        res = currency_converter(float(data['amount']), data['from_ccy'], data['to_ccy'])
-
-        response_data = {"result": res}
-        return JsonResponse(response_data)

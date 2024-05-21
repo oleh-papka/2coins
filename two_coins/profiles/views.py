@@ -1,15 +1,14 @@
 from django.contrib import messages
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.views import LogoutView, LoginView
-from django.shortcuts import render, redirect
+from django.contrib.auth.views import LoginView
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
+from django.views import View
 from django.views.generic import UpdateView, CreateView, TemplateView
 
-from . import forms
-from .forms import CustomUserCreationForm
-from budget.models import Currency, Account
+from .forms import CustomUserCreationForm, ProfileForm, CustomAuthenticationForm
+from .models import Profile
 
 
 class ProfileView(TemplateView):
@@ -17,44 +16,37 @@ class ProfileView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['profile'] = self.request.user.profile
+        context['profile'] = Profile.objects.get(user=self.request.user)
 
         return context
 
 
 class ProfileEditView(LoginRequiredMixin, UpdateView):
     login_url = 'login'
-    form_class = forms.ProfileForm
+    form_class = ProfileForm
     template_name = 'users/profile_edit.html'
     success_url = reverse_lazy('profile_edit')
 
     def get_object(self, queryset=None):
-        return self.request.user.profile
+        return Profile.objects.get(user=self.request.user)
 
     def form_valid(self, form):
         form.instance.user = self.request.user
         messages.success(self.request, "User updated successfully!")
         return super().form_valid(form)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['currencies'] = Currency.objects.all()
-        context['curr_block'] = True if Account.objects.filter(profile__user=self.request.user) else False
 
-        return context
-
-
-class CustomLogoutView(LoginRequiredMixin, LogoutView):
-    next_page = reverse_lazy('login')
+class CustomLogoutView(LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
-        messages.info(request, f"Logged out.")
-        return super().get(request, *args, **kwargs)
+        messages.info(request, "Logged out.")
+        logout(request)
+        return redirect(reverse_lazy('login'))
 
 
 class CustomLoginView(LoginView):
     template_name = 'users/login.html'
-    form_class = AuthenticationForm
+    form_class = CustomAuthenticationForm
     redirect_authenticated_user = True
 
     def form_valid(self, form):
@@ -74,40 +66,16 @@ class CustomRegisterView(CreateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
-        username = form.cleaned_data.get('username')
+        email = form.cleaned_data.get('email')
         password = form.cleaned_data.get('password1')
-        user = authenticate(username=username, password=password)
+        user = authenticate(username=email, password=password)
 
         if user is not None:
             login(self.request, user)
             messages.success(self.request, "User created successfully!")
-            messages.info(self.request, f"Logged in as {username}.")
+            messages.info(self.request, f"Logged in as {email}.")
         return response
 
     def form_invalid(self, form):
         messages.warning(self.request, "Something went wrong.")
         return super().form_invalid(form)
-
-
-def register_view(request):
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-
-        if form.is_valid():
-            messages.success(request, "User created successfully!")
-            form.save()
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password1')
-            user = authenticate(username=username, password=password)
-            login(request, user)
-            messages.info(request, f"Logged in as {username}.")
-
-            return redirect('account_list')
-        else:
-            messages.warning(request, "Something went wrong.")
-
-        return redirect('register')
-    else:
-        form = CustomUserCreationForm()
-
-    return render(request, 'users/register.html', {'form': form})

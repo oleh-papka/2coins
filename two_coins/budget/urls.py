@@ -5,12 +5,6 @@ urlpatterns = [
     # Dashboard
     path('', views.DashboardView.as_view(), name='dashboard'),
 
-    # Currencies
-    path('currency/', views.CurrencyList.as_view(), name='currency_list'),
-    # path('currency/add/', views.CurrencyCreateView.as_view(), name='currency_add'),
-    # path('currency/<int:pk>/edit/', views.CurrencyUpdateView.as_view(), name='currency_edit'),
-    # path('currency/<int:pk>/delete/', views.CurrencyDeleteView.as_view(), name='currency_delete'),
-
     # Accounts
     path('account/', views.AccountListView.as_view(), name='account_list'),
     path('account/add/', views.AccountCreateView.as_view(), name='account_add'),
@@ -30,7 +24,4 @@ urlpatterns = [
     path('transaction/add/', views.TransactionCreateView.as_view(), name='transaction_add'),
     path('transaction/<int:pk>/edit/', views.TransactionUpdateView.as_view(), name='transaction_edit'),
     path('transaction/<int:pk>/delete/', views.TransactionDeleteView.as_view(), name='transaction_delete'),
-
-    # Currency converter
-    path('currency_converter/', views.currency_converter_req, name='currency_converter'),
 ]

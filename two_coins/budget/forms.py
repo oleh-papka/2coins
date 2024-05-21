@@ -3,12 +3,6 @@ from django import forms
 from . import models
 
 
-class CurrencyForm(forms.ModelForm):
-    class Meta:
-        model = models.Currency
-        fields = '__all__'
-
-
 class AccountForm(forms.ModelForm):
     class Meta:
         model = models.Account
@@ -17,17 +11,15 @@ class AccountForm(forms.ModelForm):
 
 
 class AccountUpdateForm(forms.ModelForm):
-    new_balance = forms.FloatField()
-
     class Meta:
         model = models.Account
-        fields = ['name', 'new_balance', 'color', 'icon', 'goal_balance', 'description']
+        fields = ['name', 'balance', 'initial_balance', 'target_balance', 'deadline', 'description', 'styling']
 
 
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = models.Category
-        fields = ['cat_type', 'name', 'color', 'icon']
+        fields = ['category_type', 'name', 'styling']
 
 
 class TransactionForm(forms.ModelForm):
