@@ -10,6 +10,7 @@ from django.views.generic import ListView, DetailView, TemplateView, CreateView,
 
 from profiles.models import Profile
 from . import forms, models
+from .models import Styling, Transaction
 
 
 def get_template_chart_data(query_data):
@@ -236,7 +237,7 @@ class AccountUpdateView(LoginRequiredMixin, UpdateView):
             txn_amount = new_balance - real_balance
 
             models.Transaction.objects.create(
-                category=models.Category.objects.get(cat_type=models.Category.OTHER),
+                category=models.Category.objects.get(category_type=models.Category.OTHER),
                 account=self.object,
                 txn_type=models.Transaction.INCOME if txn_amount > 0 else models.Transaction.EXPENSE,
                 amount=txn_amount
@@ -276,55 +277,23 @@ class CategoryList(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        income_categories_query = (
+        income_data = (
             models.Category.objects
-            .filter(profile__user=self.request.user, cat_type=models.Category.INCOME)
+            .filter(profile__user=self.request.user, category_type=models.Category.INCOME)
             .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
             .annotate(labels=F('name'))
             .values('data', 'labels')
         )
-        income_other_query = (
+        expense_data = (
             models.Category.objects
-            .filter(profile__user=self.request.user,
-                    cat_type=models.Category.OTHER,
-                    transaction__txn_type=models.Transaction.INCOME)
-            .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
-            .annotate(labels=F('name'))
-            .values('data', 'labels')
-        )
-        expense_categories_query = (
-            models.Category.objects
-            .filter(profile__user=self.request.user, cat_type=models.Category.EXPENSE)
-            .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
-            .annotate(labels=F('name'))
-            .values('data', 'labels')
-        )
-        expense_other_query = (
-            models.Category.objects
-            .filter(profile__user=self.request.user,
-                    cat_type=models.Category.OTHER,
-                    transaction__txn_type=models.Transaction.EXPENSE)
-            .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
-            .annotate(labels=F('name'))
-            .values('data', 'labels')
-        )
-        transfer_query = (
-            models.Category.objects
-            .filter(profile__user=self.request.user,
-                    cat_type=models.Category.TRANSFER,
-                    transaction__txn_type=models.Transaction.TRANSFER)
+            .filter(profile__user=self.request.user, category_type=models.Category.EXPENSE)
             .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
             .annotate(labels=F('name'))
             .values('data', 'labels')
         )
 
-        data_income = income_categories_query | income_other_query
-        data_expense = expense_categories_query | expense_other_query
-        data_special = income_other_query | expense_other_query | transfer_query
-
-        context['data_income'] = get_template_chart_data(data_income)
-        context['data_expense'] = get_template_chart_data(data_expense)
-        context['data_special'] = get_template_chart_data(data_special)
+        context['data_income'] = get_template_chart_data(income_data)
+        context['data_expense'] = get_template_chart_data(expense_data)
 
         return context
 
@@ -341,7 +310,8 @@ class CategoryDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         transaction_dict = defaultdict(list)
-        transactions = self.get_object().get_transactions_by_category(self.request.user).annotate(
+        transactions = Transaction.objects.filter(category=self.object,
+                                                  account__profile__user=self.request.user).order_by('-date').annotate(
             truncated_date=TruncDate('date'))
 
         for transaction in transactions:
@@ -375,16 +345,21 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
     def get_initial(self):
         initial = super().get_initial()
 
-        if cat_type := self.request.GET.get('cat_type'):
-            initial['cat_type'] = '-' if cat_type == 'expense' else '+'
+        if category_type := self.request.GET.get('category_type'):
+            initial['category_type'] = '-' if category_type == 'expense' else '+'
 
         return initial
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.profile = Profile.objects.get(user=self.request.user)
+        self.object.styling = Styling.get_or_create_styling(color=form.cleaned_data.get('color'),
+                                                            icon=form.cleaned_data.get('icon'))
         self.object.save()
-        messages.success(self.request, f"Category '{form.cleaned_data.get('name')}' created!")
+
+        category_name = form.cleaned_data.get('name')
+        messages.success(self.request, f"Category '{category_name}' created!")
+
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -559,7 +534,7 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
         if self.request.GET.get('transfer'):
             context['transfer'] = True
             context['category'] = models.Category.objects.filter(profile__user=self.request.user).get(
-                cat_type=models.Category.TRANSFER)
+                category_type=models.Category.TRANSFER)
             context['accounts'] = [acct for acct in
                                    models.Account.objects.filter(
                                        Q(profile__user=self.request.user) & Q(currency=current_account_currency)).all()
@@ -569,7 +544,7 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
             context['accounts'] = models.Account.objects.filter(profile__user=self.request.user).all()
             context['categories'] = [(cat.id, cat.name) for cat in
                                      models.Category.objects.filter(profile__user=self.request.user).all() if
-                                     cat.cat_type in models.Category.BASIC_CATEGORY_TYPES]
+                                     cat.category_type in models.Category.BASIC_CATEGORY_TYPES]
 
         context['currencies'] = models.Currency.objects.all()
         context['profile'] = Profile.objects.get(user=self.request.user)

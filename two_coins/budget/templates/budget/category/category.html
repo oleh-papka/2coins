@@ -20,9 +20,9 @@
                             <div class="card-title mb-0 me-2 d-flex align-items-center">
                                 <div class="d-flex justify-content-center align-items-center rounded-3 me-2"
                                      style="width: 3rem; height: 3rem; background-color: {{ object.color }}2a">
-                                    {% if object.icon %}
-                                        <i class="{{ object.icon }} fa-xl"
-                                           style="color: {{ object.color }}"></i>
+                                    {% if object.styling.icon %}
+                                        <i class="{{ object.styling.icon }} fa-xl"
+                                           style="color: {{ object.styling.color }}"></i>
                                     {% endif %}
                                 </div>
                                 <h4>
@@ -31,21 +31,19 @@
                             </div>
                         </div>
 
-                        {% if object.cat_type in object.BASIC_CATEGORY_TYPES %}
-                            <div class="d-flex gap-2 align-items-center">
-                                <a class="btn btn-outline-warning"
-                                   href="{% url 'category_edit' object.id %}">
-                                    <i class="fa-regular fa-pen-to-square me-2"></i>
-                                    Edit
-                                </a>
+                        <div class="d-flex gap-2 align-items-center">
+                            <a class="btn btn-outline-warning"
+                               href="{% url 'category_edit' object.id %}">
+                                <i class="fa-regular fa-pen-to-square me-2"></i>
+                                Edit
+                            </a>
 
-                                <a class="btn btn-outline-danger"
-                                   href="{% url 'category_delete' object.id %}">
-                                    <i class="fa-regular fa-trash-can me-2"></i>
-                                    Delete
-                                </a>
-                            </div>
-                        {% endif %}
+                            <a class="btn btn-outline-danger"
+                               href="{% url 'category_delete' object.id %}">
+                                <i class="fa-regular fa-trash-can me-2"></i>
+                                Delete
+                            </a>
+                        </div>
                     </div>
                 </div>
 
@@ -55,7 +53,7 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <h6 class="m-0">{{ date }}</h6>
 
-                            {% if val.total == 0 or object.cat_type == '>' %}
+                            {% if val.total == 0 or object.category_type == '>' %}
                                 <strong class="text-secondary">
                                     {{ val.total|intspace }} {{ val.txns.0.account.currency.symbol }}
                                 </strong>
@@ -154,7 +152,7 @@
                         {% endif %}
                     {% endfor %}
                 </div>
-                {% if object.cat_type in object.BASIC_CATEGORY_TYPES %}
+                {% if object.category_type in object.BASIC_CATEGORY_TYPES %}
                     <div class="w-100 d-flex mt-3">
                         <div class="p-2 mx-3 w-100 card border-2 rounded-2 hover">
                             <div class="card-body d-flex justify-content-center">

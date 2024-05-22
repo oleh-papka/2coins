@@ -16,16 +16,33 @@
                            class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
                         <input type="color" class="form-control form-control-color" id="id_color"
-                               value="{{ field.value }}" name="color"
+                               value="{{ object.styling.color }}" name="color"
                                title="Choose your color" style="width: 5rem">
                     </div>
                 </div>
-            {% elif field.name == 'cat_type' %}
+            {% elif field.name == 'icon' %}
                 <div class="row mb-3">
-                    <label for="id_cat_type" class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <label for="id_icon"
+                           class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
-                        <select class="form-select" id="id_cat_type" aria-label="category select" name="cat_type">
-                            {% for value, name in form.fields.cat_type.choices %}
+                        <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
+                               id="id-{{ field.name }}" name="{{ field.name }}"
+                               placeholder="{{ field.label }}" value="{{ object.styling.icon }}">
+                        {% if field.help_text %}
+                            <small class="text-muted ms-1">{{ field.help_text }}</small>
+                        {% endif %}
+                        <div class="invalid-feedback">
+                            {{ field.errors.as_text }}
+                        </div>
+                    </div>
+                </div>
+            {% elif field.name == 'category_type' %}
+                <div class="row mb-3">
+                    <label for="id_category_type" class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <select class="form-select" id="id_category_type" aria-label="category select"
+                                name="category_type">
+                            {% for value, name in form.fields.category_type.choices %}
                                 <option value="{{ value }}"
                                         {% if field.value == value or forloop.first %}selected{% endif %}>{{ name }}</option>
                             {% endfor %}
@@ -56,8 +73,4 @@
             <button class="btn btn-primary" type="submit">Update</button>
         </div>
     </form>
-{% endblock %}
-
-{% block custom_scripts %}
-    <script src="{% static 'budget/js/account_create.js' %}"></script>
 {% endblock %}
