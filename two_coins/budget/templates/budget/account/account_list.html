@@ -24,21 +24,36 @@
                                         <h5 class="card-title mb-1">
                                             {{ account.name }}
                                         </h5>
-                                        <small class="text-body-secondary">Description</small>
+                                        {% if account.description %}
+                                            <small class="text-body-secondary">{{ account.description }}</small>
+                                        {% endif %}
                                     </div>
 
                                     <div class="d-flex justify-content-center align-items-center rounded-3"
-                                         style="width: 3rem; height: 3rem; background-color: {{ account.color }}2a">
-                                        <i class="{{ account.icon }} fa-xl"
-                                           style="color: {{ account.color }}"></i>
+                                         style="width: 3rem; height: 3rem; background-color: {{ account.styling.color }}2a">
+                                        <i class="{{ account.styling.icon }} fa-xl"
+                                           style="color: {{ account.styling.color }}"></i>
                                     </div>
                                 </div>
 
-                                <h4 class="card-text">
-                                    {% load intspace %}
-                                    {{ account.total|intspace }} {{ account.currency.symbol }}
-                                </h4>
-
+                                <div class="d-flex">
+                                    {% if account.account_type == 's' and account.target_balance %}
+                                        <h4 class="card-text">
+                                            {% load intspace %}
+                                            {{ account.balance|intspace }} {{ account.currency.symbol }}
+                                        </h4>
+                                        <h4>&nbsp;/&nbsp;</h4>
+                                        <h4 class="card-text">
+                                            {% load intspace %}
+                                            {{ account.target_balance|intspace }} {{ account.currency.symbol }}
+                                        </h4>
+                                    {% else %}
+                                        <h4 class="card-text">
+                                            {% load intspace %}
+                                            {{ account.balance|intspace }} {{ account.currency.symbol }}
+                                        </h4>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     {% endfor %}

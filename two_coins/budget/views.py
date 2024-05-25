@@ -8,6 +8,7 @@ from django.db.models.functions import TruncDate, Coalesce, Cast
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView, DeleteView
 
+from misc.models import StylingFormUpdateMixin
 from profiles.models import Profile
 from . import forms, models
 from .models import Styling, Transaction
@@ -39,27 +40,8 @@ class AccountListView(LoginRequiredMixin, ListView):
             .values('data', 'labels')
         )
 
-        accounts = self.object_list
-
-        for account in accounts:
-            grand_total = 0
-            txns = models.Transaction.objects.filter(Q(account=account) | Q(transfer_account=account))
-
-            for txn in txns:
-                if txn.amount_default_currency:
-                    amount_temp = txn.amount_default_currency
-                else:
-                    amount_temp = txn.amount
-
-                if txn.txn_type == '>' and txn.transfer_account != account:
-                    grand_total -= amount_temp
-                else:
-                    grand_total += amount_temp
-
-            account.total = account.balance + grand_total
-
         context = super().get_context_data(**kwargs)
-        context['accounts_list'] = accounts
+        context['accounts_list'] = self.object_list
         context['data_acct'] = get_template_chart_data(data_acct_query)
 
         return context
@@ -76,8 +58,7 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        transactions_data = models.Transaction.objects.filter(
-            Q(account=self.object) | Q(transfer_account=self.object)).order_by('-date').annotate(
+        transactions_data = models.Transaction.objects.filter(account=self.object).order_by('-date').annotate(
             truncated_date=TruncDate('date'))
         category_ids = models.Category.objects.filter(profile__user=self.request.user).values_list('id', flat=True)
         categories_data = models.Category.objects.filter(profile__user=self.request.user).filter(id__in=category_ids)
@@ -184,10 +165,19 @@ class AccountCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('account_list')
 
     def form_valid(self, form):
-        self.object = form.save(commit=False)
-        self.object.profile = Profile.objects.get(user=self.request.user)
-        self.object.save()
-        messages.success(self.request, f"Account '{form.cleaned_data.get('name')}' created!")
+        account = form.save(commit=False)
+        account.profile = Profile.objects.get(user=self.request.user)
+        account.styling = Styling.get_or_create_styling(color=form.cleaned_data.get('color'),
+                                                        icon=form.cleaned_data.get('icon'))
+
+        if not account.initial_balance:
+            account.initial_balance = account.balance
+
+        account.save()
+
+        account_name = form.cleaned_data.get('name')
+        messages.success(self.request, f"Account '{account_name}' created!")
+
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -198,52 +188,16 @@ class AccountCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         context['currencies'] = models.Currency.objects.all()
         context['profile'] = Profile.objects.get(user=self.request.user)
+
         return context
 
 
-class AccountUpdateView(LoginRequiredMixin, UpdateView):
+class AccountUpdateView(LoginRequiredMixin, StylingFormUpdateMixin):
     login_url = reverse_lazy('login')
     model = models.Account
-    form_class = forms.AccountUpdateForm
+    form_class = forms.AccountForm
     template_name = 'budget/account/account_edit.html'
     success_url = reverse_lazy('account_list')
-
-    def get_initial(self):
-        initial = super().get_initial()
-
-        initial['new_balance'] = (
-            models.Account.objects
-            .filter(profile__user=self.request.user, pk=self.object.id)
-            .annotate(real_balance=Coalesce(Sum(F('transaction__amount')), 0.0) + Cast(F('balance'),
-                                                                                       output_field=FloatField()))
-            .values('real_balance')
-        )[0]['real_balance']
-
-        return initial
-
-    def form_valid(self, form):
-        messages.success(self.request, f"Account '{form.cleaned_data.get('name')}' updated!")
-
-        new_balance = form.cleaned_data['new_balance']
-        real_balance = (
-            models.Account.objects
-            .filter(profile__user=self.request.user, pk=self.object.id)
-            .annotate(real_balance=Coalesce(Sum(F('transaction__amount')), 0.0) + Cast(F('balance'),
-                                                                                       output_field=FloatField()))
-            .values('real_balance')
-        )[0]['real_balance']
-
-        if new_balance != real_balance:
-            txn_amount = new_balance - real_balance
-
-            models.Transaction.objects.create(
-                category=models.Category.objects.get(category_type=models.Category.OTHER),
-                account=self.object,
-                txn_type=models.Transaction.INCOME if txn_amount > 0 else models.Transaction.EXPENSE,
-                amount=txn_amount
-            )
-
-        return super().form_valid(form)
 
     def form_invalid(self, form):
         messages.warning(self.request, "Something went wrong!")
@@ -251,7 +205,8 @@ class AccountUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['currencies'] = [(curr.id, curr.abbr, curr.symbol) for curr in models.Currency.objects.all()]
+        context['currencies'] = models.Currency.objects.all()
+
         return context
 
 
@@ -351,11 +306,11 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
         return initial
 
     def form_valid(self, form):
-        self.object = form.save(commit=False)
-        self.object.profile = Profile.objects.get(user=self.request.user)
-        self.object.styling = Styling.get_or_create_styling(color=form.cleaned_data.get('color'),
-                                                            icon=form.cleaned_data.get('icon'))
-        self.object.save()
+        category = form.save(commit=False)
+        category.profile = Profile.objects.get(user=self.request.user)
+        category.styling = Styling.get_or_create_styling(color=form.cleaned_data.get('color'),
+                                                         icon=form.cleaned_data.get('icon'))
+        category.save()
 
         category_name = form.cleaned_data.get('name')
         messages.success(self.request, f"Category '{category_name}' created!")
@@ -367,16 +322,12 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
         return super().form_invalid(form)
 
 
-class CategoryUpdateView(LoginRequiredMixin, UpdateView):
+class CategoryUpdateView(LoginRequiredMixin, StylingFormUpdateMixin):
     login_url = reverse_lazy('login')
     model = models.Category
     form_class = forms.CategoryForm
     template_name = 'budget/category/category_edit.html'
     success_url = reverse_lazy('category_list')
-
-    def form_valid(self, form):
-        messages.success(self.request, f"Category '{form.cleaned_data.get('name')}' updated!")
-        return super().form_valid(form)
 
     def form_invalid(self, form):
         messages.warning(self.request, "Something went wrong!")

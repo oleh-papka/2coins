@@ -121,6 +121,15 @@ class Styling(models.Model):
 
         return cls.objects.create(color=color, icon=icon)
 
+    def update_styling(self, color=None, icon=None):
+        if color and self.color != color:
+            self.color = color
+
+        if self.icon != icon:
+            self.icon = icon
+
+        return self.save()
+
 
 class Currency(models.Model):
     """
@@ -185,13 +194,14 @@ class Account(TimeStampMixin):
     initial_balance = models.FloatField(null=False,
                                         blank=True,
                                         default=0,
-                                        verbose_name="Initial account balance")
-    target_balance = models.FloatField(null=False,
+                                        verbose_name="Initial balance")
+    target_balance = models.FloatField(null=True,
                                        blank=True,
                                        default=0,
-                                       verbose_name="Target account balance")
+                                       verbose_name="Target balance")
     deadline = models.DateField(null=True,
                                 blank=True,
+                                default=None,
                                 verbose_name="Deadline date")
     description = models.CharField(null=True,
                                    blank=True,
