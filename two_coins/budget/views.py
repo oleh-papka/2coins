@@ -3,7 +3,7 @@ from datetime import datetime
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Sum, F, FloatField, Q
+from django.db.models import Sum, F, FloatField
 from django.db.models.functions import TruncDate, Coalesce, Cast
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView, DeleteView
@@ -67,15 +67,14 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
         temp_date = transactions_data[0].truncated_date if transactions_data else None
         temp_total = 0
         temp_txns = []
-        grand_total = self.object.balance
 
         categories = {}
         for cat in categories_data:
             categories[cat] = {
                 "label": cat.name,
                 "data": [0],
-                "backgroundColor": str(cat.color) + '2a',
-                "borderColor": str(cat.color),
+                "backgroundColor": str(cat.styling.color) + '2a',
+                "borderColor": str(cat.styling.color),
                 "borderWidth": 2,
                 "borderRadius": 5,
             }
@@ -88,15 +87,13 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
                     'txns': temp_txns
                 })
 
-                grand_total += temp_total
-
                 temp_date = txn.truncated_date
                 temp_total = 0
                 temp_txns = [txn]
 
                 for cat, data in categories.items():
                     if cat == txn.category:
-                        data['data'].append(txn.amount_default_currency if txn.amount_default_currency else txn.amount)
+                        data['data'].append(txn.amount_account_currency if txn.amount_account_currency else txn.amount)
                     else:
                         data['data'].append(0)
             else:
@@ -104,20 +101,10 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
 
                 for cat, data in categories.items():
                     if cat == txn.category:
-                        data['data'][-1] += txn.amount_default_currency if txn.amount_default_currency else txn.amount
+                        data['data'][-1] += txn.amount_account_currency if txn.amount_account_currency else txn.amount
 
-            if txn.txn_type == '>':
-                if txn.transfer_account != self.object:
-                    if txn.amount_default_currency:
-                        txn.amount_default_currency = -txn.amount_default_currency
-                        amount = txn.amount_default_currency
-                    else:
-                        txn.amount = -txn.amount
-                        amount = txn.amount
-                else:
-                    amount = txn.amount_default_currency if txn.amount_default_currency else txn.amount
-            elif txn.amount_default_currency:
-                amount = txn.amount_default_currency
+            if txn.amount_account_currency:
+                amount = txn.amount_account_currency
             else:
                 amount = txn.amount
 
@@ -130,8 +117,6 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
                     'total': temp_total,
                     'txns': temp_txns
                 })
-
-                grand_total += temp_total
 
         data_acct_query = (
             models.Category.objects
@@ -152,7 +137,6 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
 
         context['data_acct'] = get_template_chart_data(data_acct_query)
         context["transactions"] = transactions
-        context['grad_total'] = grand_total
 
         return context
 
@@ -370,8 +354,8 @@ class TransactionList(LoginRequiredMixin, ListView):
             categories[cat] = {
                 "label": cat.name,
                 "data": [0],
-                "backgroundColor": str(cat.color) + '2a',
-                "borderColor": str(cat.color),
+                "backgroundColor": str(cat.styling.color) + '2a',
+                "borderColor": str(cat.styling.color),
                 "borderWidth": 2,
                 "borderRadius": 5,
             }
@@ -390,7 +374,7 @@ class TransactionList(LoginRequiredMixin, ListView):
 
                 for cat, data in categories.items():
                     if cat == txn.category:
-                        data['data'].append(txn.amount_default_currency if txn.amount_default_currency else txn.amount)
+                        data['data'].append(txn.amount_account_currency if txn.amount_account_currency else txn.amount)
                     else:
                         data['data'].append(0)
             else:
@@ -398,12 +382,10 @@ class TransactionList(LoginRequiredMixin, ListView):
 
                 for cat, data in categories.items():
                     if cat == txn.category:
-                        data['data'][-1] += txn.amount_default_currency if txn.amount_default_currency else txn.amount
+                        data['data'][-1] += txn.amount_account_currency if txn.amount_account_currency else txn.amount
 
-            if txn.amount_default_currency:
-                amount = txn.amount_default_currency
-            elif txn.txn_type == '>':
-                amount = 0
+            if txn.amount_account_currency:
+                amount = txn.amount_account_currency
             else:
                 amount = txn.amount
 
@@ -452,15 +434,15 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
         return initial
 
     def form_valid(self, form):
-        messages.success(self.request, f"Transaction '{form.cleaned_data.get('amount')}' created!")
-        amount = form.cleaned_data.get('amount')
-
         account = form.cleaned_data.get('account')
-        account.balance += abs(amount) if form.cleaned_data.get('txn_type') == "+" or form.cleaned_data.get(
-            'txn_type') == '>' else - abs(
+        amount = form.cleaned_data.get('amount') if account.currency == form.cleaned_data.get(
+            'currency') else form.cleaned_data.get('amount_account_currency')
+
+        account.balance += abs(amount) if form.cleaned_data.get('transaction_type') == Transaction.INCOME else -abs(
             amount)
         account.save()
 
+        messages.success(self.request, f"Transaction '{form.cleaned_data.get('amount')}' created!")
         messages.info(self.request, f'Updated balance of account!\nYour new balance is {account.balance}')
 
         return super().form_valid(form)
@@ -475,6 +457,10 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
         if cat_id := self.request.GET.get('category'):
             cat = models.Category.objects.get(id=cat_id)
             context['category'] = cat
+        else:
+            context['categories'] = [(cat.id, cat.name) for cat in
+                                     models.Category.objects.filter(profile__user=self.request.user).all() if
+                                     cat.category_type in models.Category.CATEGORY_TYPES]
 
         if acct_id := self.request.GET.get('account'):
             acct = models.Account.objects.get(id=acct_id)
@@ -482,23 +468,13 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
             current_account_currency = acct.currency
             context['currency'] = current_account_currency
 
-        if self.request.GET.get('transfer'):
-            context['transfer'] = True
-            context['category'] = models.Category.objects.filter(profile__user=self.request.user).get(
-                category_type=models.Category.TRANSFER)
-            context['accounts'] = [acct for acct in
-                                   models.Account.objects.filter(
-                                       Q(profile__user=self.request.user) & Q(currency=current_account_currency)).all()
-                                   if
-                                   acct.id != int(acct_id)]
-        else:
-            context['accounts'] = models.Account.objects.filter(profile__user=self.request.user).all()
-            context['categories'] = [(cat.id, cat.name) for cat in
-                                     models.Category.objects.filter(profile__user=self.request.user).all() if
-                                     cat.category_type in models.Category.BASIC_CATEGORY_TYPES]
+        context['accounts'] = list(models.Account.objects.filter(
+            profile__user=self.request.user).all().values('id', 'name', 'currency_id',
+                                                          'currency__abbr', 'currency__symbol'))
 
         context['currencies'] = models.Currency.objects.all()
         context['profile'] = Profile.objects.get(user=self.request.user)
+        context['transaction_type'] = models.Transaction.TRANSACTION_TYPE_CHOICES
 
         return context
 
@@ -510,8 +486,40 @@ class TransactionUpdateView(LoginRequiredMixin, UpdateView):
     template_name = 'budget/transaction/transaction_edit.html'
     success_url = reverse_lazy('transaction_list')
 
+    def get_initial(self):
+        initial = super().get_initial()
+
+        initial['amount'] = abs(self.object.amount)
+        if self.object.amount_account_currency:
+            initial['amount_account_currency'] = abs(self.object.amount_account_currency)
+
+        return initial
+
     def form_valid(self, form):
-        messages.success(self.request, f"Transaction '{form.cleaned_data.get('amount')}' updated!")
+        prev_transaction = Transaction.objects.get(pk=form.instance.pk)
+        new_transaction = form.instance
+
+        # Reverting account balance
+        prev_transaction_amount = abs(prev_transaction.amount_account_currency or prev_transaction.amount)
+        if prev_transaction.transaction_type == Transaction.EXPENSE:
+            prev_transaction.account.balance += prev_transaction_amount
+        else:
+            prev_transaction.account.balance -= prev_transaction_amount
+        prev_transaction.account.save()
+
+        # Updating account balance
+        new_transaction.account.refresh_from_db()
+        new_transaction_amount = abs(new_transaction.amount_account_currency or new_transaction.amount)
+        if new_transaction.transaction_type == Transaction.INCOME:
+            new_transaction.account.balance += new_transaction_amount
+        else:
+            new_transaction.account.balance -= new_transaction_amount
+        new_transaction.account.save()
+
+        messages.success(self.request, f"Transaction updated!")
+        messages.info(self.request,
+                      f'Updated balance of account!\nYour new balance is {new_transaction.account.balance}')
+
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -523,10 +531,13 @@ class TransactionUpdateView(LoginRequiredMixin, UpdateView):
 
         context['categories'] = [(cat.id, cat.name) for cat in
                                  models.Category.objects.filter(profile__user=self.request.user).all()]
-        context['accounts'] = [(acct.id, acct.name) for acct in
-                               models.Account.objects.filter(profile__user=self.request.user).all()]
+        context['accounts'] = list(models.Account.objects.filter(
+            profile__user=self.request.user).all().values('id', 'name', 'currency_id',
+                                                          'currency__abbr', 'currency__symbol'))
+
         context['currencies'] = models.Currency.objects.all()
         context['profile'] = Profile.objects.get(user=self.request.user)
+        context['transaction_type'] = models.Transaction.TRANSACTION_TYPE_CHOICES
 
         return context
 
@@ -538,6 +549,16 @@ class TransactionDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('transaction_list')
 
     def form_valid(self, form):
+        transaction = self.get_object()
+
+        # Reverting account balance
+        transaction_amount = abs(transaction.amount_account_currency or transaction.amount)
+        if transaction.transaction_type == Transaction.EXPENSE:
+            transaction.account.balance += transaction_amount
+        else:
+            transaction.account.balance -= transaction_amount
+        transaction.account.save()
+
         messages.success(self.request, f"Transaction '{self.object.amount}' deleted!")
         return super().form_valid(form)
 

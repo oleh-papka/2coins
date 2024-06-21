@@ -35,7 +35,7 @@
 
                         <div class="d-flex justify-content-between align-items-end">
                             <h4 class="card-text">
-                                {{ grad_total|intspace }} {{ object.currency.symbol }}
+                                {{ object.balance|intspace }} {{ object.currency.symbol }}
                             </h4>
 
                             <div class="dropdown">
@@ -90,9 +90,9 @@
                                 <div class="card-title mb-0 me-2 d-flex align-items-center">
 
                                     <div class="d-flex justify-content-center align-items-center rounded-2 me-2"
-                                         style="width: 2.5rem; height: 2.5rem; background-color: {{ i.category.color }}2A">
-                                        <i class="{{ i.category.icon }}"
-                                           style="color: {{ i.category.color }}"></i>
+                                         style="width: 2.5rem; height: 2.5rem; background-color: {{ i.category.styling.color }}2A">
+                                        <i class="{{ i.category.styling.icon }}"
+                                           style="color: {{ i.category.styling.color }}"></i>
                                     </div>
 
                                     <div class="d-flex flex-column">
@@ -104,10 +104,10 @@
                                         </p>
                                         <small class="m-0 text-secondary">
                                             {% if i.txn_type == '>' %}
-                                                <i class="{{ i.account.icon }}"></i>
+                                                <i class="{{ i.account.styling.icon }}"></i>
                                                 {{ i.account.name|default_if_none:"" }}
                                                 →
-                                                <i class="{{ i.transfer_account.icon }}"></i>
+                                                <i class="{{ i.transfer_account.styling.icon }}"></i>
                                                 {{ i.transfer_account.name|default_if_none:"" }}
                                             {% endif %}
                                         </small>
@@ -116,17 +116,17 @@
                                 </div>
 
                                 <div class="d-flex flex-column align-items-end justify-content-center ms-auto me-3">
-                                    {% if i.amount_default_currency %}
-                                        <strong class="m-0 {% if i.txn_type == '-' %}text-danger{% elif i.txn_type == '>' %}text-secondary{% else %}text-success{% endif %}">
+                                    {% if i.amount_account_currency %}
+                                        <strong class="m-0 {% if i.transaction_type == '-' %}text-danger{% elif i.transaction_type == '>' %}text-secondary{% else %}text-success{% endif %}">
                                             {% if i.amount > 0 %}
                                                 +{% endif %}{{ i.amount|intspace }} {{ i.currency.symbol }}
                                         </strong>
                                         <small class="m-0 text-secondary">
                                             {% if i.amount > 0 %}
-                                                +{% endif %}{{ i.amount_default_currency|intspace }} {{ i.account.currency.symbol }}
+                                                +{% endif %}{{ i.amount_account_currency|intspace }} {{ i.account.currency.symbol }}
                                         </small>
                                     {% else %}
-                                        <strong class="m-0 {% if i.txn_type == '-' %}text-danger{% elif i.txn_type == '>' %}text-secondary{% else %}text-success{% endif %}">
+                                        <strong class="m-0 {% if i.transaction_type == '-' %}text-danger{% elif i.transaction_type == '>' %}text-secondary{% else %}text-success{% endif %}">
                                             {% if i.amount > 0 %}
                                                 +{% endif %}{{ i.amount|intspace }} {{ i.account.currency.symbol }}
                                         </strong>
@@ -144,7 +144,7 @@
                                         </a>
 
                                         <ul class="dropdown-menu dropdown-menu-end">
-                                            {% if i.txn_type != '>' %}
+                                            {% if i.transaction_type != '>' %}
                                                 <li>
                                                     <a class="dropdown-item text-warning"
                                                        href="{% url 'transaction_edit' i.id %}">

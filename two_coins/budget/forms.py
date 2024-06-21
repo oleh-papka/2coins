@@ -34,4 +34,6 @@ class CategoryForm(forms.ModelForm):
 class TransactionForm(forms.ModelForm):
     class Meta:
         model = models.Transaction
-        fields = '__all__'
+        fields = ['account', 'transaction_type', 'category',
+                  'amount', 'amount_account_currency',
+                  'date', 'description', 'currency']

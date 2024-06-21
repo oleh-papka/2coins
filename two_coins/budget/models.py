@@ -232,6 +232,7 @@ class Category(TimeStampMixin):
     INCOME = "+"
     EXPENSE = "-"
 
+    CATEGORY_TYPES = (INCOME, EXPENSE)
     CATEGORY_TYPES_CHOICES = [
         (EXPENSE, "Expense"),
         (INCOME, "Income"),
@@ -265,6 +266,7 @@ class Transaction(TimeStampMixin):
     INCOME = "+"
     EXPENSE = "-"
 
+    TRANSACTION_TYPES = (INCOME, EXPENSE)
     TRANSACTION_TYPE_CHOICES = [
         (EXPENSE, "Expense"),
         (INCOME, "Income"),
@@ -282,9 +284,6 @@ class Transaction(TimeStampMixin):
     amount_account_currency = models.FloatField(null=True,
                                                 blank=True,
                                                 verbose_name="Amount in account's currency")
-    exchange_rate = models.FloatField(null=True,
-                                      blank=True,
-                                      verbose_name="Exchange rate for transaction")
     description = models.CharField(null=True,
                                    blank=True,
                                    max_length=50,
@@ -292,7 +291,7 @@ class Transaction(TimeStampMixin):
     date = models.DateTimeField(null=False,
                                 blank=True,
                                 default=timezone.now,
-                                verbose_name="Transaction date/time")
+                                verbose_name="Date/time")
     currency = models.ForeignKey(Currency,
                                  null=False,
                                  blank=False,
@@ -310,12 +309,15 @@ class Transaction(TimeStampMixin):
                                 verbose_name="Account")
 
     def save(self, *args, **kwargs):
-        self.amount = abs(self.amount) if self.transaction_type == self.INCOME else - abs(self.amount)
+        self.amount = abs(self.amount) if self.transaction_type == self.INCOME else -abs(self.amount)
 
         if self.amount_account_currency:
             self.amount_default_currency = abs(
-                self.amount_account_currency) if self.transaction_type == self.INCOME else - abs(
+                self.amount_account_currency) if self.transaction_type == self.INCOME else -abs(
                 self.amount_account_currency)
+
+        if not self.date:
+            self.date = timezone.now()
 
         super(Transaction, self).save(*args, **kwargs)
 
@@ -327,10 +329,6 @@ class Transfer(TimeStampMixin):
     amount_to = models.FloatField(null=False,
                                   blank=False,
                                   verbose_name="Amount transferring to")
-    exchange_rate = models.FloatField(null=True,
-                                      blank=True,
-                                      default=1,
-                                      verbose_name="Exchange rate for transfer")
     description = models.CharField(null=True,
                                    blank=True,
                                    max_length=50,

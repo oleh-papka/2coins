@@ -10,7 +10,8 @@
         {% csrf_token %}
 
         <div class="mb-5">
-            <h5>Delete Transaction for {{ object.amount }}?</h5>
+            <h5>Delete Transaction of <b>{{ object.amount }} {{ object.currency.abbr }} {{ object.currency.symbol }}</b>
+                for <b>{{ object.account.name }}</b> account?</h5>
         </div>
 
         <div class="d-flex justify-content-end column-gap-2 mt-4">

@@ -43,9 +43,9 @@
                                 <div class="card-title mb-0 me-2 d-flex align-items-center">
 
                                     <div class="d-flex justify-content-center align-items-center rounded-2 me-2"
-                                         style="width: 2.5rem; height: 2.5rem; background-color: {{ txn.category.color }}2A">
-                                        <i class="{{ txn.category.icon }}"
-                                           style="color: {{ txn.category.color }}"></i>
+                                         style="width: 2.5rem; height: 2.5rem; background-color: {{ txn.category.styling.color }}2A">
+                                        <i class="{{ txn.category.styling.icon }}"
+                                           style="color: {{ txn.category.styling.color }}"></i>
                                     </div>
 
                                     <div class="d-flex flex-column">
@@ -56,10 +56,10 @@
                                             {% endif %}
                                         </p>
                                         <small class="m-0 text-secondary">
-                                            <i class="{{ txn.account.icon }}"></i>
+                                            <i class="{{ txn.account.styling.icon }}"></i>
                                             {{ txn.account.name|default_if_none:"" }}
                                             {% if txn.transfer_account %}
-                                                → <i class="{{ txn.transfer_account.icon }}"></i>
+                                                → <i class="{{ txn.transfer_account.styling.icon }}"></i>
                                                 {{ txn.transfer_account.name|default_if_none:"" }}
                                             {% endif %}
                                         </small>
@@ -67,18 +67,18 @@
                                 </div>
 
                                 <div class="d-flex flex-column align-items-end justify-content-center ms-auto me-3">
-                                    {% if txn.amount_default_currency %}
-                                        <strong class="m-0 {% if txn.txn_type == '-' %}text-danger{% else %}text-success{% endif %}">
+                                    {% if txn.amount_account_currency %}
+                                        <strong class="m-0 {% if txn.transaction_type == '-' %}text-danger{% else %}text-success{% endif %}">
                                             {% if txn.amount > 0 %}
                                                 +{% endif %}{{ txn.amount|intspace }} {{ txn.currency.symbol }}
                                         </strong>
                                         <small class="m-0 text-secondary">
                                             {% if txn.amount > 0 %}
-                                                +{% endif %}{{ txn.amount_default_currency|intspace }} {{ txn.account.currency.symbol }}
+                                                +{% endif %}{{ txn.amount_account_currency|intspace }} {{ txn.account.currency.symbol }}
                                         </small>
                                     {% else %}
-                                        <strong class="m-0 {% if txn.txn_type == '-' %}text-danger{% elif txn.txn_type == '>' %}text-secondary{% else %}text-success{% endif %}">
-                                            {% if txn.amount > 0 and txn.txn_type == '+' %}
+                                        <strong class="m-0 {% if txn.transaction_type == '-' %}text-danger{% else %}text-success{% endif %}">
+                                            {% if txn.amount > 0 and txn.transaction_type == '+' %}
                                                 +{% endif %}{{ txn.amount|intspace }} {{ txn.account.currency.symbol }}
                                         </strong>
                                     {% endif %}
