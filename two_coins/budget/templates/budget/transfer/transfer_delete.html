@@ -6,16 +6,13 @@
 {% endblock %}
 
 {% block form_block %}
-    <form action="{% url 'transaction_delete' object.id %}" method="post">
+    <form action="{% url 'transfer_delete' object.id %}" method="post">
         {% csrf_token %}
 
         <div class="mb-5">
-            <h5>Delete Transaction of <b>{{ object.amount }} {{ object.currency.abbr }} {{ object.currency.symbol }}</b>
-                {% if object.amount_converted %}
-                    (
-                    <b>{{ object.amount_converted }} {{ object.account.currency.abbr }} {{ object.account.currency.symbol }}</b>
-                    )
-                {% endif %} for <b>{{ object.account.name }}</b> account?</h5>
+            <h5>Delete Transfer <b>{{ object.amount_from }} {{ object.account_from.currency.abbr }} {{ object.account_from.currency.symbol }}</b> → 
+                <b>{{ object.amount_to }} {{ object.account_to.currency.abbr }} {{ object.account_to.currency.symbol }}</b>
+                for accounts <b>{{ object.account_from.name }}</b> → <b>{{ object.account_to.name }}</b>?</h5>
         </div>
 
         <div class="d-flex justify-content-end column-gap-2 mt-4">

@@ -7,16 +7,16 @@
 
 {% block form_block %}
     <div class="d-flex justify-content-between align-items-center mb-4">
-        {% if category and category.cat_type != '>' %}
+        {% if category %}
             <a href="{% url 'category' category.id %}"
                style="text-decoration: none;"
                class="text-reset">
                 <h5 class="card-title mb-0 d-flex align-items-center">
-                    <div class="d-flex justify-content-center align-items-center rounded-3 me-2"
-                         style="width: 2.5rem; height: 2.5rem; background-color: {{ category.color }}2a">
-                        {% if category.icon %}
-                            <i class="{{ category.icon }}"
-                               style="color: {{ category.color }}"></i>
+                    <div class="d-flex justify-content-center align-items-center rounded-3 me-3"
+                         style="width: 2.5rem; height: 2.5rem; background-color: {{ category.style.color }}2a">
+                        {% if category.style.icon %}
+                            <i class="{{ category.style.icon }}"
+                               style="color: {{ category.style.color }}"></i>
                         {% endif %}
                     </div>
                     {{ category.name }} transaction:
@@ -27,18 +27,14 @@
                style="text-decoration: none;"
                class="text-reset">
                 <h5 class="card-title mb-0 d-flex align-items-center">
-                    <div class="d-flex justify-content-center align-items-center rounded-3 me-2"
-                         style="width: 2.5rem; height: 2.5rem; background-color: {{ account.color }}2a">
-                        {% if account.icon %}
-                            <i class="{{ account.icon }}"
-                               style="color: {{ account.color }}"></i>
+                    <div class="d-flex justify-content-center align-items-center rounded-3 me-3"
+                         style="width: 2.5rem; height: 2.5rem; background-color: {{ account.style.color }}2a">
+                        {% if account.style.icon %}
+                            <i class="{{ account.style.icon }}"
+                               style="color: {{ account.style.color }}"></i>
                         {% endif %}
                     </div>
-                    {% if transfer %}
-                        Transfer from {{ account.name }}:
-                    {% else %}
-                        {{ account.name }} transaction:
-                    {% endif %}
+                    {{ account.name }} transaction:
                 </h5>
             </a>
         {% else %}
@@ -49,133 +45,116 @@
     <form action="{% url 'transaction_add' %}" method="post">
         {% csrf_token %}
 
-        {% for field in form %}
-            {% if field.name == 'txn_type' %}
-                {#                {% if not category or not account %}#}
-                {#                    <div class="row mb-3">#}
-                {#                        <label for="id_txn_type" class="col-sm-3 col-form-label">{{ field.label }}</label>#}
-                {#                        <div class="col">#}
-                {#                            <select class="form-select" id="id_txn_type" aria-label="txn_type select" name="txn_type">#}
-                {#                                {% for opt in txn_types %}#}
-                {#                                    <option value="{{ opt.0 }}"#}
-                {#                                            {% if field.value == opt.0 or forloop.first %}selected{% endif %}>{{ opt.1 }}</option>#}
-                {#                                {% endfor %}#}
-                {#                            </select>#}
-                {#                        </div>#}
-                {#                    </div>#}
-                {#                {% endif %}#}
-            {% elif field.name == 'date' %}
-                <div class="row mb-3">
-                    <label for="id_date"
-                           class="col-sm-3 col-form-label">{{ field.label }}</label>
-                    <div class="col">
-                        <input type="date" class="form-control" id="id_date" name="date"
-                               placeholder="{{ field.label }}">
-                    </div>
+        {# Transaction type field #}
+        <div class="row mb-3">
+            <label for="id_transaction_type"
+                   class="col-sm-3 col-form-label">{{ form.transaction_type.label }}</label>
+            <div class="col">
+                <select class="form-select" id="id_transaction_type" aria-label="transaction_type select"
+                        name="transaction_type" onchange="updateTransactionType();">
+                    {% for opt in transaction_type_list %}
+                        <option value="{{ opt.0 }}"
+                                {% if form.transaction_type.value == opt.0 or forloop.first %}selected{% endif %}>{{ opt.1 }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        {# Category field #}
+        <div class="row mb-3">
+            <label for="id_category" class="col-sm-3 col-form-label">{{ form.category.label }}</label>
+            <div class="col">
+                <select class="form-select" id="id_category" aria-label="category select" name="category">
+                    {% for cat in category_list %}
+                        <option value="{{ cat.id }}"
+                                {% if acct.value == category.id or forloop.first %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        {# Account field #}
+        <div class="row mb-3">
+            <label for="id_account" class="col-sm-3 col-form-label">{{ form.account.label }}</label>
+            <div class="col">
+                <select class="form-select" id="id_account" aria-label="account select" name="account">
+                    {% for acct in account_list %}
+                        <option value="{{ acct.id }}"
+                                {% if acct.value == account.id or forloop.first %}selected{% endif %}>{{ acct.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        {# Amount + currency field #}
+        <div class="row mb-3">
+            <label for="id_amount"
+                   class="col-sm-3 align-self-center">{{ form.amount.label }}</label>
+            <div class="col input-group">
+                <span class="input-group-text amount_transaction_type">{{ form.transaction_type.value }}</span>
+                <input type="number" min="0.01" step="0.01" oninput="validateFloatInput(this)"
+                       class="form-control {% if form.amount.errors %}is-invalid{% endif %}"
+                       id="id_amount" placeholder="{{ form.amount.label }}"
+                       name="amount">
+                <div class="input-group-text bg-body p-1">
+                    <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">
+                        {% for curr in currency_list %}
+                            <option value="{{ curr.id }}" {% if forloop.first %}selected{% endif %}>
+                                {% if curr.abbr == curr.symbol %}
+                                    &nbsp;{{ curr.abbr }}&nbsp;
+                                {% else %}
+                                    {{ curr.abbr }}&nbsp;&nbsp;{{ curr.symbol }}
+                                {% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
                 </div>
-            {% elif field.name == 'category' %}
-                <div class="row mb-3" {% if category or transfer %}style="display: none" {% endif %}>
-                    <label for="id_category" class="col-sm-3 col-form-label">{{ field.label }}</label>
-                    <div class="col">
-                        <select class="form-select" id="id_category" aria-label="category select" name="category">
-                            {% if category %}
-                                <option value="{{ category.id }}" selected>{{ category.name }}</option>
-                            {% elif transfer %}
-                                <option value="{{ category.id }}" selected>{{ category.name }}</option>
-                            {% else %}
-                                {% for cat in categories %}
-                                    <option value="{{ cat.0 }}"
-                                            {% if field.value == cat.1 or forloop.first %}selected{% endif %}>{{ cat.1 }}</option>
-                                {% endfor %}
-                            {% endif %}
-                        </select>
-                    </div>
+            </div>
+            <div class="invalid-feedback">
+                {{ form.amount.errors.as_text }}
+            </div>
+        </div>
+
+        {# Amount in account's currency field #}
+        <div class="row mb-3 hidden" id="amount_converted_field">
+            <label for="amount_converted"
+                   class="col-sm-3 align-self-center">{{ form.amount_converted.label }}</label>
+            <div class="col input-group">
+                <span class="input-group-text amount_transaction_type">{{ form.transaction_type.value }}</span>
+                <input type="number" min="0.01" step="0.01" oninput="validateFloatInput(this)"
+                       class="form-control {% if form.amount_converted.errors %}is-invalid{% endif %}"
+                       id="amount_converted" placeholder="{{ form.amount_converted.label }}"
+                       name="amount_converted">
+                <span class="input-group-text" id="amount_converted_text"></span>
+            </div>
+            <div class="invalid-feedback">
+                {{ form.amount_converted.errors.as_text }}
+            </div>
+        </div>
+
+        {# Date field #}
+        <div class="row mb-3">
+            <label for="id_date"
+                   class="col-sm-3 col-form-label">{{ form.date.label }}</label>
+            <div class="col">
+                <input type="date" class="form-control" id="id_date" name="date"
+                       placeholder="{{ form.date.label }}">
+            </div>
+        </div>
+
+        {# Description field #}
+        <div class="row mb-3">
+            <label for="id-{{ form.description.name }}"
+                   class="col-sm-3 col-form-label">{{ form.description.label }}</label>
+            <div class="col">
+                <input type="text" class="form-control {% if form.description.errors %}is-invalid{% endif %}"
+                       id="id-{{ form.description.name }}" name="{{ form.description.name }}"
+                       placeholder="{{ form.description.label }}">
+                <div class="invalid-feedback">
+                    {{ form.description.errors.as_text }}
                 </div>
-            {% elif field.name == 'account' %}
-                <div class="row mb-3" {% if account or transfer %}style="display: none" {% endif %}>
-                    <label for="id_account" class="col-sm-3 col-form-label">{{ field.label }}</label>
-                    <div class="col">
-                        <select class="form-select" id="id_account" aria-label="account select" name="account">
-                            {% if account %}
-                                <option value="{{ account.id }}" selected>{{ account.name }}</option>
-                            {% else %}
-                                {% for acct in accounts %}
-                                    <option value="{{ acct.id }}"
-                                            {% if forloop.first %}selected{% endif %}>{{ acct.name }}</option>
-                                {% endfor %}
-                            {% endif %}
-                        </select>
-                    </div>
-                </div>
-            {% elif field.name == 'currency' %}
-            {% elif field.name == 'amount_default_currency' %}
-                <div class="row mb-3 visually-hidden" id="amount_default_currency_field">
-                    <label for="id_amount_default_currency"
-                           class="col-sm-3 align-self-center">{{ field.label }}</label>
-                    <div class="col input-group">
-                        <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
-                               id="id_amount_default_currency" placeholder="{{ field.label }}"
-                               name="amount_default_currency">
-                        <span class="input-group-text">{{ profile.main_currency.abbr }}&nbsp;&nbsp;{{ profile.main_currency.symbol }}</span>
-                    </div>
-                    <div class="invalid-feedback">
-                        {{ field.errors.as_text }}
-                    </div>
-                </div>
-            {% elif field.name == 'amount' %}
-                <div class="row mb-3">
-                    <label for="id_amount"
-                           class="col-sm-3 align-self-center">{{ field.label }}</label>
-                    <div class="col input-group">
-                        <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
-                               id="id_amount" placeholder="{{ field.label }}"
-                               name="amount">
-                        <div class="input-group-text bg-body p-1">
-                            <select class="form-select" id="id_currency" aria-label="acct_type select"
-                                    name="currency">
-                                {% for curr in currencies %}
-                                    <option value="{{ curr.id }}"
-                                            {% if curr == currency  or curr == profile.main_currency %}selected{% endif %}>{{ curr.abbr }}&nbsp;&nbsp;{{ curr.symbol }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="invalid-feedback">
-                        {{ field.errors.as_text }}
-                    </div>
-                </div>
-            {% elif field.name == 'transfer_account' %}
-                <div class="row mb-3" {% if not transfer %}style="display: none"{% endif %}>
-                    <label for="id_transfer_account" class="col-sm-3 col-form-label">{{ field.label }}</label>
-                    <div class="col">
-                        {% if transfer %}
-                            <select class="form-select" id="id_transfer_account" aria-label="transfer_account select"
-                                    name="transfer_account">
-                                {% for acct in accounts %}
-                                    {% if account != acct %}
-                                        <option value="{{ acct.id }}"
-                                                {% if forloop.first %}selected{% endif %}>{{ acct.name }}</option>
-                                    {% endif %}
-                                {% endfor %}
-                            </select>
-                        {% endif %}
-                    </div>
-                </div>
-            {% else %}
-                <div class="row mb-3">
-                    <label for="id-{{ field.name }}"
-                           class="col-sm-3 col-form-label">{{ field.label }}</label>
-                    <div class="col">
-                        <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
-                               id="id-{{ field.name }}" name="{{ field.name }}"
-                               placeholder="{{ field.label }}">
-                        <div class="invalid-feedback">
-                            {{ field.errors.as_text }}
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-        {% endfor %}
+            </div>
+        </div>
 
         <div class="d-flex justify-content-end column-gap-2 mt-4">
             <a href="{% url 'transaction_list' %}" type="button" class="btn btn-outline-danger">Cancel</a>
@@ -185,19 +164,26 @@
 {% endblock %}
 
 {% block custom_scripts %}
-    <script src="{% static 'budget/js/account_create.js' %}"></script>
     <script>
-        const currency_select = document.getElementById('id_currency');
-        const defaultCurrencyDiv = document.getElementById('amount_default_currency_field');
+        const accounts = {{ account_list|safe }};
 
-        currency_select.addEventListener('change', () => {
-            if (currency_select.value === currency_select.options[0].value) {
-                // First option selected, hide div
-                defaultCurrencyDiv.classList.add('visually-hidden');
-            } else {
-                // Non-default option, show div
-                defaultCurrencyDiv.classList.remove('visually-hidden');
+        function validateFloatInput(input) {
+            const value = input.value;
+            const isValid = /^\d*\.?\d*$/.test(value) && !(value.startsWith('0') && value.length > 1 && !value.startsWith('0.'));
+            if (!isValid) {
+                input.value = value.slice(0, -1);
             }
-        });
+        }
+
+        function updateTransactionType() {
+            const selectElement = document.getElementById('id_transaction_type');
+            const selectedOptionValue = selectElement.options[selectElement.selectedIndex].value;
+            const spanElements = document.getElementsByClassName('amount_transaction_type');
+            for (let i = 0; i < spanElements.length; i++) {
+                spanElements[i].textContent = selectedOptionValue;
+            }
+        }
     </script>
+
+    <script src="{% static 'budget/js/transaction_create.js' %}"></script>
 {% endblock %}

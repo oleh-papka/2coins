@@ -3,46 +3,38 @@
     "model": "budget.currency",
     "pk": 1,
     "fields": {
-      "created_at": "2023-07-21T07:41:07.096Z",
-      "updated_at": "2023-07-21T07:41:07.096Z",
-      "name": "Ukrainian hryvnia",
-      "ccy_type": "FM",
-      "symbol": "₴",
-      "abbr": "UAH"
-    }
-  },
-  {
-    "model": "budget.currency",
-    "pk": 2,
-    "fields": {
-      "created_at": "2023-07-21T07:41:43.129Z",
-      "updated_at": "2023-07-21T07:41:43.129Z",
       "name": "US Dollar",
-      "ccy_type": "FM",
+      "currency_type": "F",
       "symbol": "$",
       "abbr": "USD"
     }
   },
   {
     "model": "budget.currency",
-    "pk": 3,
+    "pk": 2,
     "fields": {
-      "created_at": "2023-07-21T07:41:44.129Z",
-      "updated_at": "2023-07-21T07:41:44.129Z",
       "name": "Euro",
-      "ccy_type": "FM",
+      "currency_type": "F",
       "symbol": "€",
       "abbr": "EUR"
     }
   },
   {
     "model": "budget.currency",
+    "pk": 3,
+    "fields": {
+      "name": "Japanese yen",
+      "currency_type": "F",
+      "symbol": "¥",
+      "abbr": "JPY"
+    }
+  },
+  {
+    "model": "budget.currency",
     "pk": 4,
     "fields": {
-      "created_at": "2023-07-21T07:41:45.129Z",
-      "updated_at": "2023-07-21T07:41:45.129Z",
       "name": "Pound sterling",
-      "ccy_type": "FM",
+      "currency_type": "F",
       "symbol": "£",
       "abbr": "GBP"
     }
@@ -51,12 +43,110 @@
     "model": "budget.currency",
     "pk": 5,
     "fields": {
-      "created_at": "2023-07-21T07:41:46.129Z",
-      "updated_at": "2023-07-21T07:41:46.129Z",
       "name": "Złoty",
-      "ccy_type": "FM",
+      "currency_type": "F",
       "symbol": "zł",
       "abbr": "PLN"
+    }
+  },
+  {
+    "model": "budget.currency",
+    "pk": 6,
+    "fields": {
+      "name": "Australian dollar",
+      "currency_type": "F",
+      "symbol": "A$",
+      "abbr": "AUD"
+    }
+  },
+  {
+    "model": "budget.currency",
+    "pk": 7,
+    "fields": {
+      "name": "Canadian dollar",
+      "currency_type": "F",
+      "symbol": "C$",
+      "abbr": "CUD"
+    }
+  },
+  {
+    "model": "budget.currency",
+    "pk": 8,
+    "fields": {
+      "name": "Ukrainian hryvnia",
+      "currency_type": "F",
+      "symbol": "₴",
+      "abbr": "UAH"
+    }
+  },
+  {
+    "model": "budget.currency",
+    "pk": 9,
+    "fields": {
+      "name": "Bitcoin",
+      "currency_type": "C",
+      "symbol": "BTC",
+      "abbr": "BTC"
+    }
+  },
+  {
+    "model": "budget.currency",
+    "pk": 10,
+    "fields": {
+      "name": "Ethereum",
+      "currency_type": "C",
+      "symbol": "ETH",
+      "abbr": "ETH"
+    }
+  },
+  {
+    "model": "budget.currency",
+    "pk": 11,
+    "fields": {
+      "name": "Tether",
+      "currency_type": "C",
+      "symbol": "USDT",
+      "abbr": "USDT"
+    }
+  },
+  {
+    "model": "budget.currency",
+    "pk": 12,
+    "fields": {
+      "name": "Binance Coin",
+      "currency_type": "C",
+      "symbol": "BNB",
+      "abbr": "BNB"
+    }
+  },
+  {
+    "model": "budget.currency",
+    "pk": 13,
+    "fields": {
+      "name": "Solana",
+      "currency_type": "C",
+      "symbol": "SOL",
+      "abbr": "SOL"
+    }
+  },
+  {
+    "model": "budget.currency",
+    "pk": 14,
+    "fields": {
+      "name": "XRP",
+      "currency_type": "C",
+      "symbol": "XRP",
+      "abbr": "XRP"
+    }
+  },
+  {
+    "model": "budget.currency",
+    "pk": 15,
+    "fields": {
+      "name": "U.S. Dollar Coin",
+      "currency_type": "C",
+      "symbol": "USDC",
+      "abbr": "USDC"
     }
   }
 ]

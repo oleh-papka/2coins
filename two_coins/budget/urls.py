@@ -1,15 +1,10 @@
 from django.urls import path
+
 from . import views
 
 urlpatterns = [
     # Dashboard
     path('', views.DashboardView.as_view(), name='dashboard'),
-
-    # Currencies
-    path('currency/', views.CurrencyList.as_view(), name='currency_list'),
-    # path('currency/add/', views.CurrencyCreateView.as_view(), name='currency_add'),
-    # path('currency/<int:pk>/edit/', views.CurrencyUpdateView.as_view(), name='currency_edit'),
-    # path('currency/<int:pk>/delete/', views.CurrencyDeleteView.as_view(), name='currency_delete'),
 
     # Accounts
     path('account/', views.AccountListView.as_view(), name='account_list'),
@@ -25,12 +20,14 @@ urlpatterns = [
     path('category/<int:pk>/edit/', views.CategoryUpdateView.as_view(), name='category_edit'),
     path('category/<int:pk>/delete/', views.CategoryDeleteView.as_view(), name='category_delete'),
 
+    # Transfers
+    path('transfer/add/', views.TransferCreateView.as_view(), name='transfer_add'),
+    path('transfer/<int:pk>/edit/', views.TransferUpdateView.as_view(), name='transfer_edit'),
+    path('transfer/<int:pk>/delete/', views.TransferDeleteView.as_view(), name='transfer_delete'),
+
     # Transactions
     path('transaction/', views.TransactionList.as_view(), name='transaction_list'),
     path('transaction/add/', views.TransactionCreateView.as_view(), name='transaction_add'),
     path('transaction/<int:pk>/edit/', views.TransactionUpdateView.as_view(), name='transaction_edit'),
     path('transaction/<int:pk>/delete/', views.TransactionDeleteView.as_view(), name='transaction_delete'),
-
-    # Currency converter
-    path('currency_converter/', views.currency_converter_req, name='currency_converter'),
 ]

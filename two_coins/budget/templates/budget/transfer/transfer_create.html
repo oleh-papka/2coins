@@ -1,0 +1,207 @@
+{% extends 'create_form.html' %}
+{% load static %}
+
+{% block custom_static %}
+    <link rel="stylesheet" href="{% static 'budget/css/accounts_create.css' %}">
+{% endblock %}
+
+{% block form_block %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5>Creating money transfer transaction:</h5>
+    </div>
+
+    <form action="{% url 'transfer_add' %}" method="post" class="needs-validation">
+        {% csrf_token %}
+
+        {# Account from field #}
+        <div class="row mb-3">
+            <label for="id_account_from" class="col-sm-3 col-form-label">{{ form.account_from.label }}</label>
+            <div class="col">
+                <select class="form-select {% if form.account_from.errors %}is-invalid{% endif %}" id="id_account_from"
+                        aria-label="account_from select" name="account_from">
+
+                    {% for account in account_list %}
+                        <option value="{{ account.id }}"
+                                {% if account_from %}
+                                {% if account.id == account_from.id %}selected{% endif %}
+                                {% else %}
+                                {% if forloop.first %}selected{% endif %}
+                                {% endif %}>
+                            {{ account.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <div class="invalid-feedback">
+                    {{ form.account_from.errors.as_text }}
+                </div>
+            </div>
+        </div>
+
+        {# Account to field #}
+        <div class="row mb-3">
+            <label for="id_account_to" class="col-sm-3 col-form-label">{{ form.account_to.label }}</label>
+            <div class="col">
+                <select class="form-select {% if form.account_to.errors %}is-invalid{% endif %}" id="id_account_to"
+                        aria-label="account_to select" name="account_to">
+                    {% for account in account_list %}
+                        <option value="{{ account.id }}"
+                                {% if forloop.first %}selected{% endif %}>{{ account.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <div class="invalid-feedback">
+                    {{ form.account_to.errors.as_text }}
+                </div>
+            </div>
+        </div>
+
+        {# Amount transferring from + currency #}
+        <div class="row mb-3">
+            <label for="id_amount_from"
+                   class="col-sm-3 align-self-center">Amount from</label>
+
+            <div class="col input-group">
+                <input type="number" min="0.01" step="0.01" oninput="validateFloatInput(this)"
+                       class="form-control {% if form.amount_from.errors %}is-invalid{% endif %}"
+                       id="id_amount_from" placeholder="{{ form.amount_from.label }}"
+                       name="amount_from" required>
+                <span class="input-group-text" id="amount_from_text">
+                    {% if account_from %}
+                        {% if account_from.currency.abbr == account_from.currency.symbol %}
+                            {{ account_from.currency.abbr }}
+                        {% else %}
+                            {{ account_from.currency.abbr }}&nbsp;&nbsp;{{ account_from.currency.symbol }}
+                        {% endif %}
+                    {% endif %}
+                </span>
+
+                <div class="invalid-feedback">
+                    {{ form.amount_from.errors.as_text }}
+                </div>
+            </div>
+        </div>
+
+        {# Amount transferring to field + currency#}
+        <div class="row mb-3 hidden" id="amount_to_field">
+            <label for="id_amount_to"
+                   class="col-sm-3 align-self-center">Amount to</label>
+            <div class="col input-group">
+                <input type="number" min="0.01" step="0.01" oninput="validateFloatInput(this)"
+                       class="form-control {% if form.amount_to.errors %}is-invalid{% endif %}"
+                       id="id_amount_to" placeholder="{{ form.amount_to.label }}"
+                       name="amount_to">
+                <span class="input-group-text" id="amount_to_text"></span>
+
+                <div class="invalid-feedback">
+                    {{ form.amount_to.errors.as_text }}
+                </div>
+            </div>
+        </div>
+
+        {# Date field #}
+        <div class="row mb-3">
+            <label for="id_date"
+                   class="col-sm-3 col-form-label">{{ form.date.label }}</label>
+            <div class="col">
+                <input type="date" class="form-control" id="id_date" name="date">
+
+                <div class="invalid-feedback">
+                    {{ form.date.errors.as_text }}
+                </div>
+            </div>
+        </div>
+
+        {# Description field #}
+        <div class="row mb-3">
+            <label for="id-{{ form.description.name }}"
+                   class="col-sm-3 col-form-label">{{ form.description.label }}</label>
+            <div class="col">
+                <input type="text" class="form-control {% if form.description.errors %}is-invalid{% endif %}"
+                       id="id-{{ form.description.name }}" name="{{ form.description.name }}"
+                       placeholder="{{ form.description.label }}">
+                <div class="invalid-feedback">
+                    {{ form.description.errors.as_text }}
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end column-gap-2 mt-4">
+            <a href="{% url 'transaction_list' %}" type="button" class="btn btn-outline-danger">Cancel</a>
+            <button class="btn btn-primary" type="submit">Create</button>
+        </div>
+    </form>
+{% endblock %}
+
+{% block custom_scripts %}
+    <style>
+        .hidden {
+            display: none;
+        }
+    </style>
+    
+    <script>
+        const accountList = {{ account_list|safe }};
+
+        // Create a dictionary for quick lookup of currency by account ID
+        const accountCurrencyDict = {};
+        accountList.forEach(account => {
+            accountCurrencyDict[account.id] = {
+                id: account.currency_id,
+                abbr: account.currency__abbr,
+                symbol: account.currency__symbol
+            };
+        });
+
+
+        console.log(accountList);
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const accountFromSelect = document.getElementById('id_account_from');
+            const accountToSelect = document.getElementById('id_account_to');
+            const amountToField = document.getElementById('amount_to_field');
+            const amountToText = document.getElementById('amount_to_text');
+            const amountFromText = document.getElementById('amount_from_text');
+
+            function updateCurrencyFields() {
+                const accountFrom = accountFromSelect.value;
+                const accountTo = accountToSelect.value;
+
+                if (accountFrom && accountTo) {
+                    const currencyFrom = accountCurrencyDict[accountFrom];
+                    const currencyTo = accountCurrencyDict[accountTo];
+
+                    // Update the currency display for 'amount_from'
+                    amountFromText.textContent = currencyFrom.abbr === currencyFrom.symbol
+                        ? currencyFrom.abbr
+                        : currencyFrom.abbr + ' ' + currencyFrom.symbol;
+
+                    // Check if currencies differ and show/hide 'amount_to' field
+                    if (currencyFrom.id !== currencyTo.id) {
+                        amountToText.textContent = currencyTo.abbr === currencyTo.symbol
+                            ? currencyTo.abbr
+                            : currencyTo.abbr + ' ' + currencyTo.symbol;
+                        amountToField.classList.remove('hidden');
+                    } else {
+                        amountToField.classList.add('hidden');
+                    }
+                }
+            }
+
+            // Add event listeners
+            accountFromSelect.addEventListener('change', updateCurrencyFields);
+            accountToSelect.addEventListener('change', updateCurrencyFields);
+
+            // Initialize currency fields
+            updateCurrencyFields();
+        });
+
+        function validateFloatInput(input) {
+            const value = input.value;
+            const isValid = /^\d*\.?\d*$/.test(value) && !(value.startsWith('0') && value.length > 1 && !value.startsWith('0.'));
+            if (!isValid) {
+                input.value = value.slice(0, -1);
+            }
+        }
+    </script>
+{% endblock %}

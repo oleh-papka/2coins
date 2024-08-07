@@ -1,0 +1,854 @@
+openapi: 3.0.3
+info:
+  title: 2coins API
+  version: 0.0.1
+  description: Your project description
+paths:
+  /api/account/:
+    get:
+      operationId: account_list
+      tags:
+      - account
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+          description: ''
+    post:
+      operationId: account_create
+      tags:
+      - account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Account'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Account'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Account'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+          description: ''
+  /api/account/{id}/:
+    get:
+      operationId: account_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this account.
+        required: true
+      tags:
+      - account
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+          description: ''
+    put:
+      operationId: account_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this account.
+        required: true
+      tags:
+      - account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Account'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Account'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Account'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+          description: ''
+    patch:
+      operationId: account_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this account.
+        required: true
+      tags:
+      - account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAccount'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAccount'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAccount'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+          description: ''
+    delete:
+      operationId: account_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this account.
+        required: true
+      tags:
+      - account
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/category/:
+    get:
+      operationId: category_list
+      tags:
+      - category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+          description: ''
+    post:
+      operationId: category_create
+      tags:
+      - category
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+  /api/category/{id}/:
+    get:
+      operationId: category_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    put:
+      operationId: category_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - category
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    patch:
+      operationId: category_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - category
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    delete:
+      operationId: category_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this category.
+        required: true
+      tags:
+      - category
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/transaction/:
+    get:
+      operationId: transaction_list
+      tags:
+      - transaction
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionDetail'
+          description: ''
+    post:
+      operationId: transaction_create
+      tags:
+      - transaction
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transaction'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Transaction'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Transaction'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
+  /api/transaction/{id}/:
+    get:
+      operationId: transaction_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this transaction.
+        required: true
+      tags:
+      - transaction
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionDetail'
+          description: ''
+    put:
+      operationId: transaction_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this transaction.
+        required: true
+      tags:
+      - transaction
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transaction'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Transaction'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Transaction'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
+    patch:
+      operationId: transaction_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this transaction.
+        required: true
+      tags:
+      - transaction
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTransaction'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTransaction'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTransaction'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+          description: ''
+    delete:
+      operationId: transaction_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this transaction.
+        required: true
+      tags:
+      - transaction
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    Account:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        name:
+          type: string
+          title: Account name
+          maxLength: 30
+        account_type:
+          $ref: '#/components/schemas/AccountTypeEnum'
+        balance:
+          type: number
+          format: double
+          title: Account balance
+        initial_balance:
+          type: number
+          format: double
+        target_balance:
+          type: number
+          format: double
+          nullable: true
+        deadline:
+          type: string
+          format: date
+          nullable: true
+          title: Deadline date
+        description:
+          type: string
+          nullable: true
+          maxLength: 30
+        styling:
+          type: integer
+        profile:
+          type: integer
+        currency:
+          type: integer
+      required:
+      - created_at
+      - currency
+      - id
+      - name
+      - profile
+      - updated_at
+    AccountTypeEnum:
+      enum:
+      - g
+      - s
+      type: string
+      description: |-
+        * `g` - Default account
+        * `s` - Savings account
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        name:
+          type: string
+          title: Account name
+          maxLength: 30
+        account_type:
+          $ref: '#/components/schemas/AccountTypeEnum'
+        balance:
+          type: number
+          format: double
+          title: Account balance
+        initial_balance:
+          type: number
+          format: double
+        target_balance:
+          type: number
+          format: double
+          nullable: true
+        deadline:
+          type: string
+          format: date
+          nullable: true
+          title: Deadline date
+        description:
+          type: string
+          nullable: true
+          maxLength: 30
+        styling:
+          type: integer
+        profile:
+          type: integer
+        currency:
+          type: integer
+      required:
+      - created_at
+      - currency
+      - id
+      - name
+      - profile
+      - updated_at
+    NestedAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Account name
+          maxLength: 30
+        balance:
+          type: number
+          format: double
+          title: Account balance
+        currency:
+          type: integer
+      required:
+      - currency
+      - id
+      - name
+    PatchedAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        name:
+          type: string
+          title: Account name
+          maxLength: 30
+        account_type:
+          $ref: '#/components/schemas/AccountTypeEnum'
+        balance:
+          type: number
+          format: double
+          title: Account balance
+        initial_balance:
+          type: number
+          format: double
+        target_balance:
+          type: number
+          format: double
+          nullable: true
+        deadline:
+          type: string
+          format: date
+          nullable: true
+          title: Deadline date
+        description:
+          type: string
+          nullable: true
+          maxLength: 30
+        styling:
+          type: integer
+        profile:
+          type: integer
+        currency:
+          type: integer
+    PatchedCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        name:
+          type: string
+          title: Account name
+          maxLength: 30
+        account_type:
+          $ref: '#/components/schemas/AccountTypeEnum'
+        balance:
+          type: number
+          format: double
+          title: Account balance
+        initial_balance:
+          type: number
+          format: double
+        target_balance:
+          type: number
+          format: double
+          nullable: true
+        deadline:
+          type: string
+          format: date
+          nullable: true
+          title: Deadline date
+        description:
+          type: string
+          nullable: true
+          maxLength: 30
+        styling:
+          type: integer
+        profile:
+          type: integer
+        currency:
+          type: integer
+    PatchedTransaction:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        transaction_type:
+          $ref: '#/components/schemas/TransactionTypeEnum'
+        amount:
+          type: number
+          format: double
+        amount_account_currency:
+          type: number
+          format: double
+          nullable: true
+          title: Amount in account's currency
+        exchange_rate:
+          type: number
+          format: double
+          nullable: true
+          title: Exchange rate for transaction
+        description:
+          type: string
+          nullable: true
+          maxLength: 50
+        date:
+          type: string
+          format: date-time
+          title: Transaction date/time
+        currency:
+          type: integer
+        category:
+          type: integer
+        account:
+          type: integer
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        transaction_type:
+          $ref: '#/components/schemas/TransactionTypeEnum'
+        amount:
+          type: number
+          format: double
+        amount_account_currency:
+          type: number
+          format: double
+          nullable: true
+          title: Amount in account's currency
+        exchange_rate:
+          type: number
+          format: double
+          nullable: true
+          title: Exchange rate for transaction
+        description:
+          type: string
+          nullable: true
+          maxLength: 50
+        date:
+          type: string
+          format: date-time
+          title: Transaction date/time
+        currency:
+          type: integer
+        category:
+          type: integer
+        account:
+          type: integer
+      required:
+      - account
+      - amount
+      - category
+      - created_at
+      - currency
+      - id
+      - updated_at
+    TransactionDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        account:
+          $ref: '#/components/schemas/NestedAccount'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        transaction_type:
+          $ref: '#/components/schemas/TransactionTypeEnum'
+        amount:
+          type: number
+          format: double
+        amount_account_currency:
+          type: number
+          format: double
+          nullable: true
+          title: Amount in account's currency
+        exchange_rate:
+          type: number
+          format: double
+          nullable: true
+          title: Exchange rate for transaction
+        description:
+          type: string
+          nullable: true
+          maxLength: 50
+        date:
+          type: string
+          format: date-time
+          title: Transaction date/time
+        currency:
+          type: integer
+        category:
+          type: integer
+      required:
+      - account
+      - amount
+      - category
+      - created_at
+      - currency
+      - id
+      - updated_at
+    TransactionTypeEnum:
+      enum:
+      - '-'
+      - +
+      type: string
+      description: |-
+        * `-` - Expense
+        * `+` - Income
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

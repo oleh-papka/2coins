@@ -13,7 +13,7 @@
             <div class="d-flex h-100 flex-column align-items-center p-4" style="max-width: 23rem">
 
                 <div class="p-4 w-100 d-flex flex-column align-items-center gap-4 overflow-y-scroll scrollbox">
-                    {% for account in account_list %}
+                    {% for account in object_list %}
                         <div class="card rounded-4 border border-2 bg-body-secondary bg-opacity-25 hover"
                              style="width: 16rem; min-height: 10rem;">
                             <a href="{% url 'account' account.id %}" class="stretched-link text-reset"
@@ -24,21 +24,36 @@
                                         <h5 class="card-title mb-1">
                                             {{ account.name }}
                                         </h5>
-                                        <small class="text-body-secondary">Description</small>
+                                        {% if account.description %}
+                                            <small class="text-body-secondary">{{ account.description }}</small>
+                                        {% endif %}
                                     </div>
 
                                     <div class="d-flex justify-content-center align-items-center rounded-3"
-                                         style="width: 3rem; height: 3rem; background-color: {{ account.color }}2a">
-                                        <i class="{{ account.icon }} fa-xl"
-                                           style="color: {{ account.color }}"></i>
+                                         style="width: 3rem; height: 3rem; background-color: {{ account.style.color }}2a">
+                                        <i class="{{ account.style.icon }} fa-xl"
+                                           style="color: {{ account.style.color }}"></i>
                                     </div>
                                 </div>
 
-                                <h4 class="card-text">
-                                    {% load intspace %}
-                                    {{ account.total|intspace }} {{ account.currency.symbol }}
-                                </h4>
-
+                                <div class="d-flex">
+                                    {% if account.account_type == 's' and account.target_balance %}
+                                        <h4 class="card-text">
+                                            {% load intspace %}
+                                            {{ account.balance|intspace }} {{ account.currency.symbol }}
+                                        </h4>
+                                        <h4>&nbsp;/&nbsp;</h4>
+                                        <h4 class="card-text">
+                                            {% load intspace %}
+                                            {{ account.target_balance|intspace }} {{ account.currency.symbol }}
+                                        </h4>
+                                    {% else %}
+                                        <h4 class="card-text">
+                                            {% load intspace %}
+                                            {{ account.balance|intspace }} {{ account.currency.symbol }}
+                                        </h4>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     {% endfor %}
@@ -52,44 +67,6 @@
                     </div>
                 </div>
             </div>
-
-            <div class="d-flex h-100 col">
-                <div class="m-4 w-100 d-flex justify-content-center" style="max-height: 400px;">
-                    <canvas id="accounts_chart"></canvas>
-                </div>
-            </div>
         </div>
     </div>
-{% endblock %}
-
-
-{% block custom_scripts %}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <script>
-        const ctx = document.getElementById('accounts_chart').getContext('2d');
-
-        const doughnutChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: {{ data_acct.labels|safe }},
-                datasets: [{
-                    label: 'Balance',
-                    data: {{ data_acct.data|safe }},
-                    backgroundColor: {{ data_acct.colors|safe }},
-                    hoverOffset: 4,
-                }]
-            },
-            options: {
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: "bottom",
-                        align: "center"
-                    }
-                }
-            }
-        });
-    </script>
-
 {% endblock %}

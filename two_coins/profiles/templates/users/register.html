@@ -16,16 +16,7 @@
                     {% csrf_token %}
 
                     {% for field in form %}
-                        {% if field.name == 'username' %}
-                            <div class="mb-3">
-                                <label for="id_username" class="form-label">Username</label>
-                                <input type="text" required
-                                       class="form-control {% if field.errors %}is-invalid{% endif %}"
-                                       id="id_username" name="username"
-                                       autocomplete="username"
-                                       {% if field.value %}value="{{ field.value }}"{% endif %}>
-                            </div>
-                        {% elif field.name == 'email' %}
+                        {% if field.name == 'email' %}
                             <div class="mb-3">
                                 <label for="id_email" class="form-label">E-mail</label>
                                 <input type="email" required

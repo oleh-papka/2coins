@@ -10,38 +10,117 @@
         {% csrf_token %}
 
         {% for field in form %}
-            {% if field.name == 'acct_type' %}
+
+            {% if field.name == 'account_type' %}
+                <div class="row mb-3">
+                    <label for="id_account_type" class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <select class="form-select" id="id_account_type" aria-label="account_type select"
+                                name="account_type">
+                            {% for value, name in form.fields.account_type.choices %}
+                                <option value="{{ value }}"
+                                        {% if field.value == value or forloop.first %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
             {% elif field.name == 'color' %}
                 <div class="row mb-3">
                     <label for="id_color"
                            class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
                         <input type="color" class="form-control form-control-color" id="id_color"
-                               value="{{ field.value }}" name="color"
+                               value="{{ object.style.color }}" name="color"
                                title="Choose your color" style="width: 5rem">
                     </div>
                 </div>
-            {% elif field.name == 'initial_date' %}
+            {% elif field.name == 'icon' %}
                 <div class="row mb-3">
-                    <label for="id_initial_date"
+                    <label for="id_icon"
                            class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
-                        <input type="date" class="form-control" id="id_initial_date" name="initial_date"
-                               placeholder="{{ field.label }}" value="{{ field.value|date:'Y-m-d' }}">
+                        <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
+                               id="id_icon" name="{{ field.name }}"
+                               placeholder="{{ field.label }}" value="{{ object.style.icon }}">
+                        {% if field.help_text %}
+                            <small class="text-muted ms-1">{{ field.help_text }}</small>
+                        {% endif %}
+                        <div class="invalid-feedback">
+                            {{ field.errors.as_text }}
+                        </div>
                     </div>
                 </div>
-            {% elif field.name == 'new_balance' %}
+            {% elif field.name == 'deadline' %}
+                <div class="savings-account">
+                    <div class="row mb-3">
+                        <label for="id_deadline"
+                               class="col-sm-3 col-form-label">{{ field.label }}</label>
+                        <div class="col">
+                            <input type="date" class="form-control" id="id_deadline" name="deadline"
+                                   value="{{ field.value }}">
+                        </div>
+                    </div>
+                </div>
+            {% elif field.name == 'currency' %}
+            {% elif field.name == 'balance' %}
                 <div class="row mb-3">
-                    <label for="id_new_balance"
+                    <label for="id_balance"
                            class="col-sm-3 align-self-center">{{ field.label }}</label>
                     <div class="col input-group">
-                        <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
-                               id="id_new_balance" placeholder="{{ field.label }}"
-                               name="new_balance" value="{{ field.value }}">
-                        <span class="input-group-text">{{ object.currency.abbr }}&nbsp;&nbsp;{{ object.currency.symbol }}</span>
+                        <input type="number" step="0.01"
+                               class="form-control {% if field.errors %}is-invalid{% endif %}"
+                               id="id_balance" placeholder="{{ field.label }}" name="balance" value="{{ field.value }}">
+                        <div class="input-group-text bg-body p-1">
+                            <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">
+                                {% for curr in currency_list %}
+                                    <option value="{{ curr.id }}"
+                                            {% if forloop.first or object.currency == curr %}selected{% endif %}>
+                                        {% if curr.abbr == curr.symbol %}
+                                            &nbsp;{{ curr.abbr }}&nbsp;
+                                        {% else %}
+                                            {{ curr.abbr }}&nbsp;&nbsp;{{ curr.symbol }}
+                                        {% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="invalid-feedback">
+                            {{ field.errors.as_text }}
+                        </div>
                     </div>
-                    <div class="invalid-feedback">
-                        {{ field.errors.as_text }}
+                </div>
+            {% elif field.name == 'initial_balance' %}
+                <div class="savings-account">
+                    <div class="row mb-3">
+                        <label for="id_initial_balance"
+                               class="col-sm-3 align-self-center">{{ field.label }}</label>
+                        <div class="col input-group">
+                            <input type="number" step="0.01"
+                                   class="form-control {% if field.errors %}is-invalid{% endif %}"
+                                   id="id_initial_balance" placeholder="{{ field.label }}" name="initial_balance"
+                                   value="{{ field.value }}">
+                            <span class="input-group-text"></span>
+                        </div>
+                        <div class="invalid-feedback">
+                            {{ field.errors.as_text }}
+                        </div>
+                    </div>
+                </div>
+            {% elif field.name == 'target_balance' %}
+                <div class="savings-account">
+                    <div class="row mb-3">
+                        <label for="id_target_balance"
+                               class="col-sm-3 align-self-center">{{ field.label }}</label>
+                        <div class="col input-group">
+                            <input type="number" step="0.01"
+                                   class="form-control {% if field.errors %}is-invalid{% endif %}"
+                                   id="id_target_balance" placeholder="{{ field.label }}" name="target_balance"
+                                   value="{{ field.value }}">
+                            <span class="input-group-text"></span>
+                        </div>
+                        <div class="invalid-feedback">
+                            {{ field.errors.as_text }}
+                        </div>
                     </div>
                 </div>
             {% else %}
@@ -51,7 +130,7 @@
                     <div class="col">
                         <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
                                id="id-{{ field.name }}" name="{{ field.name }}"
-                               placeholder="{{ field.label }}" value="{% if field.value %}{{ field.value }}{% endif %}">
+                               placeholder="{{ field.label }}" {% if field.value %}value="{{ field.value }}"{% endif %}>
                         {% if field.help_text %}
                             <small class="text-muted ms-1">{{ field.help_text }}</small>
                         {% endif %}
@@ -64,7 +143,7 @@
         {% endfor %}
 
         <div class="d-flex justify-content-end column-gap-2 mt-4">
-            <a href="{% url 'account_list' %}" type="button" class="btn btn-outline-danger">Cancel</a>
+            <a href="{% url 'account' object.id %}" type="button" class="btn btn-outline-danger">Cancel</a>
             <button class="btn btn-primary" type="submit">Update</button>
         </div>
     </form>
