@@ -1,8 +1,9 @@
 document.addEventListener('DOMContentLoaded', function () {
     const currencySelect = document.getElementById('id_currency');
     const accountSelect = document.getElementById('id_account');
-    const defaultCurrencyDiv = document.getElementById('amount_account_currency_field');
-    const amountAccountCurrencyText = document.getElementById('amount_account_currency_text');
+    const defaultCurrencyDiv = document.getElementById('amount_converted_field');
+    const amountAccountCurrencyText = document.getElementById('amount_converted_text');
+    const amount_converted_input = document.getElementById('amount_converted');
 
 
     if (!currencySelect || !defaultCurrencyDiv || !accountSelect) {
@@ -38,8 +39,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (selectedCurrencyId === account['currency_id'].toString()) {
             defaultCurrencyDiv.classList.add('visually-hidden');
+            amount_converted_input.setAttribute("required", "false");
         } else {
             defaultCurrencyDiv.classList.remove('visually-hidden');
+            amount_converted_input.setAttribute("required", "true");
         }
     }
 

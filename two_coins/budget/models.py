@@ -1,6 +1,8 @@
 import random
 
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.db import transaction as db_transaction
 from django.utils import timezone
 
 from misc.models import TimeStampMixin
@@ -96,7 +98,7 @@ class IconChoices:
     )
 
 
-class Styling(models.Model):
+class Style(models.Model):
     color = models.CharField(null=False,
                              blank=True,
                              max_length=7,
@@ -109,11 +111,7 @@ class Styling(models.Model):
                             help_text="Icon name from FontAwesome")
 
     @classmethod
-    def get_default_styling(cls):
-        return Styling.objects.create(color=ColorChoices.COLOR_LIGHT_GREY, icon=IconChoices.ICON_CARD)
-
-    @classmethod
-    def get_or_create_styling(cls, color=None, icon=None):
+    def create_style(cls, color=None, icon=None):
         if not color:
             color = random.choice(ColorChoices.CHOICES)[0]
         if not icon:
@@ -121,7 +119,7 @@ class Styling(models.Model):
 
         return cls.objects.create(color=color, icon=icon)
 
-    def update_styling(self, color=None, icon=None):
+    def update_style(self, color=None, icon=None):
         if color and self.color != color:
             self.color = color
 
@@ -136,8 +134,8 @@ class Currency(models.Model):
     Currencies for an account supports both fiat money and cryptocurrencies.
     """
 
-    CRYPTO = "CX"
-    FIAT = "FM"
+    CRYPTO = "C"
+    FIAT = "F"
     MONEY_TYPES_CHOICES = [
         (FIAT, "Fiat money"),
         (CRYPTO, "Crypto currency"),
@@ -148,10 +146,10 @@ class Currency(models.Model):
                             max_length=30,
                             verbose_name="Currency name",
                             unique=True)
-    ccy_type = models.CharField(max_length=2,
-                                choices=MONEY_TYPES_CHOICES,
-                                default=FIAT,
-                                verbose_name="Currency type")
+    currency_type = models.CharField(max_length=1,
+                                     choices=MONEY_TYPES_CHOICES,
+                                     default=FIAT,
+                                     verbose_name="Currency type")
     symbol = models.CharField(null=False,
                               blank=False,
                               max_length=2,
@@ -166,31 +164,51 @@ class Currency(models.Model):
 
 class Account(TimeStampMixin):
     """
-    Base model representing accounts of the user.
+       Base model representing accounts of the user.
     """
 
-    GENERIC_ACCOUNT = 'g'
+    DEFAULT_ACCOUNT = 'd'
     SAVINGS_ACCOUNT = 's'
 
     ACCOUNT_TYPE_CHOICES = (
-        (GENERIC_ACCOUNT, "Default account"),
+        (DEFAULT_ACCOUNT, "Default account"),
         (SAVINGS_ACCOUNT, "Savings account")
     )
 
-    name = models.CharField(null=False,
-                            blank=False,
-                            max_length=30,
-                            verbose_name="Account name")
     account_type = models.CharField(null=False,
                                     blank=False,
                                     max_length=1,
                                     choices=ACCOUNT_TYPE_CHOICES,
-                                    default=GENERIC_ACCOUNT,
+                                    default=DEFAULT_ACCOUNT,
                                     verbose_name="Account type")
+    name = models.CharField(null=False,
+                            blank=False,
+                            max_length=30,
+                            verbose_name="Account name")
     balance = models.FloatField(null=False,
                                 blank=True,
                                 default=0,
                                 verbose_name="Account balance")
+    style = models.OneToOneField(Style,
+                                 null=False,
+                                 blank=True,
+                                 on_delete=models.DO_NOTHING)
+    profile = models.ForeignKey('profiles.Profile',
+                                null=False,
+                                blank=False,
+                                on_delete=models.CASCADE,
+                                related_name='accounts')
+    currency = models.ForeignKey(Currency,
+                                 null=False,
+                                 blank=False,
+                                 on_delete=models.CASCADE,
+                                 related_name="+")
+    description = models.CharField(null=True,
+                                   blank=True,
+                                   max_length=30,
+                                   verbose_name="Description")
+
+    # Fields for savings account only
     initial_balance = models.FloatField(null=False,
                                         blank=True,
                                         default=0,
@@ -203,25 +221,21 @@ class Account(TimeStampMixin):
                                 blank=True,
                                 default=None,
                                 verbose_name="Deadline date")
-    description = models.CharField(null=True,
-                                   blank=True,
-                                   max_length=30,
-                                   verbose_name="Description")
-    styling = models.OneToOneField(Styling,
-                                   null=False,
-                                   blank=True,
-                                   default=Styling.get_default_styling,
-                                   on_delete=models.DO_NOTHING)
-    profile = models.ForeignKey('profiles.Profile',
-                                null=False,
-                                blank=False,
-                                on_delete=models.CASCADE,
-                                related_name='accounts')
-    currency = models.ForeignKey(Currency,
-                                 null=False,
-                                 blank=False,
-                                 on_delete=models.CASCADE,
-                                 related_name="+")
+
+    def withdraw(self, amount):
+        with db_transaction.atomic():
+            self.balance -= amount
+            self.save()
+
+    def deposit(self, amount):
+        with db_transaction.atomic():
+            self.balance += amount
+            self.save()
+
+    def transfer(self, amount, amount_converted, to_account):
+        with db_transaction.atomic():
+            self.withdraw(amount)
+            to_account.deposit(amount_converted)
 
 
 class Category(TimeStampMixin):
@@ -248,17 +262,17 @@ class Category(TimeStampMixin):
                                      choices=CATEGORY_TYPES_CHOICES,
                                      default=EXPENSE,
                                      verbose_name="Category type")
-    styling = models.OneToOneField(Styling,
-                                   null=False,
-                                   blank=True,
-                                   on_delete=models.DO_NOTHING)
+    style = models.OneToOneField(Style,
+                                 null=False,
+                                 blank=True,
+                                 on_delete=models.DO_NOTHING)
     profile = models.ForeignKey('profiles.Profile',
                                 null=False,
                                 blank=False,
                                 on_delete=models.CASCADE)
 
 
-class Transaction(TimeStampMixin):
+class Transaction(models.Model):
     """
     Model for storing one transaction within an account
     """
@@ -278,12 +292,27 @@ class Transaction(TimeStampMixin):
                                         choices=TRANSACTION_TYPE_CHOICES,
                                         default=EXPENSE,
                                         verbose_name="Transaction type")
+    account = models.ForeignKey(null=False,
+                                blank=False,
+                                to=Account,
+                                on_delete=models.CASCADE,
+                                verbose_name="Account")
+    category = models.ForeignKey(null=False,
+                                 blank=False,
+                                 to=Category,
+                                 on_delete=models.CASCADE,
+                                 verbose_name="Category")
+    currency = models.ForeignKey(Currency,
+                                 null=False,
+                                 blank=False,
+                                 on_delete=models.CASCADE,
+                                 related_name="+")
     amount = models.FloatField(null=False,
                                blank=False,
                                verbose_name="Amount")
-    amount_account_currency = models.FloatField(null=True,
-                                                blank=True,
-                                                verbose_name="Amount in account's currency")
+    amount_converted = models.FloatField(null=True,
+                                         blank=True,
+                                         verbose_name="Amount in account's currency")
     description = models.CharField(null=True,
                                    blank=True,
                                    max_length=50,
@@ -292,29 +321,22 @@ class Transaction(TimeStampMixin):
                                 blank=True,
                                 default=timezone.now,
                                 verbose_name="Date/time")
-    currency = models.ForeignKey(Currency,
-                                 null=False,
-                                 blank=False,
-                                 on_delete=models.CASCADE,
-                                 related_name="+")
-    category = models.ForeignKey(null=False,
-                                 blank=False,
-                                 to=Category,
-                                 on_delete=models.CASCADE,
-                                 verbose_name="Category")
-    account = models.ForeignKey(null=False,
-                                blank=False,
-                                to=Account,
-                                on_delete=models.CASCADE,
-                                verbose_name="Account")
 
     def save(self, *args, **kwargs):
-        self.amount = abs(self.amount) if self.transaction_type == self.INCOME else -abs(self.amount)
+        if self.transaction_type == self.EXPENSE:
+            if self.amount_converted:
+                self.amount_converted = -abs(self.amount_converted)
+            self.amount = -abs(self.amount)
 
-        if self.amount_account_currency:
-            self.amount_default_currency = abs(
-                self.amount_account_currency) if self.transaction_type == self.INCOME else -abs(
-                self.amount_account_currency)
+            if self.account.account_type == Account.SAVINGS_ACCOUNT:
+                check_amount = self.amount_converted if self.amount_converted else self.amount
+
+                if check_amount > self.account.balance:
+                    raise ValueError("Insufficient funds")
+        else:
+            if self.amount_converted:
+                self.amount_converted = abs(self.amount_converted)
+            self.amount = abs(self.amount)
 
         if not self.date:
             self.date = timezone.now()
@@ -322,13 +344,13 @@ class Transaction(TimeStampMixin):
         super(Transaction, self).save(*args, **kwargs)
 
 
-class Transfer(TimeStampMixin):
-    amount = models.FloatField(null=False,
-                               blank=False,
-                               verbose_name="Amount")
+class Transfer(models.Model):
+    amount_from = models.FloatField(null=False,
+                                    blank=False,
+                                    verbose_name="Amount transferring from account")
     amount_to = models.FloatField(null=False,
-                                  blank=False,
-                                  verbose_name="Amount transferring to")
+                                  blank=True,
+                                  verbose_name="Amount transferring to account")
     description = models.CharField(null=True,
                                    blank=True,
                                    max_length=50,
@@ -336,19 +358,14 @@ class Transfer(TimeStampMixin):
     date = models.DateTimeField(null=False,
                                 blank=True,
                                 default=timezone.now,
-                                verbose_name="Transaction date/time")
-    currency = models.ForeignKey(Currency,
-                                 null=False,
-                                 blank=False,
-                                 on_delete=models.CASCADE,
-                                 related_name="+")
-    from_account = models.ForeignKey(Account,
+                                verbose_name="Date/time")
+    account_from = models.ForeignKey(Account,
                                      null=False,
                                      blank=False,
                                      on_delete=models.CASCADE,
                                      related_name="transfers_out",
                                      verbose_name="From Account")
-    to_account = models.ForeignKey(Account,
+    account_to = models.ForeignKey(Account,
                                    null=False,
                                    blank=False,
                                    on_delete=models.CASCADE,
@@ -356,7 +373,12 @@ class Transfer(TimeStampMixin):
                                    verbose_name="To Account")
 
     def save(self, *args, **kwargs):
-        self.amount = abs(self.amount)
-        self.amount_to = abs(self.amount_to)
+        self.amount_from = abs(self.amount_from)
+
+        if self.amount_from > self.account_from.balance:
+            raise ValueError("Insufficient funds")
+
+        if not self.date:
+            self.date = timezone.now()
 
         super(Transfer, self).save(*args, **kwargs)

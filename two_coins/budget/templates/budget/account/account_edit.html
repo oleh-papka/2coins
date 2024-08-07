@@ -30,8 +30,24 @@
                            class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
                         <input type="color" class="form-control form-control-color" id="id_color"
-                               value="{{ object.styling.color }}" name="color"
+                               value="{{ object.style.color }}" name="color"
                                title="Choose your color" style="width: 5rem">
+                    </div>
+                </div>
+            {% elif field.name == 'icon' %}
+                <div class="row mb-3">
+                    <label for="id_icon"
+                           class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
+                               id="id_icon" name="{{ field.name }}"
+                               placeholder="{{ field.label }}" value="{{ object.style.icon }}">
+                        {% if field.help_text %}
+                            <small class="text-muted ms-1">{{ field.help_text }}</small>
+                        {% endif %}
+                        <div class="invalid-feedback">
+                            {{ field.errors.as_text }}
+                        </div>
                     </div>
                 </div>
             {% elif field.name == 'deadline' %}
@@ -56,7 +72,7 @@
                                id="id_balance" placeholder="{{ field.label }}" name="balance" value="{{ field.value }}">
                         <div class="input-group-text bg-body p-1">
                             <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">
-                                {% for curr in currencies %}
+                                {% for curr in currency_list %}
                                     <option value="{{ curr.id }}"
                                             {% if forloop.first or object.currency == curr %}selected{% endif %}>
                                         {% if curr.abbr == curr.symbol %}
@@ -127,7 +143,7 @@
         {% endfor %}
 
         <div class="d-flex justify-content-end column-gap-2 mt-4">
-            <a href="{% url 'account_list' %}" type="button" class="btn btn-outline-danger">Cancel</a>
+            <a href="{% url 'account' object.id %}" type="button" class="btn btn-outline-danger">Cancel</a>
             <button class="btn btn-primary" type="submit">Update</button>
         </div>
     </form>

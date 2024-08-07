@@ -55,7 +55,7 @@
                                id="id_balance" placeholder="{{ field.label }}" name="balance">
                         <div class="input-group-text bg-body p-1">
                             <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">
-                                {% for curr in currencies %}
+                                {% for curr in currency_list %}
                                     <option value="{{ curr.id }}" {% if forloop.first %}selected{% endif %}>
                                         {% if curr.abbr == curr.symbol %}
                                             &nbsp;{{ curr.abbr }}&nbsp;

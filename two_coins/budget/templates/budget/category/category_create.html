@@ -20,6 +20,22 @@
                                title="Choose your color" style="width: 5rem">
                     </div>
                 </div>
+            {% elif field.name == 'icon' %}
+                <div class="row mb-3">
+                    <label for="id_icon"
+                           class="col-sm-3 col-form-label">{{ field.label }}</label>
+                    <div class="col">
+                        <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
+                               id="id_icon" name="{{ field.name }}"
+                               placeholder="{{ field.label }}">
+                        {% if field.help_text %}
+                            <small class="text-muted ms-1">{{ field.help_text }}</small>
+                        {% endif %}
+                        <div class="invalid-feedback">
+                            {{ field.errors.as_text }}
+                        </div>
+                    </div>
+                </div>
             {% elif field.name == 'category_type' %}
                 <div class="row mb-3">
                     <label for="id_category_type" class="col-sm-3 col-form-label">{{ field.label }}</label>

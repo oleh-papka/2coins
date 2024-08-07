@@ -1,6 +1,6 @@
 .hover:hover {
-  transform: scale(105%);
   transition: transform 200ms ease-in-out;
+  border-color: lightsteelblue;
 }
 
 .hover {

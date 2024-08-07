@@ -1,17 +1,19 @@
+import operator
 from collections import defaultdict
-from datetime import datetime
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Sum, F, FloatField
+from django.db import transaction as db_transaction
+from django.db.models import Sum, F, FloatField, Q
 from django.db.models.functions import TruncDate, Coalesce, Cast
+from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView, DeleteView
 
-from misc.models import StylingFormUpdateMixin
+from misc.models import StyleFormUpdateMixin
 from profiles.models import Profile
 from . import forms, models
-from .models import Styling, Transaction
+from .models import Transaction, Style, Transfer
 
 
 def get_template_chart_data(query_data):
@@ -29,23 +31,6 @@ class AccountListView(LoginRequiredMixin, ListView):
     model = models.Account
     template_name = "budget/account/account_list.html"
 
-    def get_context_data(self, **kwargs):
-        data_acct_query = (
-            models.Account.objects
-            .filter(profile__user=self.request.user)
-            .annotate(
-                data=Coalesce(Sum('transaction__amount'), 0.0) + Cast(F('balance'), output_field=FloatField())
-            )
-            .annotate(labels=F('name'))
-            .values('data', 'labels')
-        )
-
-        context = super().get_context_data(**kwargs)
-        context['accounts_list'] = self.object_list
-        context['data_acct'] = get_template_chart_data(data_acct_query)
-
-        return context
-
     def get_queryset(self):
         profile = Profile.objects.get(user=self.request.user)
         return super().get_queryset().filter(profile=profile)
@@ -58,85 +43,66 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        transactions_data = models.Transaction.objects.filter(account=self.object).order_by('-date').annotate(
-            truncated_date=TruncDate('date'))
-        category_ids = models.Category.objects.filter(profile__user=self.request.user).values_list('id', flat=True)
-        categories_data = models.Category.objects.filter(profile__user=self.request.user).filter(id__in=category_ids)
-        transactions = []
 
-        temp_date = transactions_data[0].truncated_date if transactions_data else None
+        transactions_queryset = models.Transaction.objects.filter(account=self.object).order_by(
+            '-date').annotate(truncated_date=TruncDate('date'))
+        transfers_queryset = models.Transfer.objects.filter(
+            Q(account_to=self.object) | Q(account_from=self.object)).order_by(
+            '-date').annotate(truncated_date=TruncDate('date'))
+
+        transfers_list = list(transfers_queryset)
+        transactions_list = list(transactions_queryset)
+
+        combined_list = transactions_list + transfers_list
+
+        combined_list.sort(key=operator.attrgetter('date'), reverse=True)
+
+        combined_actions = []
+
+        if not combined_list:
+            return context
+
+        temp_date = combined_list[0].truncated_date
         temp_total = 0
-        temp_txns = []
+        temp_actions = []
 
-        categories = {}
-        for cat in categories_data:
-            categories[cat] = {
-                "label": cat.name,
-                "data": [0],
-                "backgroundColor": str(cat.styling.color) + '2a',
-                "borderColor": str(cat.styling.color),
-                "borderWidth": 2,
-                "borderRadius": 5,
-            }
+        for action in combined_list:
+            action_type = 'txn' if isinstance(action, models.Transaction) else 'trf'
 
-        for txn in transactions_data:
-            if txn.truncated_date != temp_date:
-                transactions.append({
+            if action.truncated_date != temp_date:
+                combined_actions.append({
                     'date': temp_date,
                     'total': temp_total,
-                    'txns': temp_txns
+                    'txns': temp_actions
                 })
 
-                temp_date = txn.truncated_date
+                temp_date = action.truncated_date
                 temp_total = 0
-                temp_txns = [txn]
+                temp_actions = [{"action_type": action_type,
+                                 "action": action}]
+            else:
+                temp_actions.append({"action_type": action_type,
+                                     "action": action})
 
-                for cat, data in categories.items():
-                    if cat == txn.category:
-                        data['data'].append(txn.amount_account_currency if txn.amount_account_currency else txn.amount)
+            if action_type == 'txn':
+                amount = action.amount_converted if action.amount_converted else action.amount
+                temp_total += amount
+            else:
+                if action.account_from == self.object:
+                    temp_total -= action.amount_from
+                elif action.account_to == self.object:
+                    if action.amount_to:
+                        temp_total += action.amount_to
                     else:
-                        data['data'].append(0)
-            else:
-                temp_txns.append(txn)
-
-                for cat, data in categories.items():
-                    if cat == txn.category:
-                        data['data'][-1] += txn.amount_account_currency if txn.amount_account_currency else txn.amount
-
-            if txn.amount_account_currency:
-                amount = txn.amount_account_currency
-            else:
-                amount = txn.amount
-
-            temp_total += amount
-
+                        temp_total += action.amount_from
         else:
-            if transactions_data:
-                transactions.append({
-                    'date': temp_date,
-                    'total': temp_total,
-                    'txns': temp_txns
-                })
+            combined_actions.append({
+                'date': temp_date,
+                'total': temp_total,
+                'actions': temp_actions
+            })
 
-        data_acct_query = (
-            models.Category.objects
-            .filter(profile__user=self.request.user)
-            .filter(transaction__account=self.object)
-            .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
-            .annotate(labels=F('name'))
-            .values('data', 'labels')
-        )
-
-        for i in categories.values():
-            i["data"] = i["data"][::-1]
-
-        context["data_txn"] = {
-            "labels": [i['date'].strftime("%d/%m") for i in transactions][::-1],
-            "datasets": [i for i in categories.values()]
-        }
-
-        context['data_acct'] = get_template_chart_data(data_acct_query)
-        context["transactions"] = transactions
+        context["combined_actions"] = combined_actions
 
         return context
 
@@ -151,32 +117,29 @@ class AccountCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         account = form.save(commit=False)
         account.profile = Profile.objects.get(user=self.request.user)
-        account.styling = Styling.get_or_create_styling(color=form.cleaned_data.get('color'),
-                                                        icon=form.cleaned_data.get('icon'))
+        account.style = Style.create_style(color=form.cleaned_data.get('color'),
+                                           icon=form.cleaned_data.get('icon'))
 
         if not account.initial_balance:
             account.initial_balance = account.balance
 
         account.save()
-
-        account_name = form.cleaned_data.get('name')
-        messages.success(self.request, f"Account '{account_name}' created!")
+        messages.success(self.request, f"Account '{account.name}' created!")
 
         return super().form_valid(form)
 
     def form_invalid(self, form):
         messages.warning(self.request, "Something went wrong!")
+        print(form.errors)
         return super().form_invalid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['currencies'] = models.Currency.objects.all()
-        context['profile'] = Profile.objects.get(user=self.request.user)
-
+        context['currency_list'] = models.Currency.objects.all()
         return context
 
 
-class AccountUpdateView(LoginRequiredMixin, StylingFormUpdateMixin):
+class AccountUpdateView(LoginRequiredMixin, StyleFormUpdateMixin):
     login_url = reverse_lazy('login')
     model = models.Account
     form_class = forms.AccountForm
@@ -189,8 +152,7 @@ class AccountUpdateView(LoginRequiredMixin, StylingFormUpdateMixin):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['currencies'] = models.Currency.objects.all()
-
+        context['currency_list'] = models.Currency.objects.all()
         return context
 
 
@@ -201,8 +163,14 @@ class AccountDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('account_list')
 
     def form_valid(self, form):
+        success_url = self.get_success_url()
+        style = self.object.style
+
+        self.object.delete()
+        style.delete()
+
         messages.success(self.request, f"Account '{self.object.name}' deleted!")
-        return super().form_valid(form)
+        return HttpResponseRedirect(success_url)
 
 
 # Categories
@@ -212,29 +180,6 @@ class CategoryList(LoginRequiredMixin, ListView):
     model = models.Category
     context_object_name = 'category_list'
     template_name = "budget/category/category_list.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        income_data = (
-            models.Category.objects
-            .filter(profile__user=self.request.user, category_type=models.Category.INCOME)
-            .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
-            .annotate(labels=F('name'))
-            .values('data', 'labels')
-        )
-        expense_data = (
-            models.Category.objects
-            .filter(profile__user=self.request.user, category_type=models.Category.EXPENSE)
-            .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
-            .annotate(labels=F('name'))
-            .values('data', 'labels')
-        )
-
-        context['data_income'] = get_template_chart_data(income_data)
-        context['data_expense'] = get_template_chart_data(expense_data)
-
-        return context
 
     def get_queryset(self):
         profile = Profile.objects.get(user=self.request.user)
@@ -285,19 +230,17 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
         initial = super().get_initial()
 
         if category_type := self.request.GET.get('category_type'):
-            initial['category_type'] = '-' if category_type == 'expense' else '+'
+            initial['category_type'] = '-' if category_type == '-' else '+'
 
         return initial
 
     def form_valid(self, form):
         category = form.save(commit=False)
         category.profile = Profile.objects.get(user=self.request.user)
-        category.styling = Styling.get_or_create_styling(color=form.cleaned_data.get('color'),
-                                                         icon=form.cleaned_data.get('icon'))
+        category.style = Style.create_style(color=form.cleaned_data.get('color'),
+                                            icon=form.cleaned_data.get('icon'))
         category.save()
-
-        category_name = form.cleaned_data.get('name')
-        messages.success(self.request, f"Category '{category_name}' created!")
+        messages.success(self.request, f"Category '{category.name}' created!")
 
         return super().form_valid(form)
 
@@ -306,7 +249,7 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
         return super().form_invalid(form)
 
 
-class CategoryUpdateView(LoginRequiredMixin, StylingFormUpdateMixin):
+class CategoryUpdateView(LoginRequiredMixin, StyleFormUpdateMixin):
     login_url = reverse_lazy('login')
     model = models.Category
     form_class = forms.CategoryForm
@@ -325,8 +268,14 @@ class CategoryDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('category_list')
 
     def form_valid(self, form):
+        success_url = self.get_success_url()
+        style = self.object.style
+
+        self.object.delete()
+        style.delete()
+
         messages.success(self.request, f"Category '{self.object.name}' deleted!")
-        return super().form_valid(form)
+        return HttpResponseRedirect(success_url)
 
 
 # Transactions
@@ -337,74 +286,61 @@ class TransactionList(LoginRequiredMixin, ListView):
     template_name = "budget/transaction/transaction_list.html"
 
     def get_context_data(self, **kwargs):
+        user = self.request.user
         context = super().get_context_data(**kwargs)
-        transactions_data = models.Transaction.objects.filter(account__profile__user=self.request.user).order_by(
+
+        transactions_queryset = models.Transaction.objects.filter(account__profile__user=user).order_by(
             '-date').annotate(truncated_date=TruncDate('date'))
-        category_ids = models.Transaction.objects.filter(account__profile__user=self.request.user).values_list(
-            'category', flat=True).distinct()
-        categories_data = models.Category.objects.filter(profile__user=self.request.user).filter(id__in=category_ids)
-        transactions = []
+        transfers_queryset = models.Transfer.objects.filter(account_from__profile__user=user).order_by(
+            '-date').annotate(truncated_date=TruncDate('date'))
 
-        temp_date = transactions_data[0].truncated_date if transactions_data else datetime.now()
+        total_none_flag = True if len(transactions_queryset.values('currency')) > 2 else False
+
+        transfers_list = list(transfers_queryset)
+        transactions_list = list(transactions_queryset)
+
+        combined_list = transactions_list + transfers_list
+
+        combined_list.sort(key=operator.attrgetter('date'), reverse=True)
+
+        combined_actions = []
+
+        if not combined_list:
+            return context
+
+        temp_date = combined_list[0].truncated_date
         temp_total = 0
-        temp_txns = []
+        temp_actions = []
 
-        categories = {}
-        for cat in categories_data:
-            categories[cat] = {
-                "label": cat.name,
-                "data": [0],
-                "backgroundColor": str(cat.styling.color) + '2a',
-                "borderColor": str(cat.styling.color),
-                "borderWidth": 2,
-                "borderRadius": 5,
-            }
+        for action in combined_list:
+            action_type = 'txn' if isinstance(action, models.Transaction) else 'trf'
 
-        for txn in transactions_data:
-            if txn.truncated_date != temp_date:
-                transactions.append({
+            if action.truncated_date != temp_date:
+                combined_actions.append({
                     'date': temp_date,
-                    'total': temp_total,
-                    'txns': temp_txns
+                    'total': None if total_none_flag else temp_total,
+                    'actions': temp_actions
                 })
 
-                temp_date = txn.truncated_date
+                temp_date = action.truncated_date
                 temp_total = 0
-                temp_txns = [txn]
-
-                for cat, data in categories.items():
-                    if cat == txn.category:
-                        data['data'].append(txn.amount_account_currency if txn.amount_account_currency else txn.amount)
-                    else:
-                        data['data'].append(0)
+                temp_actions = [{"action_type": action_type,
+                                 "action": action}]
             else:
-                temp_txns.append(txn)
+                temp_actions.append({"action_type": action_type,
+                                     "action": action})
 
-                for cat, data in categories.items():
-                    if cat == txn.category:
-                        data['data'][-1] += txn.amount_account_currency if txn.amount_account_currency else txn.amount
-
-            if txn.amount_account_currency:
-                amount = txn.amount_account_currency
-            else:
-                amount = txn.amount
-
-            temp_total += amount
+            if action_type == 'txn':
+                amount = action.amount_converted if action.amount_converted else action.amount
+                temp_total += amount
         else:
-            transactions.append({
+            combined_actions.append({
                 'date': temp_date,
-                'total': temp_total,
-                'txns': temp_txns
+                'total': None if total_none_flag else temp_total,
+                'actions': temp_actions
             })
 
-        for i in categories.values():
-            i["data"] = i["data"][::-1]
-
-        context["data_txn"] = {
-            "labels": [i['date'].strftime("%d/%m") for i in transactions][::-1],
-            "datasets": [i for i in categories.values()]
-        }
-        context["transactions"] = transactions
+        context["combined_actions"] = combined_actions
 
         return context
 
@@ -420,23 +356,36 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
     template_name = 'budget/transaction/transaction_create.html'
     success_url = reverse_lazy('transaction_list')
 
-    def get_initial(self):
-        initial = super().get_initial()
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
 
-        if cat_id := self.request.GET.get('category'):
-            cat = models.Category.objects.get(id=cat_id)
-            initial['category'] = cat.name
+        context['category_list'] = models.Category.objects.filter(profile__user=self.request.user).all()
 
-        if acct_id := self.request.GET.get('account'):
-            acct = models.Account.objects.get(id=acct_id)
-            initial['account'] = acct.name
+        if category_id := self.request.GET.get('category'):
+            category = models.Category.objects.get(id=category_id)
+            context['category'] = category
+            context[
+                'transaction_type'] = models.Transaction.INCOME if category.category_type == models.Category.INCOME else models.Transaction.EXPENSE
 
-        return initial
+        if account_id := self.request.GET.get('account'):
+            account = models.Account.objects.get(id=account_id)
+            context['account'] = account
+            context['currency'] = account.currency
+
+        context['profile'] = Profile.objects.get(user=self.request.user)
+        context['account_list'] = list(models.Account.objects.filter(
+            profile__user=self.request.user).all().values('id', 'name', 'currency_id',
+                                                          'currency__abbr',
+                                                          'currency__symbol'))  # to pass values to JS
+        context['currency_list'] = models.Currency.objects.all()
+        context['transaction_type_list'] = models.Transaction.TRANSACTION_TYPE_CHOICES
+
+        return context
 
     def form_valid(self, form):
         account = form.cleaned_data.get('account')
         amount = form.cleaned_data.get('amount') if account.currency == form.cleaned_data.get(
-            'currency') else form.cleaned_data.get('amount_account_currency')
+            'currency') else form.cleaned_data.get('amount_converted')
 
         account.balance += abs(amount) if form.cleaned_data.get('transaction_type') == Transaction.INCOME else -abs(
             amount)
@@ -451,33 +400,6 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
         messages.warning(self.request, "Something went wrong!")
         return super().form_invalid(form)
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        if cat_id := self.request.GET.get('category'):
-            cat = models.Category.objects.get(id=cat_id)
-            context['category'] = cat
-        else:
-            context['categories'] = [(cat.id, cat.name) for cat in
-                                     models.Category.objects.filter(profile__user=self.request.user).all() if
-                                     cat.category_type in models.Category.CATEGORY_TYPES]
-
-        if acct_id := self.request.GET.get('account'):
-            acct = models.Account.objects.get(id=acct_id)
-            context['account'] = acct
-            current_account_currency = acct.currency
-            context['currency'] = current_account_currency
-
-        context['accounts'] = list(models.Account.objects.filter(
-            profile__user=self.request.user).all().values('id', 'name', 'currency_id',
-                                                          'currency__abbr', 'currency__symbol'))
-
-        context['currencies'] = models.Currency.objects.all()
-        context['profile'] = Profile.objects.get(user=self.request.user)
-        context['transaction_type'] = models.Transaction.TRANSACTION_TYPE_CHOICES
-
-        return context
-
 
 class TransactionUpdateView(LoginRequiredMixin, UpdateView):
     login_url = reverse_lazy('login')
@@ -490,8 +412,8 @@ class TransactionUpdateView(LoginRequiredMixin, UpdateView):
         initial = super().get_initial()
 
         initial['amount'] = abs(self.object.amount)
-        if self.object.amount_account_currency:
-            initial['amount_account_currency'] = abs(self.object.amount_account_currency)
+        if self.object.amount_converted:
+            initial['amount_converted'] = abs(self.object.amount_converted)
 
         return initial
 
@@ -500,7 +422,7 @@ class TransactionUpdateView(LoginRequiredMixin, UpdateView):
         new_transaction = form.instance
 
         # Reverting account balance
-        prev_transaction_amount = abs(prev_transaction.amount_account_currency or prev_transaction.amount)
+        prev_transaction_amount = abs(prev_transaction.amount_converted or prev_transaction.amount)
         if prev_transaction.transaction_type == Transaction.EXPENSE:
             prev_transaction.account.balance += prev_transaction_amount
         else:
@@ -509,7 +431,7 @@ class TransactionUpdateView(LoginRequiredMixin, UpdateView):
 
         # Updating account balance
         new_transaction.account.refresh_from_db()
-        new_transaction_amount = abs(new_transaction.amount_account_currency or new_transaction.amount)
+        new_transaction_amount = abs(new_transaction.amount_converted or new_transaction.amount)
         if new_transaction.transaction_type == Transaction.INCOME:
             new_transaction.account.balance += new_transaction_amount
         else:
@@ -529,15 +451,15 @@ class TransactionUpdateView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context['categories'] = [(cat.id, cat.name) for cat in
-                                 models.Category.objects.filter(profile__user=self.request.user).all()]
-        context['accounts'] = list(models.Account.objects.filter(
+        context['category_list'] = models.Category.objects.filter(profile__user=self.request.user).all()
+        context['account_list'] = list(models.Account.objects.filter(
             profile__user=self.request.user).all().values('id', 'name', 'currency_id',
-                                                          'currency__abbr', 'currency__symbol'))
+                                                          'currency__abbr',
+                                                          'currency__symbol'))  # to pass values to JS
 
-        context['currencies'] = models.Currency.objects.all()
         context['profile'] = Profile.objects.get(user=self.request.user)
-        context['transaction_type'] = models.Transaction.TRANSACTION_TYPE_CHOICES
+        context['currency_list'] = models.Currency.objects.all()
+        context['transaction_type_list'] = models.Transaction.TRANSACTION_TYPE_CHOICES
 
         return context
 
@@ -552,7 +474,7 @@ class TransactionDeleteView(LoginRequiredMixin, DeleteView):
         transaction = self.get_object()
 
         # Reverting account balance
-        transaction_amount = abs(transaction.amount_account_currency or transaction.amount)
+        transaction_amount = abs(transaction.amount_converted or transaction.amount)
         if transaction.transaction_type == Transaction.EXPENSE:
             transaction.account.balance += transaction_amount
         else:
@@ -560,6 +482,153 @@ class TransactionDeleteView(LoginRequiredMixin, DeleteView):
         transaction.account.save()
 
         messages.success(self.request, f"Transaction '{self.object.amount}' deleted!")
+        messages.info(self.request,
+                      f'Updated balance of account!\nYour new balance is {transaction.account.balance}')
+
+        return super().form_valid(form)
+
+
+# Transfers
+
+class TransferCreateView(LoginRequiredMixin, CreateView):
+    login_url = reverse_lazy('login')
+    model = models.Transfer
+    form_class = forms.TransferForm
+    template_name = 'budget/transfer/transfer_create.html'
+    success_url = reverse_lazy('transaction_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        if account_id := self.request.GET.get('account'):
+            context['account_from'] = models.Account.objects.get(id=account_id)
+
+        context['account_list'] = list(models.Account.objects.filter(
+            profile__user=self.request.user).all().values('id', 'name', 'currency_id',
+                                                          'currency__abbr', 'currency__symbol'))
+
+        context['currency_list'] = models.Currency.objects.all()
+        context['profile'] = Profile.objects.get(user=self.request.user)
+
+        return context
+
+    def form_valid(self, form):
+        account_from = form.cleaned_data.get('account_from')
+        account_to = form.cleaned_data.get('account_to')
+        amount_from = form.cleaned_data.get('amount_from')
+        amount_to = form.cleaned_data.get('amount_to') or amount_from
+
+        with db_transaction.atomic():
+            self.object = form.save()
+
+            account_from.balance -= amount_from
+            account_from.save()
+
+            account_to.balance += amount_to
+            account_to.save()
+
+            messages.success(self.request, f"Transfer '{account_from.name}->{account_to.name}' done!")
+            messages.info(self.request,
+                          f"Updated balance of '{account_from.name}' account!\nYour new balance is {account_from.balance}")
+
+            messages.info(self.request,
+                          f"Updated balance of '{account_to.name}' account!\nYour new balance is {account_to.balance}")
+
+        return HttpResponseRedirect(self.get_success_url())
+
+    def form_invalid(self, form):
+        messages.warning(self.request, "Something went wrong!")
+        return super().form_invalid(form)
+
+
+class TransferUpdateView(LoginRequiredMixin, UpdateView):
+    login_url = reverse_lazy('login')
+    model = models.Transfer
+    form_class = forms.TransferForm
+    template_name = 'budget/transfer/transfer_edit.html'
+    success_url = reverse_lazy('transaction_list')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        if account_id := self.request.GET.get('account'):
+            context['account_from'] = models.Account.objects.get(id=account_id)
+
+        context['account_list'] = list(models.Account.objects.filter(
+            profile__user=self.request.user).all().values('id', 'name', 'currency_id',
+                                                          'currency__abbr', 'currency__symbol'))
+
+        context['currency_list'] = models.Currency.objects.all()
+        context['profile'] = Profile.objects.get(user=self.request.user)
+
+        return context
+
+    def form_valid(self, form):
+        prev_transfer = Transfer.objects.get(pk=form.instance.pk)
+        new_transfer = form.instance
+
+        # Reverting account balance
+        amount_to = prev_transfer.amount_to if prev_transfer.amount_to else prev_transfer.amount_from
+        prev_transfer.account_from.balance += prev_transfer.amount_from
+        prev_transfer.account_to.balance -= amount_to
+
+        prev_transfer.account_from.save()
+        prev_transfer.account_to.save()
+
+        account_from = form.cleaned_data.get('account_from')
+        account_to = form.cleaned_data.get('account_to')
+        amount_from = form.cleaned_data.get('amount_from')
+        amount_to = form.cleaned_data.get('amount_to') or amount_from
+
+        # Updating account balance
+        new_transfer.account_from.refresh_from_db()
+        new_transfer.account_to.refresh_from_db()
+
+        with db_transaction.atomic():
+            new_transfer.account_from.balance -= amount_from
+            new_transfer.account_from.save()
+
+            new_transfer.account_to.balance += amount_to
+            new_transfer.account_to.save()
+
+            messages.success(self.request, f"Transfer '{account_from.name}->{account_to.name}' updated!")
+            messages.info(self.request,
+                          f"Updated balance of '{account_from.name}' account!\nYour new balance is {account_from.balance}")
+
+            messages.info(self.request,
+                          f"Updated balance of '{account_to.name}' account!\nYour new balance is {account_to.balance}")
+
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        messages.warning(self.request, "Something went wrong!")
+        return super().form_invalid(form)
+
+
+class TransferDeleteView(LoginRequiredMixin, DeleteView):
+    login_url = reverse_lazy('login')
+    model = models.Transfer
+    template_name = 'budget/transfer/transfer_delete.html'
+    success_url = reverse_lazy('transaction_list')
+
+    def form_valid(self, form):
+        transfer = self.get_object()
+
+        # Reverting account balance
+        amount_to = transfer.amount_to if transfer.amount_to else transfer.amount_from
+        transfer.account_from.balance += transfer.amount_from
+        transfer.account_to.balance -= amount_to
+
+        transfer.account_from.save()
+        transfer.account_to.save()
+
+        messages.success(self.request, f"Transfer deleted!")
+        messages.info(self.request,
+                      f"Updated balance of '{transfer.account_from.name}' account!\nYour new balance is {transfer.account_from.balance}")
+
+        messages.info(self.request,
+                      f"Updated balance of '{transfer.account_to.name}' account!\nYour new balance is {transfer.account_to.balance}")
+
         return super().form_valid(form)
 
 

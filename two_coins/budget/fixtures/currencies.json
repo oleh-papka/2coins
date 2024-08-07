@@ -4,7 +4,7 @@
     "pk": 1,
     "fields": {
       "name": "US Dollar",
-      "ccy_type": "FM",
+      "currency_type": "F",
       "symbol": "$",
       "abbr": "USD"
     }
@@ -14,7 +14,7 @@
     "pk": 2,
     "fields": {
       "name": "Euro",
-      "ccy_type": "FM",
+      "currency_type": "F",
       "symbol": "€",
       "abbr": "EUR"
     }
@@ -24,7 +24,7 @@
     "pk": 3,
     "fields": {
       "name": "Japanese yen",
-      "ccy_type": "FM",
+      "currency_type": "F",
       "symbol": "¥",
       "abbr": "JPY"
     }
@@ -34,7 +34,7 @@
     "pk": 4,
     "fields": {
       "name": "Pound sterling",
-      "ccy_type": "FM",
+      "currency_type": "F",
       "symbol": "£",
       "abbr": "GBP"
     }
@@ -44,7 +44,7 @@
     "pk": 5,
     "fields": {
       "name": "Złoty",
-      "ccy_type": "FM",
+      "currency_type": "F",
       "symbol": "zł",
       "abbr": "PLN"
     }
@@ -54,7 +54,7 @@
     "pk": 6,
     "fields": {
       "name": "Australian dollar",
-      "ccy_type": "FM",
+      "currency_type": "F",
       "symbol": "A$",
       "abbr": "AUD"
     }
@@ -64,7 +64,7 @@
     "pk": 7,
     "fields": {
       "name": "Canadian dollar",
-      "ccy_type": "FM",
+      "currency_type": "F",
       "symbol": "C$",
       "abbr": "CUD"
     }
@@ -74,7 +74,7 @@
     "pk": 8,
     "fields": {
       "name": "Ukrainian hryvnia",
-      "ccy_type": "FM",
+      "currency_type": "F",
       "symbol": "₴",
       "abbr": "UAH"
     }
@@ -84,7 +84,7 @@
     "pk": 9,
     "fields": {
       "name": "Bitcoin",
-      "ccy_type": "CX",
+      "currency_type": "C",
       "symbol": "BTC",
       "abbr": "BTC"
     }
@@ -94,7 +94,7 @@
     "pk": 10,
     "fields": {
       "name": "Ethereum",
-      "ccy_type": "CX",
+      "currency_type": "C",
       "symbol": "ETH",
       "abbr": "ETH"
     }
@@ -104,7 +104,7 @@
     "pk": 11,
     "fields": {
       "name": "Tether",
-      "ccy_type": "CX",
+      "currency_type": "C",
       "symbol": "USDT",
       "abbr": "USDT"
     }
@@ -114,7 +114,7 @@
     "pk": 12,
     "fields": {
       "name": "Binance Coin",
-      "ccy_type": "CX",
+      "currency_type": "C",
       "symbol": "BNB",
       "abbr": "BNB"
     }
@@ -124,7 +124,7 @@
     "pk": 13,
     "fields": {
       "name": "Solana",
-      "ccy_type": "CX",
+      "currency_type": "C",
       "symbol": "SOL",
       "abbr": "SOL"
     }
@@ -134,7 +134,7 @@
     "pk": 14,
     "fields": {
       "name": "XRP",
-      "ccy_type": "CX",
+      "currency_type": "C",
       "symbol": "XRP",
       "abbr": "XRP"
     }
@@ -144,7 +144,7 @@
     "pk": 15,
     "fields": {
       "name": "U.S. Dollar Coin",
-      "ccy_type": "CX",
+      "currency_type": "C",
       "symbol": "USDC",
       "abbr": "USDC"
     }

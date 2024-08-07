@@ -16,7 +16,7 @@ class TimeStampMixin(models.Model):
         abstract = True
 
 
-class StylingFormUpdateMixin(UpdateView):
+class StyleFormUpdateMixin(UpdateView):
     model_verbose_name = ''
 
     def form_valid(self, form: BaseModelForm):
@@ -24,7 +24,7 @@ class StylingFormUpdateMixin(UpdateView):
 
         color_updated = form.cleaned_data.get('color')
         icon_updated = form.cleaned_data.get('icon')
-        instance.styling.update_styling(color=color_updated, icon=icon_updated)
+        instance.style.update_style(color=color_updated, icon=icon_updated)
 
         instance.save()
 

@@ -16,7 +16,7 @@
                            class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
                         <input type="color" class="form-control form-control-color" id="id_color"
-                               value="{{ object.styling.color }}" name="color"
+                               value="{{ object.style.color }}" name="color"
                                title="Choose your color" style="width: 5rem">
                     </div>
                 </div>
@@ -26,8 +26,8 @@
                            class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
                         <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
-                               id="id-{{ field.name }}" name="{{ field.name }}"
-                               placeholder="{{ field.label }}" value="{{ object.styling.icon }}">
+                               id="id_icon" name="{{ field.name }}" value="{{ object.style.icon }}"
+                               placeholder="{{ field.label }}">
                         {% if field.help_text %}
                             <small class="text-muted ms-1">{{ field.help_text }}</small>
                         {% endif %}
@@ -69,7 +69,7 @@
         {% endfor %}
 
         <div class="d-flex justify-content-end column-gap-2 mt-4">
-            <a href="{% url 'category_list' %}" type="button" class="btn btn-outline-danger">Cancel</a>
+            <a href="{% url 'category' object.id %}" type="button" class="btn btn-outline-danger">Cancel</a>
             <button class="btn btn-primary" type="submit">Update</button>
         </div>
     </form>

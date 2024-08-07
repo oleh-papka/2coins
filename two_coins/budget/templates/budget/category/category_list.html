@@ -15,15 +15,15 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="pills-expenses-tab" data-bs-toggle="pill"
                                 data-bs-target="#pills-expenses"
-                                type="button" role="tab" aria-controls="pills-expenses" aria-selected="true"
-                                onclick="showExpense()">Expenses
+                                type="button" role="tab" aria-controls="pills-expenses" aria-selected="true">
+                            Expenses
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="pills-income-tab" data-bs-toggle="pill"
                                 data-bs-target="#pills-income"
-                                type="button" role="tab" aria-controls="pills-income" aria-selected="false"
-                                onclick="showIncome()">Income
+                                type="button" role="tab" aria-controls="pills-income" aria-selected="false">
+                            Income
                         </button>
                     </li>
                 </ul>
@@ -44,10 +44,10 @@
                                                    class="text-reset">
                                                     <h5 class="card-title mb-0 me-2 d-flex align-items-center">
                                                         <div class="d-flex justify-content-center align-items-center rounded-3 me-2"
-                                                             style="width: 2.5rem; height: 2.5rem; background-color: {{ object.styling.color }}2a">
-                                                            {% if object.styling.icon %}
-                                                                <i class="{{ object.styling.icon }}"
-                                                                   style="color: {{ object.styling.color }}"></i>
+                                                             style="width: 2.5rem; height: 2.5rem; background-color: {{ object.style.color }}2a">
+                                                            {% if object.style.icon %}
+                                                                <i class="{{ object.style.icon }}"
+                                                                   style="color: {{ object.style.color }}"></i>
                                                             {% endif %}
                                                         </div>
                                                         {{ object.name|truncatechars:12 }}
@@ -67,7 +67,7 @@
                             <div class="card rounded-2 border-2 bg-body-secondary bg-opacity-25 hover"
                                  style="width: 14rem; height: 7.6rem">
                                 <div class="card-body d-flex justify-content-center align-items-center">
-                                    <a href="{% url 'category_add' %}?category_type=expense" class="stretched-link">
+                                    <a href="{% url 'category_add' %}?category_type=-" class="stretched-link">
                                         <i class="fa-solid fa-plus fa-2xl text-secondary"></i>
                                     </a>
                                 </div>
@@ -90,10 +90,10 @@
                                                    class="text-reset">
                                                     <h5 class="card-title mb-0 me-2 d-flex align-items-center">
                                                         <div class="d-flex justify-content-center align-items-center rounded-3 me-2"
-                                                             style="width: 2.5rem; height: 2.5rem; background-color: {{ object.styling.color }}2a">
-                                                            {% if object.styling.icon %}
-                                                                <i class="{{ object.styling.icon }}"
-                                                                   style="color: {{ object.styling.color }}"></i>
+                                                             style="width: 2.5rem; height: 2.5rem; background-color: {{ object.style.color }}2a">
+                                                            {% if object.style.icon %}
+                                                                <i class="{{ object.style.icon }}"
+                                                                   style="color: {{ object.style.color }}"></i>
                                                             {% endif %}
                                                         </div>
                                                         {{ object.name|truncatechars:12 }}
@@ -111,7 +111,7 @@
                             <div class="card rounded-2 border-2 bg-body-secondary bg-opacity-25 hover"
                                  style="width: 14rem; height: 7.6rem">
                                 <div class="card-body d-flex justify-content-center align-items-center">
-                                    <a href="{% url 'category_add' %}?category_type=income" class="stretched-link">
+                                    <a href="{% url 'category_add' %}?category_type=+" class="stretched-link">
                                         <i class="fa-solid fa-plus fa-2xl text-secondary"></i>
                                     </a>
                                 </div>
@@ -121,79 +121,6 @@
 
                 </div>
             </div>
-
-            <div class="d-flex h-100 col">
-                <div class="m-4 w-100 d-flex justify-content-center" style="max-height: 400px;">
-                    <canvas id="expense_chart"></canvas>
-                    <canvas id="income_chart" class="visually-hidden"></canvas>
-                </div>
-            </div>
         </div>
     </div>
-{% endblock %}
-
-{% block custom_scripts %}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <script>
-        const ctx1 = document.getElementById('expense_chart').getContext('2d');
-
-        const doughnutChart1 = new Chart(ctx1, {
-            type: 'doughnut',
-            data: {
-                labels: {{ data_expense.labels|safe }},
-                datasets: [{
-                    label: 'Balance',
-                    data: {{ data_expense.data|safe }},
-                    backgroundColor: {{ data_expense.colors|safe }},
-                    hoverOffset: 4,
-                }]
-            },
-            options: {
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: "bottom",
-                        align: "center"
-                    }
-                }
-            }
-        });
-
-        const ctx2 = document.getElementById('income_chart').getContext('2d');
-
-        const doughnutChart2 = new Chart(ctx2, {
-            type: 'doughnut',
-            data: {
-                labels: {{ data_income.labels|safe }},
-                datasets: [{
-                    label: 'Balance',
-                    data: {{ data_income.data|safe }},
-                    backgroundColor: {{ data_income.colors|safe }},
-                    hoverOffset: 4,
-                }]
-            },
-            options: {
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: "bottom",
-                        align: "center"
-                    }
-                }
-            }
-        });
-
-        
-
-        function showIncome() {
-            document.getElementById("expense_chart").classList.add("visually-hidden");
-            document.getElementById("income_chart").classList.remove("visually-hidden");
-        }
-
-        function showExpense() {
-            document.getElementById("income_chart").classList.add("visually-hidden");
-            document.getElementById("expense_chart").classList.remove("visually-hidden");
-        }
-    </script>
 {% endblock %}

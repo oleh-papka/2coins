@@ -1,4 +1,5 @@
 from django.urls import path
+
 from . import views
 
 urlpatterns = [
@@ -18,6 +19,11 @@ urlpatterns = [
     path('category/<int:pk>/', views.CategoryDetailView.as_view(), name='category'),
     path('category/<int:pk>/edit/', views.CategoryUpdateView.as_view(), name='category_edit'),
     path('category/<int:pk>/delete/', views.CategoryDeleteView.as_view(), name='category_delete'),
+
+    # Transfers
+    path('transfer/add/', views.TransferCreateView.as_view(), name='transfer_add'),
+    path('transfer/<int:pk>/edit/', views.TransferUpdateView.as_view(), name='transfer_edit'),
+    path('transfer/<int:pk>/delete/', views.TransferDeleteView.as_view(), name='transfer_delete'),
 
     # Transactions
     path('transaction/', views.TransactionList.as_view(), name='transaction_list'),

@@ -12,11 +12,11 @@
                style="text-decoration: none;"
                class="text-reset">
                 <h5 class="card-title mb-0 d-flex align-items-center">
-                    <div class="d-flex justify-content-center align-items-center rounded-3 me-2"
-                         style="width: 2.5rem; height: 2.5rem; background-color: {{ category.styling.color }}2a">
-                        {% if category.styling.icon %}
-                            <i class="{{ category.styling.icon }}"
-                               style="color: {{ category.styling.color }}"></i>
+                    <div class="d-flex justify-content-center align-items-center rounded-3 me-3"
+                         style="width: 2.5rem; height: 2.5rem; background-color: {{ category.style.color }}2a">
+                        {% if category.style.icon %}
+                            <i class="{{ category.style.icon }}"
+                               style="color: {{ category.style.color }}"></i>
                         {% endif %}
                     </div>
                     {{ category.name }} transaction:
@@ -27,11 +27,11 @@
                style="text-decoration: none;"
                class="text-reset">
                 <h5 class="card-title mb-0 d-flex align-items-center">
-                    <div class="d-flex justify-content-center align-items-center rounded-3 me-2"
-                         style="width: 2.5rem; height: 2.5rem; background-color: {{ account.color }}2a">
-                        {% if account.styling.icon %}
-                            <i class="{{ account.styling.icon }}"
-                               style="color: {{ account.styling.color }}"></i>
+                    <div class="d-flex justify-content-center align-items-center rounded-3 me-3"
+                         style="width: 2.5rem; height: 2.5rem; background-color: {{ account.style.color }}2a">
+                        {% if account.style.icon %}
+                            <i class="{{ account.style.icon }}"
+                               style="color: {{ account.style.color }}"></i>
                         {% endif %}
                     </div>
                     {{ account.name }} transaction:
@@ -51,8 +51,8 @@
                    class="col-sm-3 col-form-label">{{ form.transaction_type.label }}</label>
             <div class="col">
                 <select class="form-select" id="id_transaction_type" aria-label="transaction_type select"
-                        name="transaction_type" onchange="updateTransactionType()">
-                    {% for opt in transaction_type %}
+                        name="transaction_type" onchange="updateTransactionType();">
+                    {% for opt in transaction_type_list %}
                         <option value="{{ opt.0 }}"
                                 {% if form.transaction_type.value == opt.0 or forloop.first %}selected{% endif %}>{{ opt.1 }}</option>
                     {% endfor %}
@@ -65,9 +65,9 @@
             <label for="id_category" class="col-sm-3 col-form-label">{{ form.category.label }}</label>
             <div class="col">
                 <select class="form-select" id="id_category" aria-label="category select" name="category">
-                    {% for cat in categories %}
-                        <option value="{{ cat.0 }}"
-                                {% if form.category.value == category.id or forloop.first %}selected{% endif %}>{{ cat.1 }}</option>
+                    {% for cat in category_list %}
+                        <option value="{{ cat.id }}"
+                                {% if acct.value == category.id or forloop.first %}selected{% endif %}>{{ cat.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -78,9 +78,9 @@
             <label for="id_account" class="col-sm-3 col-form-label">{{ form.account.label }}</label>
             <div class="col">
                 <select class="form-select" id="id_account" aria-label="account select" name="account">
-                    {% for acct in accounts %}
+                    {% for acct in account_list %}
                         <option value="{{ acct.id }}"
-                                {% if form.account.value == account.id or forloop.first %}selected{% endif %}>{{ acct.name }}</option>
+                                {% if acct.value == account.id or forloop.first %}selected{% endif %}>{{ acct.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -98,7 +98,7 @@
                        name="amount">
                 <div class="input-group-text bg-body p-1">
                     <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">
-                        {% for curr in currencies %}
+                        {% for curr in currency_list %}
                             <option value="{{ curr.id }}" {% if forloop.first %}selected{% endif %}>
                                 {% if curr.abbr == curr.symbol %}
                                     &nbsp;{{ curr.abbr }}&nbsp;
@@ -116,19 +116,19 @@
         </div>
 
         {# Amount in account's currency field #}
-        <div class="row mb-3 hidden" id="amount_account_currency_field">
-            <label for="amount_account_currency"
-                   class="col-sm-3 align-self-center">{{ form.amount_account_currency.label }}</label>
+        <div class="row mb-3 hidden" id="amount_converted_field">
+            <label for="amount_converted"
+                   class="col-sm-3 align-self-center">{{ form.amount_converted.label }}</label>
             <div class="col input-group">
                 <span class="input-group-text amount_transaction_type">{{ form.transaction_type.value }}</span>
                 <input type="number" min="0.01" step="0.01" oninput="validateFloatInput(this)"
-                       class="form-control {% if form.amount_account_currency.errors %}is-invalid{% endif %}"
-                       id="amount_account_currency" placeholder="{{ form.amount_account_currency.label }}"
-                       name="amount_default_currency">
-                <span class="input-group-text" id="amount_account_currency_text"></span>
+                       class="form-control {% if form.amount_converted.errors %}is-invalid{% endif %}"
+                       id="amount_converted" placeholder="{{ form.amount_converted.label }}"
+                       name="amount_converted">
+                <span class="input-group-text" id="amount_converted_text"></span>
             </div>
             <div class="invalid-feedback">
-                {{ form.amount_account_currency.errors.as_text }}
+                {{ form.amount_converted.errors.as_text }}
             </div>
         </div>
 
@@ -165,7 +165,7 @@
 
 {% block custom_scripts %}
     <script>
-        const accounts = {{ accounts|safe }};
+        const accounts = {{ account_list|safe }};
 
         function validateFloatInput(input) {
             const value = input.value;
