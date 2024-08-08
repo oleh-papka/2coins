@@ -130,7 +130,6 @@ class AccountCreateView(LoginRequiredMixin, CreateView):
 
     def form_invalid(self, form):
         messages.warning(self.request, "Something went wrong!")
-        print(form.errors)
         return super().form_invalid(form)
 
     def get_context_data(self, **kwargs):

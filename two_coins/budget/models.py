@@ -207,6 +207,10 @@ class Account(TimeStampMixin):
                                    blank=True,
                                    max_length=30,
                                    verbose_name="Description")
+    allow_negative_balance = models.BooleanField(null=False,
+                                                 blank=True,
+                                                 default=False,
+                                                 verbose_name="Allow negative balance")
 
     # Fields for savings account only
     initial_balance = models.FloatField(null=False,
@@ -236,6 +240,12 @@ class Account(TimeStampMixin):
         with db_transaction.atomic():
             self.withdraw(amount)
             to_account.deposit(amount_converted)
+
+    def save(self, *args, **kwargs):
+        if self.account_type == self.SAVINGS_ACCOUNT:
+            self.allow_negative_balance = False
+
+        super(Account, self).save(*args, **kwargs)
 
 
 class Category(TimeStampMixin):
