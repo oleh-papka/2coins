@@ -1,5 +1,4 @@
 import operator
-from collections import defaultdict
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -192,28 +191,46 @@ class CategoryDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        transaction_dict = defaultdict(list)
-        transactions = Transaction.objects.filter(category=self.object,
-                                                  account__profile__user=self.request.user).order_by('-date').annotate(
-            truncated_date=TruncDate('date'))
 
-        for transaction in transactions:
-            transaction_dict[transaction.truncated_date].append(transaction)
+        transactions_queryset = models.Transaction.objects.filter(category=self.object,
+                                                                  account__profile__user=self.request.user).order_by(
+            '-date').annotate(truncated_date=TruncDate('date'))
 
-        res = dict()
-        data_cat = {'data': [], 'labels': []}
+        transactions_list = list(transactions_queryset)
+        transactions = []
 
-        for k, v in dict(transaction_dict).items():
-            res[k] = {'total': sum([i.amount_default_currency if i.amount_default_currency else i.amount for i in v]),
-                      'txns': v}
-            data_cat['data'].append(abs(res[k]['total']))
-            data_cat['labels'].append(k.strftime("%d/%m"))
+        if not transactions_list:
+            return context
 
-        data_cat['data'].reverse()
-        data_cat['labels'].reverse()
+        temp_date = transactions_list[0].truncated_date
+        temp_total = 0
+        temp_transactions = []
 
-        context['transaction_dict'] = dict(res)
-        context['data_cat'] = data_cat
+        for transaction in transactions_list:
+            if transaction.truncated_date != temp_date:
+                transactions.append({
+                    'date': temp_date,
+                    'total': temp_total,
+                    'txns': temp_transactions
+                })
+
+                temp_date = transaction.truncated_date
+                temp_total = 0
+                temp_transactions = [transaction]
+            else:
+                temp_transactions.append(transaction)
+
+            amount = transaction.amount_converted if transaction.amount_converted else transaction.amount
+            temp_total += amount
+
+        else:
+            transactions.append({
+                'date': temp_date,
+                'total': temp_total,
+                'transactions': temp_transactions
+            })
+
+        context["transactions"] = transactions
 
         return context
 
