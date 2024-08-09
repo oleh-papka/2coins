@@ -59,7 +59,7 @@
                 <span class="input-group-text amount_converted">{{ form.transaction_type.value }}</span>
                 <input type="number" min="0.01" step="0.01" oninput="validateFloatInput(this);"
                        class="form-control {% if form.amount.errors %}is-invalid{% endif %}"
-                       id="id_amount" placeholder="{{ form.amount.label }}"
+                       id="id_amount" placeholder="{{ form.amount.label }}" required
                        name="amount" value="{{ form.amount.value }}">
                 <div class="input-group-text bg-body p-1">
                     <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">

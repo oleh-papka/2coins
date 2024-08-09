@@ -39,10 +39,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (selectedCurrencyId === account['currency_id'].toString()) {
             defaultCurrencyDiv.classList.add('visually-hidden');
-            amount_converted_input.setAttribute("required", "false");
+            amount_converted_input['required']=false;
         } else {
             defaultCurrencyDiv.classList.remove('visually-hidden');
-            amount_converted_input.setAttribute("required", "true");
+            amount_converted_input['required']=true;
         }
     }
 

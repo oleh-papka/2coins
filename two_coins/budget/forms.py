@@ -20,7 +20,6 @@ class BaseStyleForm(forms.ModelForm):
         self.fields['color'].label = f'{model_name} color'
 
 
-# Todo: add validations to all of the forms
 class AccountForm(BaseStyleForm):
     class Meta(BaseStyleForm.Meta):
         model = models.Account
@@ -35,6 +34,22 @@ class TransactionForm(forms.ModelForm):
     class Meta:
         model = models.Transaction
         fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        if cleaned_data['transaction_type'] == models.Transaction.EXPENSE:
+            amount = cleaned_data['amount']
+            amount_converted = cleaned_data['amount_converted']
+            account = cleaned_data['account']
+
+            amount_to_check = amount if not amount_converted else amount_converted
+            field_name = 'amount_converted' if amount_converted else 'amount'
+
+            if amount_to_check > account.balance and not account.allow_negative_balance:
+                self.add_error(field_name, 'Insufficient funds in the account!')
+
+        return cleaned_data
 
 
 class TransferForm(forms.ModelForm):
@@ -53,10 +68,9 @@ class TransferForm(forms.ModelForm):
             self.add_error("account_from", msg)
             self.add_error("account_to", msg)
 
-        if account_from.balance < amount_from:
+        if account_from.balance < amount_from and not account_from.allow_negative_balance:
             self.add_error('amount_from', 'Insufficient funds in the source account!')
 
-        print(f"Final Cleaned Data: {cleaned_data}")
         return cleaned_data
 
     class Meta:

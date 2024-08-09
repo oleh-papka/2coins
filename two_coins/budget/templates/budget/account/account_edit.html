@@ -80,20 +80,21 @@
                         <input type="number" step="0.01"
                                class="form-control {% if field.errors %}is-invalid{% endif %}"
                                id="id_balance" placeholder="{{ field.label }}" name="balance" value="{{ field.value }}">
-                        <div class="input-group-text bg-body p-1">
-                            <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">
-                                {% for curr in currency_list %}
-                                    <option value="{{ curr.id }}"
-                                            {% if forloop.first or object.currency == curr %}selected{% endif %}>
-                                        {% if curr.abbr == curr.symbol %}
-                                            &nbsp;{{ curr.abbr }}&nbsp;
-                                        {% else %}
-                                            {{ curr.abbr }}&nbsp;&nbsp;{{ curr.symbol }}
-                                        {% endif %}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                        <span class="input-group-text">{{ object.currency.abbr }}&nbsp;&nbsp;{{ object.currency.symbol }}</span>
+                        {#                        <div class="input-group-text bg-body p-1">#}
+                        {#                            <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">#}
+                        {#                                {% for curr in currency_list %}#}
+                        {#                                    <option value="{{ curr.id }}"#}
+                        {#                                            {% if forloop.first or object.currency == curr %}selected{% endif %}>#}
+                        {#                                        {% if curr.abbr == curr.symbol %}#}
+                        {#                                            &nbsp;{{ curr.abbr }}&nbsp;#}
+                        {#                                        {% else %}#}
+                        {#                                            {{ curr.abbr }}&nbsp;&nbsp;{{ curr.symbol }}#}
+                        {#                                        {% endif %}#}
+                        {#                                    </option>#}
+                        {#                                {% endfor %}#}
+                        {#                            </select>#}
+                        {#                        </div>#}
                         <div class="invalid-feedback">
                             {{ field.errors.as_text }}
                         </div>
@@ -109,7 +110,13 @@
                                    class="form-control {% if field.errors %}is-invalid{% endif %}"
                                    id="id_initial_balance" placeholder="{{ field.label }}" name="initial_balance"
                                    value="{{ field.value }}">
-                            <span class="input-group-text"></span>
+                            <span class="input-group-text">
+                                {% if object.currency.abbr == object.currency.symbol %}
+                                    &nbsp;{{ curr.abbr }}&nbsp;
+                                {% else %}
+                                    {{ object.currency.abbr }}&nbsp;&nbsp;{{ object.currency.symbol }}
+                                {% endif %}
+                            </span>
                         </div>
                         <div class="invalid-feedback">
                             {{ field.errors.as_text }}
@@ -126,7 +133,13 @@
                                    class="form-control {% if field.errors %}is-invalid{% endif %}"
                                    id="id_target_balance" placeholder="{{ field.label }}" name="target_balance"
                                    value="{{ field.value }}">
-                            <span class="input-group-text"></span>
+                            <span class="input-group-text">
+                                {% if object.currency.abbr == object.currency.symbol %}
+                                    &nbsp;{{ curr.abbr }}&nbsp;
+                                {% else %}
+                                    {{ object.currency.abbr }}&nbsp;&nbsp;{{ object.currency.symbol }}
+                                {% endif %}
+                            </span>
                         </div>
                         <div class="invalid-feedback">
                             {{ field.errors.as_text }}
@@ -140,6 +153,7 @@
                     <div class="col">
                         <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
                                id="id-{{ field.name }}" name="{{ field.name }}"
+                               {% if field.name == 'name' %}required{% endif %}
                                placeholder="{{ field.label }}" {% if field.value %}value="{{ field.value }}"{% endif %}>
                         {% if field.help_text %}
                             <small class="text-muted ms-1">{{ field.help_text }}</small>
@@ -160,5 +174,5 @@
 {% endblock %}
 
 {% block custom_scripts %}
-    <script src="{% static 'budget/js/account_create.js' %}"></script>
+    <script src="{% static 'budget/js/account_edit.js' %}"></script>
 {% endblock %}

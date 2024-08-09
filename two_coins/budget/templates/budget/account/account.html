@@ -76,6 +76,10 @@
                                 <strong class="text-success">
                                     +{{ action_group.total|intspace }} {{ action_group.actions.0.action.account.currency.symbol }}
                                 </strong>
+                            {% elif action_group.total == 0%}
+                                <strong class="text-secondary">
+                                    {{ action_group.total|intspace }} {{ action_group.actions.0.action.account.currency.symbol }}
+                                </strong>
                             {% else %}
                                 <strong class="text-danger">
                                     {{ action_group.total|intspace }} {{ action_group.actions.0.action.account.currency.symbol }}

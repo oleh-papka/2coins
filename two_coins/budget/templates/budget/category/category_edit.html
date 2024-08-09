@@ -56,6 +56,7 @@
                     <div class="col">
                         <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
                                id="id-{{ field.name }}" name="{{ field.name }}"
+                               {% if field.name == 'name' %}required{% endif %}
                                placeholder="{{ field.label }}" value="{% if field.value %}{{ field.value }}{% endif %}">
                         {% if field.help_text %}
                             <small class="text-muted ms-1">{{ field.help_text }}</small>
