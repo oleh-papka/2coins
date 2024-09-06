@@ -9,33 +9,33 @@ from misc.models import TimeStampMixin
 
 
 class ColorChoices:
-    COLOR_DARK_RED = '#aa1409'
-    COLOR_RED = '#f44336'
-    COLOR_PINK = '#e91e63'
-    COLOR_ROSE = '#ffe4e1'
-    COLOR_FUCHSIA = '#ff66ff'
-    COLOR_PURPLE = '#9c27b0'
-    COLOR_DARK_PURPLE = '#673ab7'
-    COLOR_INDIGO = '#3f51b5'
-    COLOR_BLUE = '#2196f3'
-    COLOR_LIGHT_BLUE = '#03a9f4'
-    COLOR_CYAN = '#00bcd4'
-    COLOR_TEAL = '#009688'
-    COLOR_AQUA = '#00ffff'
-    COLOR_DARK_GREEN = '#2f6a31'
-    COLOR_GREEN = '#4caf50'
-    COLOR_LIGHT_GREEN = '#8bc34a'
-    COLOR_LIME = '#cddc39'
-    COLOR_YELLOW = '#ffeb3b'
-    COLOR_AMBER = '#ffc107'
-    COLOR_ORANGE = '#ff9800'
-    COLOR_DARK_ORANGE = '#ff5722'
-    COLOR_BROWN = '#795548'
-    COLOR_LIGHT_GREY = '#c0c0c0'
-    COLOR_GREY = '#9e9e9e'
-    COLOR_DARK_GREY = '#607d8b'
-    COLOR_BLACK = '#111111'
-    COLOR_WHITE = '#ffffff'
+    COLOR_DARK_RED = 'aa1409'
+    COLOR_RED = 'f44336'
+    COLOR_PINK = 'e91e63'
+    COLOR_ROSE = 'ffe4e1'
+    COLOR_FUCHSIA = 'ff66ff'
+    COLOR_PURPLE = '9c27b0'
+    COLOR_DARK_PURPLE = '673ab7'
+    COLOR_INDIGO = '3f51b5'
+    COLOR_BLUE = '2196f3'
+    COLOR_LIGHT_BLUE = '03a9f4'
+    COLOR_CYAN = '00bcd4'
+    COLOR_TEAL = '009688'
+    COLOR_AQUA = '00ffff'
+    COLOR_DARK_GREEN = '2f6a31'
+    COLOR_GREEN = '4caf50'
+    COLOR_LIGHT_GREEN = '8bc34a'
+    COLOR_LIME = 'cddc39'
+    COLOR_YELLOW = 'ffeb3b'
+    COLOR_AMBER = 'ffc107'
+    COLOR_ORANGE = 'ff9800'
+    COLOR_DARK_ORANGE = 'ff5722'
+    COLOR_BROWN = '795548'
+    COLOR_LIGHT_GREY = 'c0c0c0'
+    COLOR_GREY = '9e9e9e'
+    COLOR_DARK_GREY = '607d8b'
+    COLOR_BLACK = '111111'
+    COLOR_WHITE = 'ffffff'
 
     CHOICES = (
         (COLOR_DARK_RED, 'Dark Red'),
@@ -101,8 +101,8 @@ class IconChoices:
 class Style(models.Model):
     color = models.CharField(null=False,
                              blank=True,
-                             max_length=7,
-                             default="#fcba03",
+                             max_length=6,
+                             default="fcba03",
                              verbose_name="Color")
     icon = models.CharField(null=True,
                             blank=True,
@@ -185,10 +185,12 @@ class Account(TimeStampMixin):
                             blank=False,
                             max_length=30,
                             verbose_name="Account name")
-    balance = models.FloatField(null=False,
-                                blank=True,
-                                default=0,
-                                verbose_name="Account balance")
+    balance = models.DecimalField(null=False,
+                                  blank=True,
+                                  default=0,
+                                  max_digits=10,
+                                  decimal_places=2,
+                                  verbose_name="Account balance")
     style = models.OneToOneField(Style,
                                  null=False,
                                  blank=True,
@@ -213,14 +215,18 @@ class Account(TimeStampMixin):
                                                  verbose_name="Allow negative balance")
 
     # Fields for savings account only
-    initial_balance = models.FloatField(null=False,
-                                        blank=True,
-                                        default=0,
-                                        verbose_name="Initial balance")
-    target_balance = models.FloatField(null=True,
-                                       blank=True,
-                                       default=0,
-                                       verbose_name="Target balance")
+    initial_balance = models.DecimalField(null=True,
+                                          blank=True,
+                                          default=0,
+                                          max_digits=10,
+                                          decimal_places=2,
+                                          verbose_name="Initial balance")
+    target_balance = models.DecimalField(null=True,
+                                         blank=True,
+                                         default=0,
+                                         max_digits=10,
+                                         decimal_places=2,
+                                         verbose_name="Target balance")
     deadline = models.DateField(null=True,
                                 blank=True,
                                 default=None,
@@ -240,12 +246,6 @@ class Account(TimeStampMixin):
         with db_transaction.atomic():
             self.withdraw(amount)
             to_account.deposit(amount_converted)
-
-    def save(self, *args, **kwargs):
-        if self.account_type == self.SAVINGS_ACCOUNT:
-            self.allow_negative_balance = False
-
-        super(Account, self).save(*args, **kwargs)
 
 
 class Category(TimeStampMixin):
@@ -317,12 +317,16 @@ class Transaction(models.Model):
                                  blank=False,
                                  on_delete=models.CASCADE,
                                  related_name="+")
-    amount = models.FloatField(null=False,
-                               blank=False,
-                               verbose_name="Amount")
-    amount_converted = models.FloatField(null=True,
-                                         blank=True,
-                                         verbose_name="Amount in account's currency")
+    amount = models.DecimalField(null=False,
+                                 blank=False,
+                                 max_digits=10,
+                                 decimal_places=2,
+                                 verbose_name="Amount")
+    amount_converted = models.DecimalField(null=True,
+                                           blank=True,
+                                           max_digits=10,
+                                           decimal_places=2,
+                                           verbose_name="Amount in account's currency")
     description = models.CharField(null=True,
                                    blank=True,
                                    max_length=50,
@@ -332,35 +336,18 @@ class Transaction(models.Model):
                                 default=timezone.now,
                                 verbose_name="Date/time")
 
-    def save(self, *args, **kwargs):
-        if self.transaction_type == self.EXPENSE:
-            if self.amount_converted:
-                self.amount_converted = -abs(self.amount_converted)
-            self.amount = -abs(self.amount)
-
-            if self.account.account_type == Account.SAVINGS_ACCOUNT:
-                check_amount = self.amount_converted if self.amount_converted else self.amount
-
-                if check_amount > self.account.balance:
-                    raise ValueError("Insufficient funds")
-        else:
-            if self.amount_converted:
-                self.amount_converted = abs(self.amount_converted)
-            self.amount = abs(self.amount)
-
-        if not self.date:
-            self.date = timezone.now()
-
-        super(Transaction, self).save(*args, **kwargs)
-
 
 class Transfer(models.Model):
-    amount_from = models.FloatField(null=False,
-                                    blank=False,
-                                    verbose_name="Amount transferring from account")
-    amount_to = models.FloatField(null=False,
-                                  blank=True,
-                                  verbose_name="Amount transferring to account")
+    amount_from = models.DecimalField(null=False,
+                                      blank=False,
+                                      max_digits=10,
+                                      decimal_places=2,
+                                      verbose_name="Amount transferring from account")
+    amount_to = models.DecimalField(null=False,
+                                    blank=True,
+                                    max_digits=10,
+                                    decimal_places=2,
+                                    verbose_name="Amount transferring to account")
     description = models.CharField(null=True,
                                    blank=True,
                                    max_length=50,
@@ -381,14 +368,3 @@ class Transfer(models.Model):
                                    on_delete=models.CASCADE,
                                    related_name="transfers_in",
                                    verbose_name="To Account")
-
-    def save(self, *args, **kwargs):
-        self.amount_from = abs(self.amount_from)
-
-        if self.amount_from > self.account_from.balance:
-            raise ValueError("Insufficient funds")
-
-        if not self.date:
-            self.date = timezone.now()
-
-        super(Transfer, self).save(*args, **kwargs)

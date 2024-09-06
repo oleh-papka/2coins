@@ -32,3 +32,15 @@ class StyleFormUpdateMixin(UpdateView):
         messages.success(self.request, f"{instance._meta.verbose_name.title()} '{instance_name}' updated!")
 
         return super().form_valid(form)
+
+
+class FormInvalidMixin:
+    def form_invalid(self, form):
+        for field, errors in form.errors.items():
+            for error in errors:
+                if field == '__all__':
+                    messages.error(self.request, error)
+                else:
+                    messages.error(self.request, f"{form[field].label}: {error}")
+
+        return super().form_invalid(form)

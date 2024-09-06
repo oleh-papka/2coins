@@ -9,7 +9,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView, DeleteView
 
-from misc.models import StyleFormUpdateMixin
+from misc.models import StyleFormUpdateMixin, FormInvalidMixin
 from profiles.models import Profile
 from . import forms, models
 from .models import Transaction, Style, Transfer
@@ -106,7 +106,7 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class AccountCreateView(LoginRequiredMixin, CreateView):
+class AccountCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
     login_url = reverse_lazy('login')
     model = models.Account
     form_class = forms.AccountForm
@@ -116,20 +116,10 @@ class AccountCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         account = form.save(commit=False)
         account.profile = Profile.objects.get(user=self.request.user)
-        account.style = Style.create_style(color=form.cleaned_data.get('color'),
-                                           icon=form.cleaned_data.get('icon'))
-
-        if not account.initial_balance:
-            account.initial_balance = account.balance
-
         account.save()
         messages.success(self.request, f"Account '{account.name}' created!")
 
         return super().form_valid(form)
-
-    def form_invalid(self, form):
-        messages.warning(self.request, "Something went wrong!")
-        return super().form_invalid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -137,16 +127,16 @@ class AccountCreateView(LoginRequiredMixin, CreateView):
         return context
 
 
-class AccountUpdateView(LoginRequiredMixin, StyleFormUpdateMixin):
+class AccountUpdateView(LoginRequiredMixin, FormInvalidMixin, UpdateView):
     login_url = reverse_lazy('login')
     model = models.Account
-    form_class = forms.AccountForm
+    form_class = forms.AccountUpdateForm
     template_name = 'budget/account/account_edit.html'
     success_url = reverse_lazy('account_list')
 
-    def form_invalid(self, form):
-        messages.warning(self.request, "Something went wrong!")
-        return super().form_invalid(form)
+    def form_valid(self, form):
+        messages.success(self.request, f"Account '{form.cleaned_data.get('name')}' updated!")
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -235,7 +225,7 @@ class CategoryDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class CategoryCreateView(LoginRequiredMixin, CreateView):
+class CategoryCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
     login_url = reverse_lazy('login')
     model = models.Category
     form_class = forms.CategoryForm
@@ -260,12 +250,8 @@ class CategoryCreateView(LoginRequiredMixin, CreateView):
 
         return super().form_valid(form)
 
-    def form_invalid(self, form):
-        messages.warning(self.request, "Something went wrong!")
-        return super().form_invalid(form)
 
-
-class CategoryUpdateView(LoginRequiredMixin, StyleFormUpdateMixin):
+class CategoryUpdateView(LoginRequiredMixin, FormInvalidMixin, StyleFormUpdateMixin):
     login_url = reverse_lazy('login')
     model = models.Category
     form_class = forms.CategoryForm
@@ -365,7 +351,7 @@ class TransactionList(LoginRequiredMixin, ListView):
         return super().get_queryset().filter(account__profile=profile)
 
 
-class TransactionCreateView(LoginRequiredMixin, CreateView):
+class TransactionCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
     login_url = reverse_lazy('login')
     model = models.Transaction
     form_class = forms.TransactionForm
@@ -403,21 +389,18 @@ class TransactionCreateView(LoginRequiredMixin, CreateView):
         amount = form.cleaned_data.get('amount') if account.currency == form.cleaned_data.get(
             'currency') else form.cleaned_data.get('amount_converted')
 
-        account.balance += abs(amount) if form.cleaned_data.get('transaction_type') == Transaction.INCOME else -abs(
-            amount)
-        account.save()
+        if form.cleaned_data.get('transaction_type') == Transaction.INCOME:
+            account.deposit(amount)
+        else:
+            account.withdraw(amount)
 
         messages.success(self.request, f"Transaction '{form.cleaned_data.get('amount')}' created!")
         messages.info(self.request, f'Updated balance of account!\nYour new balance is {account.balance}')
 
         return super().form_valid(form)
 
-    def form_invalid(self, form):
-        messages.warning(self.request, "Something went wrong!")
-        return super().form_invalid(form)
 
-
-class TransactionUpdateView(LoginRequiredMixin, UpdateView):
+class TransactionUpdateView(LoginRequiredMixin, FormInvalidMixin, UpdateView):
     login_url = reverse_lazy('login')
     model = models.Transaction
     form_class = forms.TransactionForm
@@ -440,18 +423,18 @@ class TransactionUpdateView(LoginRequiredMixin, UpdateView):
         # Reverting account balance
         prev_transaction_amount = abs(prev_transaction.amount_converted or prev_transaction.amount)
         if prev_transaction.transaction_type == Transaction.EXPENSE:
-            prev_transaction.account.balance += prev_transaction_amount
+            prev_transaction.account.balance = F('balance') + prev_transaction_amount
         else:
-            prev_transaction.account.balance -= prev_transaction_amount
+            prev_transaction.account.balance = F('balance') - prev_transaction_amount
         prev_transaction.account.save()
 
         # Updating account balance
         new_transaction.account.refresh_from_db()
         new_transaction_amount = abs(new_transaction.amount_converted or new_transaction.amount)
         if new_transaction.transaction_type == Transaction.INCOME:
-            new_transaction.account.balance += new_transaction_amount
+            new_transaction.account.balance = F('balance') + new_transaction_amount
         else:
-            new_transaction.account.balance -= new_transaction_amount
+            new_transaction.account.balance = F('balance') - new_transaction_amount
         new_transaction.account.save()
 
         messages.success(self.request, f"Transaction updated!")
@@ -459,10 +442,6 @@ class TransactionUpdateView(LoginRequiredMixin, UpdateView):
                       f'Updated balance of account!\nYour new balance is {new_transaction.account.balance}')
 
         return super().form_valid(form)
-
-    def form_invalid(self, form):
-        messages.warning(self.request, "Something went wrong!")
-        return super().form_invalid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -506,7 +485,7 @@ class TransactionDeleteView(LoginRequiredMixin, DeleteView):
 
 # Transfers
 
-class TransferCreateView(LoginRequiredMixin, CreateView):
+class TransferCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
     login_url = reverse_lazy('login')
     model = models.Transfer
     form_class = forms.TransferForm
@@ -552,12 +531,8 @@ class TransferCreateView(LoginRequiredMixin, CreateView):
 
         return HttpResponseRedirect(self.get_success_url())
 
-    def form_invalid(self, form):
-        messages.warning(self.request, "Something went wrong!")
-        return super().form_invalid(form)
 
-
-class TransferUpdateView(LoginRequiredMixin, UpdateView):
+class TransferUpdateView(LoginRequiredMixin, FormInvalidMixin, UpdateView):
     login_url = reverse_lazy('login')
     model = models.Transfer
     form_class = forms.TransferForm
@@ -615,10 +590,6 @@ class TransferUpdateView(LoginRequiredMixin, UpdateView):
                           f"Updated balance of '{account_to.name}' account!\nYour new balance is {account_to.balance}")
 
         return super().form_valid(form)
-
-    def form_invalid(self, form):
-        messages.warning(self.request, "Something went wrong!")
-        return super().form_invalid(form)
 
 
 class TransferDeleteView(LoginRequiredMixin, DeleteView):
