@@ -1,5 +1,5 @@
 {% extends 'list_objects.html' %}
-{% load intspace %}
+{% load number_filters %}
 
 {% block title %}2coins | {{ object.name }}{% endblock %}
 
@@ -19,10 +19,10 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="card-title mb-0 me-2 d-flex align-items-center">
                                 <div class="d-flex justify-content-center align-items-center rounded-3 me-2"
-                                     style="width: 3rem; height: 3rem; background-color: {{ object.style.color }}2a">
+                                     style="width: 3rem; height: 3rem; background-color: #{{ object.style.color }}2a">
                                     {% if object.style.icon %}
                                         <i class="{{ object.style.icon }} fa-xl"
-                                           style="color: {{ object.style.color }}"></i>
+                                           style="color: #{{ object.style.color }}"></i>
                                     {% endif %}
                                 </div>
                                 <h4>
@@ -55,15 +55,15 @@
 
                             {% if transaction_group.total == 0 %}
                                 <strong class="text-secondary">
-                                    {{ transaction_group.total|intspace }} {{ transaction_group.transactions.0.account.currency.symbol }}
+                                    {{ transaction_group.total|strip_trailing_zeros|int_space }} {{ transaction_group.transactions.0.account.currency.symbol }}
                                 </strong>
                             {% elif transaction_group.total > 0 %}
                                 <strong class="text-success">
-                                    +{{ transaction_group.total|intspace }} {{ transaction_group.transactions.0.account.currency.symbol }}
+                                    +{{ transaction_group.total|strip_trailing_zeros|int_space }} {{ transaction_group.transactions.0.account.currency.symbol }}
                                 </strong>
                             {% else %}
                                 <strong class="text-danger">
-                                    {{ transaction_group.total|intspace }} {{ transaction_group.transactions.0.account.currency.symbol }}
+                                    {{ transaction_group.total|strip_trailing_zeros|int_space }} {{ transaction_group.transactions.0.account.currency.symbol }}
                                 </strong>
                             {% endif %}
                         </div>
@@ -75,9 +75,9 @@
                                 <div class="card-title mb-0 me-2 d-flex align-items-center">
 
                                     <div class="d-flex justify-content-center align-items-center rounded-2 me-2"
-                                         style="width: 2.5rem; height: 2.5rem; background-color: {{ transaction.account.style.color }}2A">
+                                         style="width: 2.5rem; height: 2.5rem; background-color: #{{ transaction.account.style.color }}2A">
                                         <i class="{{ transaction.account.style.icon }}"
-                                           style="color: {{ transaction.account.style.color }}"></i>
+                                           style="color: #{{ transaction.account.style.color }}"></i>
                                     </div>
 
                                     <div class="d-flex flex-column">
@@ -98,16 +98,16 @@
                                     {% if transaction.amount_converted %}
                                         <strong class="m-0 {% if transaction.transaction_type == '-' %}text-danger{% else %}text-success{% endif %}">
                                             {% if transaction.amount > 0 %}
-                                                +{% endif %}{{ transaction.amount|intspace }} {{ transaction.account.currency.symbol }}
+                                                +{% endif %}{{ transaction.amount|strip_trailing_zeros|int_space }} {{ transaction.account.currency.symbol }}
                                         </strong>
                                         <small class="m-0 text-secondary">
                                             {% if transaction.amount > 0 %}
-                                                +{% endif %}{{ transaction.amount_converted|intspace }} {{ transaction.account.currency.symbol }}
+                                                +{% endif %}{{ transaction.amount_converted|strip_trailing_zeros|int_space }} {{ transaction.account.currency.symbol }}
                                         </small>
                                     {% else %}
                                         <strong class="m-0 {% if transaction.transaction_type == '-' %}text-danger{% elif transaction.transaction_type == '>' %}text-secondary{% else %}text-success{% endif %}">
                                             {% if transaction.amount > 0 and transaction.transaction_type == '+' %}
-                                                +{% endif %}{{ transaction.amount|intspace }} {{ transaction.account.currency.symbol }}
+                                                +{% endif %}{{ transaction.amount|strip_trailing_zeros|int_space }} {{ transaction.account.currency.symbol }}
                                         </strong>
                                     {% endif %}
                                 </div>

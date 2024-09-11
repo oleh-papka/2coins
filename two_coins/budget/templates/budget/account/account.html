@@ -1,5 +1,5 @@
 {% extends 'list_objects.html' %}
-{% load intspace %}
+{% load number_filters %}
 
 {% block title %}2coins | {{ object.name }}{% endblock %}
 
@@ -20,9 +20,9 @@
                     <div class="card-body d-flex flex-column justify-content-between">
                         <div class="d-flex gap-2 align-items-center">
                             <div class="d-flex justify-content-center align-items-center rounded-3"
-                                 style="width: 3rem; height: 3rem; background-color: {{ object.style.color }}2a">
+                                 style="width: 3rem; height: 3rem; background-color: #{{ object.style.color }}2a">
                                 <i class="{{ object.style.icon }} fa-xl"
-                                   style="color: {{ object.style.color }}"></i>
+                                   style="color: #{{ object.style.color }}"></i>
                             </div>
 
                             <div>
@@ -35,7 +35,7 @@
 
                         <div class="d-flex justify-content-between align-items-end">
                             <h4 class="card-text">
-                                {{ object.balance|intspace }} {{ object.currency.symbol }}
+                                {{ object.balance|strip_trailing_zeros|int_space }} {{ object.currency.symbol }}
                             </h4>
 
                             <div class="dropdown">
@@ -74,15 +74,15 @@
 
                             {% if action_group.total > 0 %}
                                 <strong class="text-success">
-                                    +{{ action_group.total|intspace }} {{ action_group.actions.0.action.account.currency.symbol }}
+                                    +{{ action_group.total|strip_trailing_zeros|int_space }} {{ action_group.actions.0.action.account.currency.symbol }}
                                 </strong>
                             {% elif action_group.total == 0%}
                                 <strong class="text-secondary">
-                                    {{ action_group.total|intspace }} {{ action_group.actions.0.action.account.currency.symbol }}
+                                    {{ action_group.total|strip_trailing_zeros|int_space }} {{ action_group.actions.0.action.account.currency.symbol }}
                                 </strong>
                             {% else %}
                                 <strong class="text-danger">
-                                    {{ action_group.total|intspace }} {{ action_group.actions.0.action.account.currency.symbol }}
+                                    {{ action_group.total|strip_trailing_zeros|int_space }} {{ action_group.actions.0.action.account.currency.symbol }}
                                 </strong>
                             {% endif %}
                         </div>
@@ -115,9 +115,9 @@
                                         </div>
                                     {% else %}
                                         <div class="d-flex justify-content-center align-items-center rounded-2 me-2"
-                                             style="width: 2.5rem; height: 2.5rem; background-color: {{ action_.action.category.style.color }}2A">
+                                             style="width: 2.5rem; height: 2.5rem; background-color: #{{ action_.action.category.style.color }}2A">
                                             <i class="{{ action_.action.category.style.icon }}"
-                                               style="color: {{ action_.action.category.style.color }}"></i>
+                                               style="color: #{{ action_.action.category.style.color }}"></i>
                                         </div>
 
                                         <div class="d-flex flex-column">
@@ -140,16 +140,16 @@
                                         {% if action_.action.account_from.currency == action_.action.account_to.currency %}
                                             <strong class="m-0 {% if action_.action.account_from == object %}text-danger{% else %}text-success{% endif %}">
                                                 {% if action_.action.account_from == object %}-{% else %}
-                                                    +{% endif %}{{ action_.action.amount_from|intspace }} {{ action_.action.account_from.currency.symbol }}
+                                                    +{% endif %}{{ action_.action.amount_from|strip_trailing_zeros|int_space }} {{ action_.action.account_from.currency.symbol }}
                                             </strong>
                                         {% else %}
                                             <strong class="m-0 {% if action_.action.account_from == object %}text-danger{% else %}text-success{% endif %}">
                                                 {% if action_.action.account_from == object %}-{% else %}
-                                                    +{% endif %}{{ action_.action.amount_from|intspace }} {{ action_.action.account_from.currency.symbol }}
+                                                    +{% endif %}{{ action_.action.amount_from|strip_trailing_zeros|int_space }} {{ action_.action.account_from.currency.symbol }}
                                             </strong>
                                             <small class="m-0 {% if action_.action.account_from == object %}text-danger{% else %}text-success{% endif %}">
                                                 {% if action_.action.account_from == object %}-{% else %}
-                                                    +{% endif %}{{ action_.action.amount_to|intspace }} {{ action_.action.account_to.currency.symbol }}
+                                                    +{% endif %}{{ action_.action.amount_to|strip_trailing_zeros|int_space }} {{ action_.action.account_to.currency.symbol }}
                                             </small>
                                         {% endif %}
                                     </div>
@@ -158,16 +158,16 @@
                                         {% if action_.action.amount_converted %}
                                             <strong class="m-0 {% if action_.action.transaction_type == '-' %}text-danger{% else %}text-success{% endif %}">
                                                 {% if action_.action.amount > 0 %}
-                                                    +{% endif %}{{ action_.action.amount|intspace }} {{ action_.action.currency.symbol }}
+                                                    +{% endif %}{{ action_.action.amount|strip_trailing_zeros|int_space }} {{ action_.action.currency.symbol }}
                                             </strong>
                                             <small class="m-0 text-secondary">
                                                 {% if action_.action.amount > 0 %}
-                                                    +{% endif %}{{ action_.action.amount_converted|intspace }} {{ action_.action.account.currency.symbol }}
+                                                    +{% endif %}{{ action_.action.amount_converted|strip_trailing_zeros|int_space }} {{ action_.action.account.currency.symbol }}
                                             </small>
                                         {% else %}
                                             <strong class="m-0 {% if action_.action.transaction_type == '-' %}text-danger{% else %}text-success{% endif %}">
                                                 {% if action_.action.amount > 0 and action_.action.transaction_type == '+' %}
-                                                    +{% endif %}{{ action_.action.amount|intspace }} {{ action_.action.account.currency.symbol }}
+                                                    +{% endif %}{{ action_.action.amount|strip_trailing_zeros|int_space }} {{ action_.action.account.currency.symbol }}
                                             </strong>
                                         {% endif %}
                                     </div>

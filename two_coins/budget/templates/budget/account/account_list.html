@@ -1,4 +1,5 @@
 {% extends 'list_objects.html' %}
+{% load number_filters %}
 
 {% block title %}2coins | {{ instance_name }}{% endblock %}
 
@@ -30,27 +31,24 @@
                                     </div>
 
                                     <div class="d-flex justify-content-center align-items-center rounded-3"
-                                         style="width: 3rem; height: 3rem; background-color: {{ account.style.color }}2a">
+                                         style="width: 3rem; height: 3rem; background-color: #{{ account.style.color }}2a">
                                         <i class="{{ account.style.icon }} fa-xl"
-                                           style="color: {{ account.style.color }}"></i>
+                                           style="color: #{{ account.style.color }}"></i>
                                     </div>
                                 </div>
 
                                 <div class="d-flex">
                                     {% if account.account_type == 's' and account.target_balance %}
                                         <h4 class="card-text">
-                                            {% load intspace %}
-                                            {{ account.balance|intspace }} {{ account.currency.symbol }}
+                                            {{ account.balance|strip_trailing_zeros|int_space }} {{ account.currency.symbol }}
                                         </h4>
                                         <h4>&nbsp;/&nbsp;</h4>
                                         <h4 class="card-text">
-                                            {% load intspace %}
-                                            {{ account.target_balance|intspace }} {{ account.currency.symbol }}
+                                            {{ account.target_balance|strip_trailing_zeros|int_space }} {{ account.currency.symbol }}
                                         </h4>
                                     {% else %}
                                         <h4 class="card-text">
-                                            {% load intspace %}
-                                            {{ account.balance|intspace }} {{ account.currency.symbol }}
+                                            {{ account.balance|strip_trailing_zeros|int_space }} {{ account.currency.symbol }}
                                         </h4>
                                     {% endif %}
                                 </div>

@@ -648,7 +648,5 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         context = super().get_context_data(**kwargs)
         context['last_txns'] = last_txns
-        context['data_acct'] = get_template_chart_data(data_acct_query)
-        context['data_cat'] = get_template_chart_data(data_cat_query)
 
         return context

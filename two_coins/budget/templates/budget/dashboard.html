@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load intspace %}
+{% load number_filters %}
 
 {% block sidebar %}
     {% include 'sidebar.html' %}
@@ -46,16 +46,16 @@
                                 {% if txn.amount_default_currency %}
                                     <strong class="m-0 {% if txn.txn_type == '-' %}text-danger{% else %}text-success{% endif %}">
                                         {% if txn.amount > 0 %}
-                                            +{% endif %}{{ txn.amount|intspace }} {{ txn.currency.symbol }}
+                                            +{% endif %}{{ txn.amount|strip_trailing_zeros|int_space }} {{ txn.currency.symbol }}
                                     </strong>
                                     <small class="m-0 text-secondary">
                                         {% if txn.amount > 0 %}
-                                            +{% endif %}{{ txn.amount_default_currency|intspace }} {{ txn.account.currency.symbol }}
+                                            +{% endif %}{{ txn.amount_default_currency|strip_trailing_zeros|int_space }} {{ txn.account.currency.symbol }}
                                     </small>
                                 {% else %}
                                     <strong class="m-0 {% if txn.txn_type == '-' %}text-danger{% elif txn.txn_type == '>' %}text-secondary{% else %}text-success{% endif %}">
                                         {% if txn.amount > 0 and txn.txn_type == '+' %}
-                                            +{% endif %}{{ txn.amount|intspace }} {{ txn.account.currency.symbol }}
+                                            +{% endif %}{{ txn.amount|strip_trailing_zeros|int_space }} {{ txn.account.currency.symbol }}
                                     </strong>
                                 {% endif %}
                             </div>
