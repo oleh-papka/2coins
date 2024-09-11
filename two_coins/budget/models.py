@@ -188,8 +188,8 @@ class Account(TimeStampMixin):
     balance = models.DecimalField(null=False,
                                   blank=True,
                                   default=0,
-                                  max_digits=10,
-                                  decimal_places=2,
+                                  max_digits=20,
+                                  decimal_places=8,
                                   verbose_name="Account balance")
     style = models.OneToOneField(Style,
                                  null=False,
