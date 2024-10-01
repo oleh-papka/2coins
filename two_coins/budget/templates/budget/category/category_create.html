@@ -1,10 +1,6 @@
 {% extends 'create_form.html' %}
 {% load static %}
 
-{% block custom_static %}
-    <link rel="stylesheet" href="{% static 'budget/css/accounts_create.css' %}">
-{% endblock %}
-
 {% block form_block %}
     <form action="{% url 'category_add' %}" method="post">
         {% csrf_token %}
@@ -71,7 +67,7 @@
 
         <div class="d-flex justify-content-end column-gap-2 mt-4">
             <a href="{% url 'category_list' %}" type="button" class="btn btn-outline-danger">Cancel</a>
-            <button class="btn btn-primary" type="submit">Create</button>
+            <button class="btn btn-outline-secondary" type="submit">Create</button>
         </div>
     </form>
 {% endblock %}

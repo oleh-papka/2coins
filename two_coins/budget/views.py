@@ -1,4 +1,5 @@
 import operator
+from datetime import datetime
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -10,6 +11,7 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView, DeleteView
 
 from misc.models import StyleFormUpdateMixin, FormInvalidMixin
+from misc.utils import get_current_month_dates
 from profiles.models import Profile
 from . import forms, models
 from .models import Transaction, Style, Transfer
@@ -43,10 +45,23 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        transactions_queryset = models.Transaction.objects.filter(account=self.object).order_by(
-            '-date').annotate(truncated_date=TruncDate('date'))
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
+
+        if not start_date and not end_date:
+            start_date, end_date = get_current_month_dates()
+        else:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+
+        context["date_range"] = f'{start_date.strftime("%m/%d/%Y")} - {end_date.strftime("%m/%d/%Y")}'
+
+        transactions_queryset = models.Transaction.objects.filter(account=self.object, date__gte=start_date,
+                                                                  date__lte=end_date).order_by('-date').annotate(
+            truncated_date=TruncDate('date'))
         transfers_queryset = models.Transfer.objects.filter(
-            Q(account_to=self.object) | Q(account_from=self.object)).order_by(
+            Q(account_to=self.object) | Q(account_from=self.object),
+            date__gte=start_date, date__lte=end_date).order_by(
             '-date').annotate(truncated_date=TruncDate('date'))
 
         transfers_list = list(transfers_queryset)
@@ -56,52 +71,14 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
 
         combined_list.sort(key=operator.attrgetter('date'), reverse=True)
 
-        combined_actions = []
-
         if not combined_list:
             return context
 
-        temp_date = combined_list[0].truncated_date
-        temp_total = 0
-        temp_actions = []
-
         for action in combined_list:
             action_type = 'txn' if isinstance(action, models.Transaction) else 'trf'
+            action.action_type = action_type
 
-            if action.truncated_date != temp_date:
-                combined_actions.append({
-                    'date': temp_date,
-                    'total': temp_total,
-                    'txns': temp_actions
-                })
-
-                temp_date = action.truncated_date
-                temp_total = 0
-                temp_actions = [{"action_type": action_type,
-                                 "action": action}]
-            else:
-                temp_actions.append({"action_type": action_type,
-                                     "action": action})
-
-            if action_type == 'txn':
-                amount = action.amount_converted if action.amount_converted else action.amount
-                temp_total += amount
-            else:
-                if action.account_from == self.object:
-                    temp_total -= action.amount_from
-                elif action.account_to == self.object:
-                    if action.amount_to:
-                        temp_total += action.amount_to
-                    else:
-                        temp_total += action.amount_from
-        else:
-            combined_actions.append({
-                'date': temp_date,
-                'total': temp_total,
-                'actions': temp_actions
-            })
-
-        context["combined_actions"] = combined_actions
+        context["combined_actions"] = combined_list
 
         return context
 
@@ -182,45 +159,33 @@ class CategoryDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
+
+        if not start_date and not end_date:
+            start_date, end_date = get_current_month_dates()
+        else:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+
+        context["date_range"] = f'{start_date.strftime("%m/%d/%Y")} - {end_date.strftime("%m/%d/%Y")}'
+
         transactions_queryset = models.Transaction.objects.filter(category=self.object,
-                                                                  account__profile__user=self.request.user).order_by(
+                                                                  account__profile__user=self.request.user,
+                                                                  date__gte=start_date,
+                                                                  date__lte=end_date).order_by(
             '-date').annotate(truncated_date=TruncDate('date'))
 
         transactions_list = list(transactions_queryset)
-        transactions = []
 
         if not transactions_list:
             return context
 
-        temp_date = transactions_list[0].truncated_date
-        temp_total = 0
-        temp_transactions = []
+        for action in transactions_list:
+            action_type = 'txn' if isinstance(action, models.Transaction) else 'trf'
+            action.action_type = action_type
 
-        for transaction in transactions_list:
-            if transaction.truncated_date != temp_date:
-                transactions.append({
-                    'date': temp_date,
-                    'total': temp_total,
-                    'txns': temp_transactions
-                })
-
-                temp_date = transaction.truncated_date
-                temp_total = 0
-                temp_transactions = [transaction]
-            else:
-                temp_transactions.append(transaction)
-
-            amount = transaction.amount_converted if transaction.amount_converted else transaction.amount
-            temp_total += amount
-
-        else:
-            transactions.append({
-                'date': temp_date,
-                'total': temp_total,
-                'transactions': temp_transactions
-            })
-
-        context["transactions"] = transactions
+        context["transactions"] = transactions_list
 
         return context
 
@@ -291,12 +256,23 @@ class TransactionList(LoginRequiredMixin, ListView):
         user = self.request.user
         context = super().get_context_data(**kwargs)
 
-        transactions_queryset = models.Transaction.objects.filter(account__profile__user=user).order_by(
-            '-date').annotate(truncated_date=TruncDate('date'))
-        transfers_queryset = models.Transfer.objects.filter(account_from__profile__user=user).order_by(
-            '-date').annotate(truncated_date=TruncDate('date'))
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
 
-        total_none_flag = True if len(transactions_queryset.values('currency')) > 2 else False
+        if not start_date and not end_date:
+            start_date, end_date = get_current_month_dates()
+        else:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+
+        context["date_range"] = f'{start_date.strftime("%m/%d/%Y")} - {end_date.strftime("%m/%d/%Y")}'
+
+        transactions_queryset = models.Transaction.objects.filter(account__profile__user=user, date__gte=start_date,
+                                                                  date__lte=end_date).order_by(
+            '-date').annotate(truncated_date=TruncDate('date'))
+        transfers_queryset = models.Transfer.objects.filter(account_from__profile__user=user, date__gte=start_date,
+                                                            date__lte=end_date).order_by(
+            '-date').annotate(truncated_date=TruncDate('date'))
 
         transfers_list = list(transfers_queryset)
         transactions_list = list(transactions_queryset)
@@ -305,44 +281,14 @@ class TransactionList(LoginRequiredMixin, ListView):
 
         combined_list.sort(key=operator.attrgetter('date'), reverse=True)
 
-        combined_actions = []
-
         if not combined_list:
             return context
 
-        temp_date = combined_list[0].truncated_date
-        temp_total = 0
-        temp_actions = []
-
         for action in combined_list:
             action_type = 'txn' if isinstance(action, models.Transaction) else 'trf'
+            action.action_type = action_type
 
-            if action.truncated_date != temp_date:
-                combined_actions.append({
-                    'date': temp_date,
-                    'total': None if total_none_flag else temp_total,
-                    'actions': temp_actions
-                })
-
-                temp_date = action.truncated_date
-                temp_total = 0
-                temp_actions = [{"action_type": action_type,
-                                 "action": action}]
-            else:
-                temp_actions.append({"action_type": action_type,
-                                     "action": action})
-
-            if action_type == 'txn':
-                amount = action.amount_converted if action.amount_converted else action.amount
-                temp_total += amount
-        else:
-            combined_actions.append({
-                'date': temp_date,
-                'total': None if total_none_flag else temp_total,
-                'actions': temp_actions
-            })
-
-        context["combined_actions"] = combined_actions
+        context["combined_actions"] = combined_list
 
         return context
 

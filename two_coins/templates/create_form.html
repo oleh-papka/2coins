@@ -6,9 +6,11 @@
     {% include 'sidebar.html' %}
 {% endblock %}
 
-{% block content %}
-    <div class="bg-body-tertiary rounded-4 p-4 mx-auto" id="form-card">
-        {% block form_block %}
-        {% endblock %}
+{% block body %}
+    <div class="w-100" style="padding: 20px">
+        <div class="rounded-4 p-4 shadow mx-auto" style="background-color: #FCFCFC; width: 650px;">
+            {% block form_block %}
+            {% endblock %}
+        </div>
     </div>
 {% endblock %}

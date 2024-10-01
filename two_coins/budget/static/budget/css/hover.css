@@ -1,6 +1,6 @@
 .hover:hover {
   transition: transform 200ms ease-in-out;
-  border-color: lightsteelblue;
+  border: 1px solid #484848 !important;
 }
 
 .hover {

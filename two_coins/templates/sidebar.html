@@ -1,78 +1,124 @@
-<div class="d-flex flex-column p-3 h-100 bg-body-secondary" id="side-nav">
-    <a href="/" class="d-flex align-items-center ms-3 text-decoration-none text-reset" id="logo">
-        <span class="fw-semibold fs-3">2coins</span>
-    </a>
-
-    <hr>
-
-    <ul class="nav nav-pills flex-column mb-auto row-gap-2">
-        <li class="nav-item">
-            <a href="{% url 'dashboard' %}"
-               class="nav-link d-flex {% if request.path_info == '/' %} active {% else %} text-secondary {% endif %}"
-                    {% if request.path_info == '/' %} aria-current="page" {% endif %}>
-                <span class="material-symbols-outlined me-3">dashboard</span>
-                Dashboard
+<div class="sidebar d-flex flex-column justify-content-between shadow" id="sidebar">
+    <div>
+        <div class="d-flex align-items-center" style="height: 40px">
+            <a
+                    href="/"
+                    class="d-flex align-items-center text-decoration-none text-reset"
+            >
+                <div
+                        style="
+            width: 40px;
+            height: 40px;
+            background-color: #f4d03f;
+            border-radius: 10px;
+            margin-right: 12px;
+          "
+                ></div>
+                <h2 class="fw-semibold sidebar-item">2coins</h2>
             </a>
-        </li>
-        <li class="nav-item">
-            <a href="{% url 'account_list' %}"
-               class="nav-link d-flex {% if "account" in request.resolver_match.url_name %} active {% else %} text-secondary {% endif %}"
-                    {% if "account" in request.resolver_match.url_name %} aria-current="page" {% endif %}>
-                <span class="material-symbols-outlined me-3">account_balance_wallet</span>
-                Accounts
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{% url 'category_list' %}"
-               class="nav-link d-flex {% if "category" in request.resolver_match.url_name %} active {% else %} text-secondary {% endif %}"
-                    {% if "category" in request.resolver_match.url_name %} aria-current="page" {% endif %}>
-                <span class="material-symbols-outlined me-3">category</span>
-                Categories
-            </a>
-        </li>
-        <li class="]nav-item">
-            <a href="{% url 'transaction_list' %}"
-               class="nav-link d-flex {% if "transaction" in request.resolver_match.url_name %} active {% else %} text-secondary {% endif %}"
-                    {% if "transaction" in request.resolver_match.url_name %} aria-current="page" {% endif %}>
-                <span class="material-symbols-outlined me-3">receipt_long</span>
-                Transactions
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="{% url 'profile' %}"
-               class="nav-link d-flex {% if "profile" in request.resolver_match.url_name %} active {% else %} text-secondary {% endif %}"
-                    {% if "profile" in request.resolver_match.url_name %} aria-current="page" {% endif %}>
-                <span class="material-symbols-outlined me-3">manage_accounts</span>
-                Profile
-            </a>
-        </li>
-    </ul>
+        </div>
 
-    <hr>
+        <hr class="h-divider"/>
 
-    <div class="btn-group" role="group">
-        <input type="radio" class="btn-check" name="btn-light-theme" id="btn-light-theme" autocomplete="off" checked
-               onclick="go_light()">
-        <label class="btn btn-outline-secondary d-flex justify-content-center" for="btn-light-theme"
-               id="label-light-theme">
-            <span class="material-symbols-outlined me-2">light_mode</span>
-            Light
-        </label>
+        <ul class="nav nav-pills flex-column gap-2">
+            <li class="nav-item">
+                <a
+                        href="{% url 'dashboard' %}"
+                        class="nav-link d-flex align-items-center text-decoration-none {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+                        aria-current="page"
+                >
+                    <i
+                            class="fa-duotone fa-solid fa-house-chimney fa-lg fa-fw"
+                            style="margin-right: 12px; --fa-primary-color: #484848;"
+                    ></i>
+                    <span class="sidebar-item">Dashboard</span>
+                </a>
+            </li>
 
-        <input type="radio" class="btn-check" name="btn-dark-theme" id="btn-dark-theme" autocomplete="off"
-               onclick="go_dark()">
-        <label class="btn btn-outline-secondary d-flex justify-content-center" for="btn-dark-theme"
-               id="label-dark-theme">
-            <span class="material-symbols-outlined me-2">dark_mode</span>
-            Dark
-        </label>
+            <li class="nav-item">
+                <a
+                        href="{% url 'account_list' %}"
+                        class="nav-link d-flex align-items-center text-decoration-none {% if request.resolver_match.url_name == 'account_list' %}active{% endif %}"
+                >
+                    <i
+                            class="fa-duotone fa-solid fa-wallet fa-lg fa-fw"
+                            style="
+              margin-right: 12px;
+              --fa-primary-color: #484848;
+            "
+                    ></i>
+
+                    <span class="sidebar-item">Accounts</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a
+                        href="{% url 'category_list' %}"
+                        class="nav-link d-flex align-items-center text-decoration-none {% if request.resolver_match.url_name == 'category_list' %}active{% endif %}"
+                >
+                    <i
+                            class="fa-duotone fa-shapes fa-lg fa-fw"
+                            style="
+              margin-right: 12px;
+              --fa-primary-color: #484848;
+            "
+                    ></i>
+
+                    <span class="sidebar-item">Categories</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a
+                        href="{% url 'transaction_list' %}"
+                        class="nav-link d-flex align-items-center text-decoration-none {% if request.resolver_match.url_name == 'transaction_list' %}active{% endif %}"
+                >
+                    <i
+                            class="fa-duotone fa-solid fa-file-invoice-dollar fa-lg fa-fw"
+                            style="
+              margin-right: 12px;
+              --fa-primary-color: #484848;
+            "
+                    ></i>
+
+                    <span class="sidebar-item">Transactions</span>
+                </a>
+            </li>
+        </ul>
     </div>
 
-    <div class="mt-2">
-        {% if request.user.is_authenticated %}
-            <a type="button" class="btn btn-outline-primary w-100" href="{% url 'logout' %}">Logout</a>
-        {% else %}
-            <a type="button" class="btn btn-outline-primary w-100" href="{% url 'login' %}">Log in</a>
-        {% endif %}
+    <div id="sidebar-bottom">
+        <a href="{% url 'transaction_add' %}" class="btn btn-outline-secondary d-flex justify-content-center align-items-center" style="min-height: 40px; min-width: 40px">
+            <i class="fa-regular fa-minus-square fa-lg fa-fw" style="margin-right: 10px"></i>
+            <span class="sidebar-item">Add transaction</span>
+        </a>
+
+        <hr class="h-divider"/>
+
+        <div class="d-flex justify-content-between align-items-center">
+            <a href="{% url 'profile' %}">
+                <div class="d-flex align-items-center">
+                    <div
+                            style="
+            width: 40px;
+            height: 40px;
+            background-color: #f4d03f;
+            border-radius: 10px;
+            margin-right: 12px;
+          "
+                    ></div>
+
+                    <span class="sidebar-item" style="font-size: 16px;">Oleh Papka</span>
+                </div>
+            </a>
+
+            <a href="{% url 'logout' %}" class="btn sidebar-item">
+                <i
+                        class="fa-duotone fa-solid fa-arrow-right-from-bracket fa-xl"
+                        style="--fa-primary-color: #484848"
+                ></i>
+            </a>
+        </div>
     </div>
 </div>

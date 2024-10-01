@@ -8,221 +8,331 @@
     <link rel="stylesheet" href="{% static 'budget/css/currency_list.css' %}">
     <link rel="stylesheet" href="{% static 'scroll_shadow.css' %}">
     <link rel="stylesheet" href="{% static 'budget/css/hover.css' %}">
+
+
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css"/>
+    <style>
+        /* Initially hide the extra columns */
+        .extra-column {
+            display: none;
+        }
+
+        /* When the table expands, show extra columns */
+        .expanded .extra-column {
+            display: table-cell;
+        }
+
+        .expanded-content {
+            max-width: 700px !important;
+            width: 700px !important;
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
     <div class="w-100 vh-100">
-        <div class="row m-0 vh-100 d-flex">
-            <div class="d-flex h-100 flex-column align-items-center p-4" style="max-width: 33rem">
+        <div class="row m-0 vh-100 d-flex" style="padding: 20px; gap: 20px;">
 
-                <div class="card w-100 rounded-4 border border-2 bg-body-secondary bg-opacity-25"
-                     style="min-width: 16rem; min-height: 10rem;">
-                    <div class="card-body d-flex flex-column justify-content-between">
-                        <div class="d-flex gap-2 align-items-center">
-                            <div class="d-flex justify-content-center align-items-center rounded-3"
-                                 style="width: 3rem; height: 3rem; background-color: #{{ object.style.color }}2a">
-                                <i class="{{ object.style.icon }} fa-xl"
-                                   style="color: #{{ object.style.color }}"></i>
+            <div class="d-flex h-100 flex-column col justify-content-between shadow" id="table-col"
+                 style="max-width: 520px; padding: 20px; border-radius: 20px; background-color: #FCFCFC">
+
+                <div>
+                    <div class="card"
+                         style="width: 100%; margin-bottom: 16px; border-radius: 16px; border: 1px solid rgba(72, 72, 72, 0.4);">
+                        <div class="card-body d-flex justify-content-between">
+                            <div class="d-flex align-items-center" style="gap: 16px">
+                                <div class="d-flex justify-content-center align-items-center rounded-3"
+                                     style="width: 40px; height: 40px; background-color: #{{ object.style.color }}2a">
+                                    <i class="{{ object.style.icon }} fa-xl"
+                                       style="color: #{{ object.style.color }}"></i>
+                                </div>
+
+                                <div class="d-flex" style="gap: 10px">
+                                    <h5>
+                                        {{ object.name }}
+                                    </h5>
+                                    {% if object.description %}
+                                        <span class="text-body-secondary">({{ object.description }})</span>
+                                    {% endif %}
+                                </div>
                             </div>
 
-                            <div>
-                                <h4>
-                                    {{ object.name }}
-                                </h4>
-                            </div>
-                        </div>
-                        <small class="text-body-secondary">Description</small>
+                            <div class="d-flex align-self-center align-items-center">
+                                {% if object.account_type == 's' and object.target_balance %}
+                                    <h4 class="text-secondary">
+                                        {{ object.balance|strip_trailing_zeros|int_space }}
+                                    </h4>
+                                    <h4>&nbsp;/&nbsp;</h4>
+                                    <h4 class="text-secondary">
+                                        {{ object.target_balance|strip_trailing_zeros|int_space }} {{ account.currency.symbol }}
+                                    </h4>
+                                {% else %}
+                                    <h4 class="text-secondary">
+                                        {{ object.balance|strip_trailing_zeros|int_space }} {{ account.currency.symbol }}
+                                    </h4>
+                                {% endif %}
 
-                        <div class="d-flex justify-content-between align-items-end">
-                            <h4 class="card-text">
-                                {{ object.balance|strip_trailing_zeros|int_space }} {{ object.currency.symbol }}
-                            </h4>
-
-                            <div class="dropdown">
-                                <button class="btn btn-outline-secondary dropdown-toggle" type="button"
-                                        data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fa-solid fa-ellipsis me-2"></i>Actions
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li>
-                                        <a class="dropdown-item text-info"
-                                           href="{% url 'transfer_add' %}?account={{ object.id }}">
-                                            <i class="fa-solid fa-arrow-right-arrow-left me-2"></i>Transfer
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item text-warning" href="{% url 'account_edit' object.id %}">
-                                            <i class="fa-regular fa-pen-to-square me-2"></i>Edit
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item text-danger"
-                                           href="{% url 'account_delete' object.id %}">
-                                            <i class="fa-regular fa-trash-can me-2"></i>Delete
-                                        </a>
-                                    </li>
-                                </ul>
+                                <div class="dropend" style="margin-left: 10px">
+                                    <button class="btn btn-outline-secondary btn" type="button"
+                                            data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                                            aria-expanded="false">
+                                        <i class="fa-regular fa-ellipsis"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item text-info"
+                                               href="{% url 'transfer_add' %}?account={{ object.id }}">
+                                                <i class="fa-solid fa-arrow-right-arrow-left me-2"></i>Transfer
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item text-warning"
+                                               href="{% url 'account_edit' object.id %}">
+                                                <i class="fa-regular fa-pen-to-square me-2"></i>Edit
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item text-danger"
+                                               href="{% url 'account_delete' object.id %}">
+                                                <i class="fa-regular fa-trash-can me-2"></i>Delete
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="mt-3 p-3 w-100 d-flex flex-column overflow-y-scroll scrollbox">
-                    {% for action_group in combined_actions %}
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h6 class="m-0">{{ action_group.date }}</h6>
-
-                            {% if action_group.total > 0 %}
-                                <strong class="text-success">
-                                    +{{ action_group.total|strip_trailing_zeros|int_space }} {{ action_group.actions.0.action.account.currency.symbol }}
-                                </strong>
-                            {% elif action_group.total == 0%}
-                                <strong class="text-secondary">
-                                    {{ action_group.total|strip_trailing_zeros|int_space }} {{ action_group.actions.0.action.account.currency.symbol }}
-                                </strong>
-                            {% else %}
-                                <strong class="text-danger">
-                                    {{ action_group.total|strip_trailing_zeros|int_space }} {{ action_group.actions.0.action.account.currency.symbol }}
-                                </strong>
-                            {% endif %}
+                    <div class="w-100 d-flex justify-content-between align-items-center"
+                         style="height: 40px; gap: 20px; margin-bottom: 16px">
+                        <div class="input-group" style="width: 270px;">
+                            <span class="input-group-text"><i
+                                    class="fa-duotone fa-solid fa-calendar-days fa-lg"></i></span>
+                            <input type="text" class="form-control" name="daterange" value="{{ date_range }}">
                         </div>
 
-                        <hr>
+                        <button id="toggle-button" class="btn btn-outline-secondary"><i
+                                class="fa-solid fa-expand"></i>
+                        </button>
+                    </div>
 
-                        {% for action_ in action_group.actions %}
-                            <div class="mb-3 mx-2 border border-2 rounded p-2 d-flex justify-content-between">
-                                <div class="card-title mb-0 me-2 d-flex align-items-center">
-                                    {% if action_.action_type == 'trf' %}
+
+                    <hr class="h-divider"/>
+
+                    <table class="table table-hover" id="txn-table" style="vertical-align: middle;">
+                        <tbody>
+                        {% for action in combined_actions %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
                                         <div class="d-flex justify-content-center align-items-center rounded-2 me-2"
-                                             style="width: 2.5rem; height: 2.5rem; background-color: #0CCAF02A">
-                                            <i class="fa-solid fa-arrow-right-arrow-left" style="color: #0CCAF0"></i>
+                                             style="width: 30px; height: 30px; {% if action.action_type == 'trf' %}background-color: #0CCAF02A{% else %}background-color: #{{ action.category.style.color }}2A{% endif %}">
+                                            <i class="{% if action.action_type == 'trf' %}fa-duotone fa-solid fa-right-left{% else %}{{ action.category.style.icon }}{% endif %}"
+                                               style="{% if action.action_type == 'trf' %}color: #0CCAF0{% else %}color: #{{ action.category.style.color }}{% endif %}"></i>
                                         </div>
+                                        {% if action.action_type == 'trf' %}Transfer{% else %}
+                                            {{ action.category.name }}{% endif %}
+                                    </div>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if action.action_type == 'trf' %}
+                                            <div class="d-flex justify-content-center align-items-center rounded-2 me-2">
+                                                <i class="{{ action.account_from.style.icon }}"
+                                                   style="color: #{{ action.account_from.style.color }}"></i>
+                                            </div>
+                                            {{ action.account_from.name }}
 
-                                        <div class="d-flex flex-column">
-                                            <p class="m-0">
-                                                Transfer {% if action_.action.account_from == object %}from{% else %}
-                                                to{% endif %}
-                                                {% if action_.action.description %}
-                                                    <small class="text-secondary">({{ action_.action.description|default_if_none:""|truncatechars:15 }})</small>
-                                                {% endif %}
-                                            </p>
-                                            <small class="m-0 text-secondary">
-                                                <i class="{{ action_.action.account_from.style.icon }}"></i>
-                                                {{ action_.action.account_from.name|default_if_none:"" }}
-                                                → <i class="{{ action_.action.account_to.style.icon }}"></i>
-                                                {{ action_.action.account_to.name|default_if_none:"" }}
-                                            </small>
-                                        </div>
+                                            <i class="fa-duotone fa-arrow-right mx-2 text-secondary"></i>
+
+                                            <div class="d-flex justify-content-center align-items-center rounded-2 me-2">
+                                                <i class="{{ action.account_to.style.icon }}"
+                                                   style="color: #{{ action.account_to.style.color }}"></i>
+                                            </div>
+                                            {{ action.account_to.name }}
+                                        {% else %}
+                                            <div class="d-flex justify-content-center align-items-center rounded-2 me-2">
+                                                <i class="{{ action.account.style.icon }}"
+                                                   style="color: #{{ action.account.style.color }}"></i>
+                                            </div>
+                                            {{ action.account.name }}
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    {% if action.action_type == 'trf' %}
+                                        {% if action.account_from.currency == action.account_to.currency %}
+                                            <strong class="m-0 text-secondary">
+                                                {{ action.amount_from|strip_trailing_zeros|int_space }} {{ action.account_from.currency.symbol }}
+                                            </strong>
+                                        {% else %}
+                                            <strong class="m-0 text-secondary">
+                                                {{ action.amount_from|strip_trailing_zeros|int_space }} {{ action.account_from.currency.symbol }}
+                                            </strong>
+                                            <span class="m-0 text-secondary">({{ action.amount_to|strip_trailing_zeros|int_space }} {{ action.account_to.currency.symbol }}
+                                                )</span>
+                                        {% endif %}
                                     {% else %}
-                                        <div class="d-flex justify-content-center align-items-center rounded-2 me-2"
-                                             style="width: 2.5rem; height: 2.5rem; background-color: #{{ action_.action.category.style.color }}2A">
-                                            <i class="{{ action_.action.category.style.icon }}"
-                                               style="color: #{{ action_.action.category.style.color }}"></i>
-                                        </div>
-
-                                        <div class="d-flex flex-column">
-                                            <p class="m-0">
-                                                {{ action_.action.category.name }}
-                                                {% if action_.action.description %}
-                                                    <small class="text-secondary">({{ action_.action.description|default_if_none:""|truncatechars:15 }})</small>
-                                                {% endif %}
-                                            </p>
-                                            <small class="m-0 text-secondary">
-                                                <i class="{{ action_.action.account.style.icon }}"></i>
-                                                {{ action_.action.account.name|default_if_none:"" }}
-                                            </small>
-                                        </div>
+                                        {% if action.amount_converted %}
+                                            <strong class="m-0 {% if action.transaction_type == '-' %}text-danger{% else %}text-success{% endif %}">
+                                                {% if action.amount > 0 and action.transaction_type == '+' %}
+                                                    +{% elif action.amount > 0 and action.transaction_type == '-' %}
+                                                    -{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.currency.symbol }}
+                                            </strong> <span class="m-0 text-secondary">
+                                            ({% if action.amount > 0 and action.transaction_type == '+' %}
+                                            +{% elif action.amount > 0 and action.transaction_type == '-' %}
+                                            -{% endif %}{{ action.amount_converted|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }})
+                                        </span>
+                                        {% else %}
+                                            <strong class="m-0 {% if action.transaction_type == '-' %}text-danger{% else %}text-success{% endif %}">
+                                                {% if action.amount > 0 and action.transaction_type == '+' %}
+                                                    +{% elif action.amount > 0 and action.transaction_type == '-' %}
+                                                    -{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }}
+                                            </strong>
+                                        {% endif %}
                                     {% endif %}
-                                </div>
-
-                                {% if action_.action_type == 'trf' %}
-                                    <div class="d-flex flex-column align-items-end justify-content-center ms-auto me-3">
-                                        {% if action_.action.account_from.currency == action_.action.account_to.currency %}
-                                            <strong class="m-0 {% if action_.action.account_from == object %}text-danger{% else %}text-success{% endif %}">
-                                                {% if action_.action.account_from == object %}-{% else %}
-                                                    +{% endif %}{{ action_.action.amount_from|strip_trailing_zeros|int_space }} {{ action_.action.account_from.currency.symbol }}
-                                            </strong>
-                                        {% else %}
-                                            <strong class="m-0 {% if action_.action.account_from == object %}text-danger{% else %}text-success{% endif %}">
-                                                {% if action_.action.account_from == object %}-{% else %}
-                                                    +{% endif %}{{ action_.action.amount_from|strip_trailing_zeros|int_space }} {{ action_.action.account_from.currency.symbol }}
-                                            </strong>
-                                            <small class="m-0 {% if action_.action.account_from == object %}text-danger{% else %}text-success{% endif %}">
-                                                {% if action_.action.account_from == object %}-{% else %}
-                                                    +{% endif %}{{ action_.action.amount_to|strip_trailing_zeros|int_space }} {{ action_.action.account_to.currency.symbol }}
-                                            </small>
-                                        {% endif %}
-                                    </div>
-                                {% else %}
-                                    <div class="d-flex flex-column align-items-end justify-content-center ms-auto me-3">
-                                        {% if action_.action.amount_converted %}
-                                            <strong class="m-0 {% if action_.action.transaction_type == '-' %}text-danger{% else %}text-success{% endif %}">
-                                                {% if action_.action.amount > 0 %}
-                                                    +{% endif %}{{ action_.action.amount|strip_trailing_zeros|int_space }} {{ action_.action.currency.symbol }}
-                                            </strong>
-                                            <small class="m-0 text-secondary">
-                                                {% if action_.action.amount > 0 %}
-                                                    +{% endif %}{{ action_.action.amount_converted|strip_trailing_zeros|int_space }} {{ action_.action.account.currency.symbol }}
-                                            </small>
-                                        {% else %}
-                                            <strong class="m-0 {% if action_.action.transaction_type == '-' %}text-danger{% else %}text-success{% endif %}">
-                                                {% if action_.action.amount > 0 and action_.action.transaction_type == '+' %}
-                                                    +{% endif %}{{ action_.action.amount|strip_trailing_zeros|int_space }} {{ action_.action.account.currency.symbol }}
-                                            </strong>
-                                        {% endif %}
-                                    </div>
-                                {% endif %}
-
-                                <div class="d-flex gap-3 align-items-center">
-                                    <div class="vr"></div>
-
-                                    <div class="dropdown" style="position: static;">
-                                        <a class="btn btn-outline-secondary dropdown-toggle"
-                                           href="#" role="button"
-                                           data-bs-toggle="dropdown" aria-expanded="false">
-                                            <i class="fa-solid fa-ellipsis"></i>
-                                        </a>
-
+                                </td>
+                                <td class="extra-column d-none text-center">
+                                    <span class="text-secondary">{{ action.date|date:"d/m" }}</span>
+                                </td>
+                                <td class="extra-column d-none text-center">
+                                    <span class="text-secondary">{{ action.description|default_if_none:"..." }}</span>
+                                </td>
+                                <td class="gap-2 text-end">
+                                    <div class="dropend">
+                                        <button class="btn btn-outline-secondary btn-sm" type="button"
+                                                data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                                                aria-expanded="false">
+                                            <i class="fa-regular fa-ellipsis"></i>
+                                        </button>
                                         <ul class="dropdown-menu dropdown-menu-end">
-                                            {% if action_.action.transaction_type != '>' %}
-                                                <li>
-                                                    <a class="dropdown-item text-warning"
-                                                       href="{% url 'transaction_edit' action_.action.id %}">
-                                                        <i class="fa-regular fa-pen-to-square me-2"></i>
-                                                        Edit
-                                                    </a>
-                                                </li>
-                                            {% endif %}
-                                            <li>
-                                                <a class="dropdown-item text-danger"
-                                                   href="{% url 'transaction_delete' action_.action.id %}">
-                                                    <i class="fa-regular fa-trash-can me-2"></i>
-                                                    Delete
-                                                </a>
-                                            </li>
+                                            <li><a class="dropdown-item text-warning"
+                                                   {% if action.action_type == 'trf' %}href="{% url 'transfer_edit' action.id %}"
+                                                   {% else %}href="{% url 'transaction_edit' action.id %}"{% endif %}>
+                                                <i class="fa-regular fa-pen-to-square me-2"></i>
+                                                Edit
+                                            </a></li>
+                                            <li><a class="dropdown-item text-danger"
+                                                   {% if action.action_type == 'trf' %}href="{% url 'transfer_delete' action.id %}"
+                                                   {% else %}href="{% url 'transaction_delete' action.id %}"{% endif %}>
+                                                <i class="fa-regular fa-trash-can-xmark me-2"></i>
+                                                Delete
+                                            </a></li>
                                         </ul>
                                     </div>
-                                </div>
-                            </div>
+                                </td>
+                            </tr>
                         {% endfor %}
-
-                        {% if not forloop.last %}
-                            <div class="m-2"></div>
-                        {% endif %}
-                    {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
 
-                <div class="w-100 d-flex mt-3">
-                    <div class="p-2 mx-3 w-100 card border-2 rounded-2 hover">
-                        <div class="card-body d-flex justify-content-center">
-                            <a href="{% url 'transaction_add' %}?account={{ account.id }}"
-                               class="stretched-link"></a>
-                            <i class="fa-solid fa-plus fa-xl text-secondary"></i>
-                        </div>
+                <div class="card hover"
+                     style="width: 100%; height: 50px; border-radius: 10px; border: 1px solid rgba(72, 72, 72, 0.4);">
+                    <div class="card-body d-flex justify-content-center align-items-center">
+                        <a href="{% url 'transaction_add' %}" class="stretched-link"></a>
+                        <i class="fa-solid fa-plus fa-xl text-secondary"></i>
                     </div>
                 </div>
             </div>
+
+            <div class="d-flex h-100 flex-column col shadow"
+                 style="padding: 20px; border-radius: 20px; background-color: #FCFCFC"></div>
         </div>
     </div>
+{% endblock %}
+
+{% block custom_scripts %}
+    <script>
+        $(function () {
+            $('input[name="daterange"]').daterangepicker({
+                ranges: {
+                    'Today': [moment(), moment()],
+                    'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                    'This Week': [moment().startOf('isoWeek'), moment().endOf('isoWeek')],
+                    'Last Week': [moment().subtract(1, 'week').startOf('isoWeek'), moment().subtract(1, 'week').endOf('isoWeek')],
+                    'This Month': [moment().startOf('month'), moment().endOf('month')],
+                    'All time': [moment().subtract(100, 'year').startOf('month'), moment()]
+                },
+                "alwaysShowCalendars": true,
+                "locale": {
+                    "format": "MM/DD/YYYY",
+                    "separator": " - ",
+                    "applyLabel": "Apply",
+                    "cancelLabel": "Cancel",
+                    "fromLabel": "From",
+                    "toLabel": "To",
+                    "customRangeLabel": "Custom",
+                    "weekLabel": "W",
+                    "daysOfWeek": [
+                        "Su",
+                        "Mo",
+                        "Tu",
+                        "We",
+                        "Th",
+                        "Fr",
+                        "Sa"
+                    ],
+                    "monthNames": [
+                        "January",
+                        "February",
+                        "March",
+                        "April",
+                        "May",
+                        "June",
+                        "July",
+                        "August",
+                        "September",
+                        "October",
+                        "November",
+                        "December"
+                    ],
+                    "firstDay": 1
+                },
+                "drops": "auto"
+            }, function (start, end, label) {
+                const url = `{% url 'account' object.id %}?start_date=${start.format('YYYY-MM-DD')}&end_date=${end.format('YYYY-MM-DD')}`;
+                window.location.href = url;
+            });
+        })
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const toggleButton = document.getElementById('toggle-button');
+            const tableCol = document.getElementById('table-col');
+            const extraColumns = document.querySelectorAll('.extra-column');
+            const sidebar = document.getElementById('sidebar');
+            const table = document.getElementById('txn-table');
+            const icon = toggleButton.querySelector('i');
+
+            toggleButton.addEventListener('click', function () {
+                // Toggle extra columns visibility
+                extraColumns.forEach(function (column) {
+                    if (column.classList.contains('d-none')) {
+                        column.classList.remove('d-none');
+                    } else {
+                        column.classList.add('d-none');
+                    }
+                });
+
+                table.classList.toggle('expanded');
+                tableCol.classList.toggle('expanded-content');
+                sidebar.classList.toggle('minimized');
+
+                if (icon.classList.contains('fa-expand')) {
+                    icon.classList.remove('fa-expand');
+                    icon.classList.add('fa-compress');
+                    icon.classList.replace('fa-solid', 'fa-regular'); // Replace solid with regular if needed
+                } else {
+                    icon.classList.remove('fa-compress');
+                    icon.classList.add('fa-expand');
+                    icon.classList.replace('fa-regular', 'fa-solid'); // Replace regular with solid if needed
+                }
+            });
+        });
+    </script>
 {% endblock %}
 

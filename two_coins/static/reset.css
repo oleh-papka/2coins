@@ -16,6 +16,8 @@ h1,
 h2,
 h3,
 h4,
+h5,
+h6,
 p,
 figure,
 blockquote,
@@ -38,6 +40,70 @@ html:focus-within {
 /* Set core body defaults */
 body {
     text-rendering: optimizeSpeed;
+    background-color: #bbbbb8;
 }
 
 
+main {
+    height: 100vh;
+    max-height: 100vh;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+hr.h-divider {
+    border-top: 1px solid #484848;
+    margin: 16px 0;
+    opacity: 0.65;
+}
+
+a {
+    color: #484848;
+    text-decoration: none;
+}
+
+table,
+tbody,
+th,
+tr,
+td {
+    background-color: transparent !important;
+}
+
+.card-text {
+    color: rgba(72, 72, 72, 0.7);
+}
+
+.dropdown-item:active {
+    background-color: transparent !important;
+}
+
+.form-control:focus {
+    border-color: #F4CF3F !important;
+    box-shadow: 0 0 0 0.2rem #F4CF3F60 !important;
+}
+
+.form-select:focus {
+    outline: none !important;
+    /*box-shadow: none !important;*/
+    border: 1px solid #F4CF3F;
+    box-shadow: 0 0 0 0.2rem #F4CF3F60 !important;
+}
+
+.form-switch .form-check-input {
+    height: 24px;
+    width: 48px;
+}
+
+.form-switch .form-check-input:focus {
+    border-color: #F4CF3F85;
+    outline: 0;
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+    background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(0,0,0,0.25)'/></svg>");
+}
+
+.form-switch .form-check-input:checked {
+    background-color: #F4CF3F;
+    border: none;
+    background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba(255,255,255,1.0)'/></svg>");
+}

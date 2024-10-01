@@ -1,10 +1,6 @@
 {% extends 'delete_form.html' %}
 {% load static %}
 
-{% block custom_static %}
-    <link rel="stylesheet" href="{% static 'budget/css/accounts_create.css' %}">
-{% endblock %}
-
 {% block form_block %}
     <form action="{% url 'transaction_delete' object.id %}" method="post">
         {% csrf_token %}
@@ -20,7 +16,7 @@
 
         <div class="d-flex justify-content-end column-gap-2 mt-4">
             <a href="{% url 'transaction_list' %}" type="button" class="btn btn-outline-secondary">Back</a>
-            <button class="btn btn-danger" type="submit">Delete</button>
+            <button class="btn btn-outline-danger" type="submit">Delete</button>
         </div>
     </form>
 {% endblock %}

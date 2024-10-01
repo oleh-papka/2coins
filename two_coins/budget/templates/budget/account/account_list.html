@@ -1,4 +1,9 @@
-{% extends 'list_objects.html' %}
+{% extends 'base.html' %}
+
+{% block sidebar %}
+    {% include 'sidebar.html' %}
+{% endblock %}
+
 {% load number_filters %}
 
 {% block title %}2coins | {{ instance_name }}{% endblock %}
@@ -10,13 +15,14 @@
 
 {% block body %}
     <div class="w-100 vh-100">
-        <div class="row m-0 vh-100 d-flex">
-            <div class="d-flex h-100 flex-column align-items-center p-4" style="max-width: 23rem">
+        <div class="row m-0 vh-100 d-flex" style="padding: 20px; gap: 20px">
+            <div class="d-flex h-100 flex-column align-items-center col shadow"
+                 style="max-width: 520px; padding: 20px; border-radius: 20px; background-color: #FCFCFC">
 
-                <div class="p-4 w-100 d-flex flex-column align-items-center gap-4 overflow-y-scroll scrollbox">
+                <div class="w-100 d-flex flex-wrap justify-content-between" style="gap: 20px; overflow-y: auto; scrollbar-width: none;">
                     {% for account in object_list %}
-                        <div class="card rounded-4 border border-2 bg-body-secondary bg-opacity-25 hover"
-                             style="width: 16rem; min-height: 10rem;">
+                        <div class="card"
+                             style="width: 230px; height: 150px; border-radius: 16px; border: 1px solid rgba(72, 72, 72, 0.4);">
                             <a href="{% url 'account' account.id %}" class="stretched-link text-reset"
                                style="text-decoration: none;"></a>
                             <div class="card-body d-flex flex-column justify-content-between">
@@ -37,34 +43,39 @@
                                     </div>
                                 </div>
 
-                                <div class="d-flex">
+                                <div class="d-flex align-self-end">
                                     {% if account.account_type == 's' and account.target_balance %}
-                                        <h4 class="card-text">
-                                            {{ account.balance|strip_trailing_zeros|int_space }} {{ account.currency.symbol }}
-                                        </h4>
-                                        <h4>&nbsp;/&nbsp;</h4>
-                                        <h4 class="card-text">
+                                        <h5 class="card-text">
+                                            {{ account.balance|strip_trailing_zeros|int_space }}
+                                        </h5>
+                                        <h5>&nbsp;/&nbsp;</h5>
+                                        <h5 class="card-text">
                                             {{ account.target_balance|strip_trailing_zeros|int_space }} {{ account.currency.symbol }}
-                                        </h4>
+                                        </h5>
                                     {% else %}
-                                        <h4 class="card-text">
+                                        <h5 class="card-text">
                                             {{ account.balance|strip_trailing_zeros|int_space }} {{ account.currency.symbol }}
-                                        </h4>
+                                        </h5>
                                     {% endif %}
                                 </div>
                             </div>
                         </div>
                     {% endfor %}
-                </div>
 
-                <div class="card rounded-4 p-4 border border-2 bg-body-secondary bg-opacity-25 hover"
-                     style="width: 16rem; height: 5rem;">
-                    <div class="card-body d-flex justify-content-center align-items-center">
-                        <a href="{% url 'account_add' %}" class="stretched-link"></a>
-                        <i class="fa-solid fa-plus fa-2xl text-secondary"></i>
+                    <div class="card hover"
+                         style="width: 230px; height: 150px; border-radius: 16px; border: 1px solid rgba(72, 72, 72, 0.4);">
+                        <div class="card-body d-flex justify-content-center align-items-center">
+                            <a href="{% url 'account_add' %}" class="stretched-link"></a>
+                            <i class="fa-solid fa-plus fa-2xl text-secondary"></i>
+                        </div>
                     </div>
                 </div>
+
+
             </div>
+
+            <div class="d-flex h-100 flex-column align-items-center p-4 col shadow"
+                 style="padding: 20px; border-radius: 20px; background-color: #FCFCFC"></div>
         </div>
     </div>
 {% endblock %}
