@@ -136,30 +136,31 @@
                                         {% if action.action_type == 'trf' %}Transfer{% else %}
                                             {{ action.category.name }}{% endif %}
                                     </div>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        {% if action.action_type == 'trf' %}
-                                            <div class="d-flex justify-content-center align-items-center rounded-2 me-2">
-                                                <i class="{{ action.account_from.style.icon }}"
-                                                   style="color: #{{ action.account_from.style.color }}"></i>
-                                            </div>
-                                            {{ action.account_from.name }}
+                                </td>
+                                <td class="text-center">
+                                    {% if action.action_type == 'trf' %}
+                                        <div class="d-flex align-items-center justify-content-center">
+                                            {% if action.account_from.id != object.id %}
+                                                <div class="d-flex justify-content-center align-items-center rounded-2 me-2">
+                                                    <i class="{{ action.account_from.style.icon }}"
+                                                       style="color: #{{ action.account_from.style.color }}"></i>
+                                                </div>
+                                                {{ action.account_from.name }}
+                                            {% endif %}
 
                                             <i class="fa-duotone fa-arrow-right mx-2 text-secondary"></i>
 
-                                            <div class="d-flex justify-content-center align-items-center rounded-2 me-2">
-                                                <i class="{{ action.account_to.style.icon }}"
-                                                   style="color: #{{ action.account_to.style.color }}"></i>
-                                            </div>
-                                            {{ action.account_to.name }}
-                                        {% else %}
-                                            <div class="d-flex justify-content-center align-items-center rounded-2 me-2">
-                                                <i class="{{ action.account.style.icon }}"
-                                                   style="color: #{{ action.account.style.color }}"></i>
-                                            </div>
-                                            {{ action.account.name }}
-                                        {% endif %}
-                                    </div>
+                                            {% if action.account_to.id != object.id %}
+                                                <div class="d-flex justify-content-center align-items-center rounded-2 me-2">
+                                                    <i class="{{ action.account_to.style.icon }}"
+                                                       style="color: #{{ action.account_to.style.color }}"></i>
+                                                </div>
+                                                {{ action.account_to.name }}
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-secondary">...</span>
+                                    {% endif %}
                                 </td>
                                 <td class="text-end">
                                     {% if action.action_type == 'trf' %}

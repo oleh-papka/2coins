@@ -33,7 +33,7 @@
 {% block body %}
     <div class="w-100 vh-100">
         <div class="row m-0 vh-100 d-flex" style="padding: 20px; gap: 20px;">
-        
+
             <div class="d-flex h-100 flex-column col justify-content-between shadow" id="table-col"
                  style="max-width: 520px; padding: 20px; border-radius: 20px; background-color: #FCFCFC">
 
@@ -94,16 +94,17 @@
                         <tbody>
                         {% for action in transactions %}
                             <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div class="d-flex justify-content-center align-items-center rounded-2 me-2"
-                                             style="width: 30px; height: 30px; {% if action.action_type == 'trf' %}background-color: #0CCAF02A{% else %}background-color: #{{ action.category.style.color }}2A{% endif %}">
-                                            <i class="{% if action.action_type == 'trf' %}fa-duotone fa-solid fa-right-left{% else %}{{ action.category.style.icon }}{% endif %}"
-                                               style="{% if action.action_type == 'trf' %}color: #0CCAF0{% else %}color: #{{ action.category.style.color }}{% endif %}"></i>
-                                        </div>
-                                        {% if action.action_type == 'trf' %}Transfer{% else %}
-                                            {{ action.category.name }}{% endif %}
-                                    </div>
+{#                                <td>#}
+{#                                    <div class="d-flex align-items-center">#}
+{#                                        <div class="d-flex justify-content-center align-items-center rounded-2 me-2"#}
+{#                                             style="width: 30px; height: 30px; {% if action.action_type == 'trf' %}background-color: #0CCAF02A{% else %}background-color: #{{ action.category.style.color }}2A{% endif %}">#}
+{#                                            <i class="{% if action.action_type == 'trf' %}fa-duotone fa-solid fa-right-left{% else %}{{ action.category.style.icon }}{% endif %}"#}
+{#                                               style="{% if action.action_type == 'trf' %}color: #0CCAF0{% else %}color: #{{ action.category.style.color }}{% endif %}"></i>#}
+{#                                        </div>#}
+{#                                        {% if action.action_type == 'trf' %}Transfer{% else %}#}
+{#                                            {{ action.category.name }}{% endif %}#}
+{#                                    </div>#}
+{#                                </td>#}
                                 <td>
                                     <div class="d-flex align-items-center">
                                         {% if action.action_type == 'trf' %}
@@ -162,10 +163,10 @@
                                         {% endif %}
                                     {% endif %}
                                 </td>
-                                <td class="extra-column d-none text-center">
+                                <td class="text-center">
                                     <span class="text-secondary">{{ action.date|date:"d/m" }}</span>
                                 </td>
-                                <td class="extra-column d-none text-center">
+                                <td class="text-center">
                                     <span class="text-secondary">{{ action.description|default_if_none:"..." }}</span>
                                 </td>
                                 <td class="gap-2 text-end">
@@ -206,7 +207,7 @@
                     </div>
                 </div>
             </div>
-        
+
             <div class="d-flex h-100 flex-column col shadow"
                  style="padding: 20px; border-radius: 20px; background-color: #FCFCFC"></div>
         </div>

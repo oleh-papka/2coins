@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from ..models import Transaction, Account
+from ..models import Transaction, Account, Transfer, Category, Currency
 
 
 class NestedAccountSerializer(serializers.ModelSerializer):
@@ -9,7 +9,19 @@ class NestedAccountSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'balance', 'currency']
 
 
-class TransactionDetailSerializer(serializers.ModelSerializer):
+class NestedCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'category_type']
+
+
+class NestedCurrencySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Currency
+        fields = ['id', 'name', 'currency_type', 'symbol', 'abbr']
+
+
+class TransactionDetailedSerializer(serializers.ModelSerializer):
     account = NestedAccountSerializer()
 
     class Meta:
@@ -23,13 +35,24 @@ class TransactionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class AccountSerializer(serializers.ModelSerializer):
+class TransferSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Account
+        model = Transfer
         fields = '__all__'
 
 
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Account
-        fields = '__all__'
+class CombinedTxnTrfSerializer(serializers.Serializer):
+    transaction_type = serializers.ChoiceField(choices=Transaction.TRANSACTION_TYPE_CHOICES, required=False)
+    account = NestedAccountSerializer(required=False)
+    account_from = NestedAccountSerializer(required=False)
+    account_to = NestedAccountSerializer(required=False)
+    category = NestedCategorySerializer(required=False)
+    currency = NestedCurrencySerializer(required=False)
+    amount = serializers.DecimalField(max_digits=20, decimal_places=8, required=False)
+    amount_from = serializers.DecimalField(max_digits=20, decimal_places=8, required=False)
+    amount_to = serializers.DecimalField(max_digits=20, decimal_places=8, required=False)
+    amount_converted = serializers.DecimalField(max_digits=20, decimal_places=8, required=False)
+    description = serializers.CharField()
+    date = serializers.DateTimeField()
+
+    action_type = serializers.CharField()
