@@ -4,7 +4,6 @@ from operator import attrgetter
 from django.db.models.functions import TruncDate
 from rest_framework import mixins, generics
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from .serializers import TransactionDetailedSerializer, CombinedTxnTrfSerializer, TransactionSerializer
 from ..models import Transaction, Transfer
@@ -43,7 +42,9 @@ class TransactionDeleteView(generics.DestroyAPIView):
     serializer_class = TransactionSerializer
 
 
-class CombinedActionListView(APIView):
+class CombinedActionListView(generics.GenericAPIView):
+    serializer_class = CombinedTxnTrfSerializer
+
     def get(self, request, *args, **kwargs):
         user = request.user
 

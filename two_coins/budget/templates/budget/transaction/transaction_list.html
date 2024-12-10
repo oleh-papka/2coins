@@ -65,9 +65,9 @@
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="d-flex justify-content-center align-items-center rounded-2 me-2"
-                                             style="width: 30px; height: 30px; {% if action.action_type == 'trf' %}background-color: #0CCAF02A{% else %}background-color: #{{ action.category.style.color }}2A{% endif %}">
-                                            <i class="{% if action.action_type == 'trf' %}fa-duotone fa-solid fa-right-left{% else %}{{ action.category.style.icon }}{% endif %}"
-                                               style="{% if action.action_type == 'trf' %}color: #0CCAF0{% else %}color: #{{ action.category.style.color }}{% endif %}"></i>
+                                             style="width: 30px; height: 30px; {% if action.action_type == 'trf' %}background-color: #0CCAF02A{% else %}background-color: #{{ action.category.color }}2A{% endif %}">
+                                            <i class="{% if action.action_type == 'trf' %}fa-duotone fa-solid fa-right-left{% else %}{{ action.category.icon }}{% endif %}"
+                                               style="{% if action.action_type == 'trf' %}color: #0CCAF0{% else %}color: #{{ action.category.color }}{% endif %}"></i>
                                         </div>
                                         {% if action.action_type == 'trf' %}Transfer{% else %}
                                             {{ action.category.name }}{% endif %}
@@ -77,22 +77,22 @@
                                     <div class="d-flex align-items-center">
                                         {% if action.action_type == 'trf' %}
                                             <div class="d-flex justify-content-center align-items-center rounded-2 me-2">
-                                                <i class="{{ action.account_from.style.icon }}"
-                                                   style="color: #{{ action.account_from.style.color }}"></i>
+                                                <i class="{{ action.account_from.icon }}"
+                                                   style="color: #{{ action.account_from.color }}"></i>
                                             </div>
                                             {{ action.account_from.name }}
 
                                             <i class="fa-duotone fa-arrow-right mx-2 text-secondary"></i>
 
                                             <div class="d-flex justify-content-center align-items-center rounded-2 me-2">
-                                                <i class="{{ action.account_to.style.icon }}"
-                                                   style="color: #{{ action.account_to.style.color }}"></i>
+                                                <i class="{{ action.account_to.icon }}"
+                                                   style="color: #{{ action.account_to.color }}"></i>
                                             </div>
                                             {{ action.account_to.name }}
                                         {% else %}
                                             <div class="d-flex justify-content-center align-items-center rounded-2 me-2">
-                                                <i class="{{ action.account.style.icon }}"
-                                                   style="color: #{{ action.account.style.color }}"></i>
+                                                <i class="{{ action.account.icon }}"
+                                                   style="color: #{{ action.account.color }}"></i>
                                             </div>
                                             {{ action.account.name }}
                                         {% endif %}

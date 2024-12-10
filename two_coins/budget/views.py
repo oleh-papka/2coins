@@ -10,11 +10,11 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView, DeleteView
 
-from misc.models import StyleFormUpdateMixin, FormInvalidMixin
+from misc.models import FormInvalidMixin
 from misc.utils import get_current_month_dates
 from profiles.models import Profile
 from . import forms, models
-from .models import Transaction, Style, Transfer
+from .models import Transaction, Transfer
 
 
 def get_template_chart_data(query_data):
@@ -86,7 +86,7 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
 class AccountCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
     login_url = reverse_lazy('login')
     model = models.Account
-    form_class = forms.AccountForm
+    form_class = forms.AccountCreateForm
     template_name = 'budget/account/account_create.html'
     success_url = reverse_lazy('account_list')
 
@@ -129,10 +129,7 @@ class AccountDeleteView(LoginRequiredMixin, DeleteView):
 
     def form_valid(self, form):
         success_url = self.get_success_url()
-        style = self.object.style
-
         self.object.delete()
-        style.delete()
 
         messages.success(self.request, f"Account '{self.object.name}' deleted!")
         return HttpResponseRedirect(success_url)
@@ -208,15 +205,14 @@ class CategoryCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
     def form_valid(self, form):
         category = form.save(commit=False)
         category.profile = Profile.objects.get(user=self.request.user)
-        category.style = Style.create_style(color=form.cleaned_data.get('color'),
-                                            icon=form.cleaned_data.get('icon'))
+
         category.save()
         messages.success(self.request, f"Category '{category.name}' created!")
 
         return super().form_valid(form)
 
 
-class CategoryUpdateView(LoginRequiredMixin, FormInvalidMixin, StyleFormUpdateMixin):
+class CategoryUpdateView(LoginRequiredMixin, FormInvalidMixin, UpdateView):
     login_url = reverse_lazy('login')
     model = models.Category
     form_class = forms.CategoryForm
@@ -236,10 +232,7 @@ class CategoryDeleteView(LoginRequiredMixin, DeleteView):
 
     def form_valid(self, form):
         success_url = self.get_success_url()
-        style = self.object.style
-
         self.object.delete()
-        style.delete()
 
         messages.success(self.request, f"Category '{self.object.name}' deleted!")
         return HttpResponseRedirect(success_url)

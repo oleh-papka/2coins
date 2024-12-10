@@ -12,7 +12,7 @@
                            class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
                         <input type="color" class="form-control form-control-color" id="id_color"
-                               value="#{{ object.style.color }}" name="color"
+                               value="#{{ object.color }}" name="color"
                                title="Choose your color" style="width: 5rem">
                     </div>
                 </div>
@@ -22,7 +22,7 @@
                            class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
                         <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
-                               id="id_icon" name="{{ field.name }}" value="{{ object.style.icon }}"
+                               id="id_icon" name="{{ field.name }}" value="{{ object.icon }}"
                                placeholder="{{ field.label }}">
                         {% if field.help_text %}
                             <small class="text-muted ms-1">{{ field.help_text }}</small>
