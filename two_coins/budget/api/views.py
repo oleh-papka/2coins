@@ -2,6 +2,8 @@ from itertools import chain
 from operator import attrgetter
 
 from django.db.models.functions import TruncDate
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import mixins, generics
 from rest_framework.response import Response
 
@@ -14,6 +16,13 @@ class TransactionCreateListView(mixins.ListModelMixin,
     queryset = Transaction.objects.all()
     serializer_class = TransactionDetailedSerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date'),
+            OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date'),
+        ],
+        responses={200: None},
+    )
     def get(self, request, *args, **kwargs):
         user = request.user
 
@@ -45,6 +54,13 @@ class TransactionDeleteView(generics.DestroyAPIView):
 class CombinedActionListView(generics.GenericAPIView):
     serializer_class = CombinedTxnTrfSerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date'),
+            OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date'),
+        ],
+        responses={200: None},
+    )
     def get(self, request, *args, **kwargs):
         user = request.user
 

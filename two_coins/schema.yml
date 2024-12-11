@@ -7,6 +7,19 @@ paths:
   /api/combined-actions/:
     get:
       operationId: combined_actions_retrieve
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date
       tags:
       - combined-actions
       security:
@@ -15,14 +28,23 @@ paths:
       - {}
       responses:
         '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CombinedTxnTrf'
-          description: ''
+          description: No response body
   /api/transaction/:
     get:
-      operationId: transaction_list
+      operationId: transaction_retrieve
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date
       tags:
       - transaction
       security:
@@ -31,13 +53,7 @@ paths:
       - {}
       responses:
         '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TransactionDetailed'
-          description: ''
+          description: No response body
     post:
       operationId: transaction_create
       tags:
@@ -85,64 +101,6 @@ paths:
           description: No response body
 components:
   schemas:
-    CategoryTypeEnum:
-      enum:
-      - '-'
-      - +
-      type: string
-      description: |-
-        * `-` - Expense
-        * `+` - Income
-    CombinedTxnTrf:
-      type: object
-      properties:
-        transaction_type:
-          $ref: '#/components/schemas/TransactionTypeEnum'
-        account:
-          $ref: '#/components/schemas/NestedAccount'
-        account_from:
-          $ref: '#/components/schemas/NestedAccount'
-        account_to:
-          $ref: '#/components/schemas/NestedAccount'
-        category:
-          $ref: '#/components/schemas/NestedCategory'
-        currency:
-          $ref: '#/components/schemas/NestedCurrency'
-        amount:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
-        amount_from:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
-        amount_to:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
-        amount_converted:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
-        description:
-          type: string
-        date:
-          type: string
-          format: date-time
-        action_type:
-          type: string
-      required:
-      - action_type
-      - date
-      - description
-    CurrencyTypeEnum:
-      enum:
-      - F
-      - C
-      type: string
-      description: |-
-        * `F` - Fiat money
-        * `C` - Crypto currency
     NestedAccount:
       type: object
       properties:
@@ -164,45 +122,6 @@ components:
       - currency
       - id
       - name
-    NestedCategory:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        name:
-          type: string
-          title: Category name
-          maxLength: 30
-        category_type:
-          $ref: '#/components/schemas/CategoryTypeEnum'
-      required:
-      - id
-      - name
-    NestedCurrency:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        name:
-          type: string
-          title: Currency name
-          maxLength: 30
-        currency_type:
-          $ref: '#/components/schemas/CurrencyTypeEnum'
-        symbol:
-          type: string
-          maxLength: 2
-        abbr:
-          type: string
-          title: Abbreviation
-          maxLength: 5
-      required:
-      - abbr
-      - id
-      - name
-      - symbol
     TransactionDetailed:
       type: object
       properties:
