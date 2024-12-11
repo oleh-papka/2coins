@@ -8,44 +8,42 @@
 {% endblock %}
 
 {% block body %}
-    <div class="row">
-        <div class="col-lg-6 p-0">
-            <div class="img-container">
-                <img src="https://images.unsplash.com/photo-1566228015668-4c45dbc4e2f5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=3087&q=80"
-                     alt="Login image">
-            </div>
-        </div>
-
-        <div class="col-lg-6 d-flex justify-content-center p-0">
+    <div class="w-100 h-100 d-flex align-items-center" style="padding: 20px; margin-bottom: 200px">
+        <div class="rounded-4 p-5 shadow mx-auto" style="background-color: #FCFCFC; width: 600px;">
             <div id="login-group">
-                <h1 class="mb-5">User login</h1>
+                <h1 class="mb-5 text-center">2coins Login</h1>
                 <form action="{% url 'login' %}" method="post">
                     {% csrf_token %}
 
-                    <div class="mb-3">
-                        <label for="id_username" class="form-label">e-mail</label>
-                        <input type="email" required class="form-control form-control" id="id_username" name="username"
-                               autocomplete="username">
+                    <div class="row mb-3">
+                        <label for="id_username" class="col-sm-3 col-form-label">e-mail</label>
+                        <div class="col">
+                            <input type="email" required class="form-control" id="id_username"
+                                   name="username"
+                                   autocomplete="username">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label for="id_password" class="col-sm-3 col-form-label">Password</label>
+                        <div class="col">
+                            <input type="password" required id="id_password" class="form-control"
+                                   name="password"
+                                   autocomplete="current-password">
+                        </div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="id_password" class="form-label">Password</label>
-                        <input type="password" required id="id_password" class="form-control form-control"
-                               name="password"
-                               autocomplete="current-password">
+                        <a href="#" style="color: #4397dc"><p class="text-end">Forgot the password?</p></a>
                     </div>
 
-                    <div class="mb-4">
-                        <a href="#"><p class="text-end">Forgot the password?</p></a>
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-outline-secondary">Log in</button>
                     </div>
 
-                    <div class="d-grid mb-4">
-                        <button type="submit" class="btn btn-primary">Log in</button>
-                    </div>
-
-                    <p class="text-center">Not registered? <a href="{% url 'register' %}">Create account</a></p>
+                    <p class="text-center">Not registered? <a href="{% url 'register' %}" style="color: #4397dc">Create
+                        account</a></p>
                 </form>
-
             </div>
         </div>
     </div>

@@ -74,3 +74,15 @@ a {
     height: 24px;
     width: 48px;
 }
+
+.nav-link.active {
+    background-color: #4397dc !important;
+}
+
+.nav-item:hover a:not(.active) {
+    color: #136ba8 !important;
+}
+
+.nav-link:hover:not(.active) {
+    color: #136ba8 !important;
+}

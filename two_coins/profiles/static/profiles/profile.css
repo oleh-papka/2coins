@@ -1,12 +1,10 @@
 #profile-card {
     min-width: 350px;
-    border: 2px solid #c9c9c9;
 }
 
 #profile-picture {
     width: 200px;
     height: 200px;
-    border: 2px solid #8f8f8f;
     border-radius: 10%;
     overflow: hidden;
 }
