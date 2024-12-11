@@ -1,15 +1,11 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 
-from .views import TransactionViewSet, AccountViewSet, CategoryViewSet
-
-router = DefaultRouter()
-router.register(r'transaction', TransactionViewSet, basename='transaction')
-router.register(r'account', AccountViewSet, basename='account')
-router.register(r'category', CategoryViewSet, basename='category')
+from .views import TransactionCreateListView, CombinedActionListView, TransactionDeleteView
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('combined-actions/', CombinedActionListView.as_view(), name='combined_actions'),
+    path('transaction/', TransactionCreateListView.as_view(), name='transaction'),
+    path('transaction/<int:pk>', TransactionDeleteView.as_view(), name='transaction')
 ]
 
 app_name = 'budget-api'

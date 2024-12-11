@@ -1,26 +1,23 @@
 {% extends 'delete_form.html' %}
 {% load static %}
-
-{% block custom_static %}
-    <link rel="stylesheet" href="{% static 'budget/css/accounts_create.css' %}">
-{% endblock %}
+{% load number_filters %}
 
 {% block form_block %}
     <form action="{% url 'transaction_delete' object.id %}" method="post">
         {% csrf_token %}
 
         <div class="mb-5">
-            <h5>Delete Transaction of <b>{{ object.amount }} {{ object.currency.abbr }} {{ object.currency.symbol }}</b>
+            <h5>Delete Transaction of <b>{{ object.amount|strip_trailing_zeros }} {{ object.currency.abbr }} {{ object.currency.symbol }}</b>
                 {% if object.amount_converted %}
                     (
-                    <b>{{ object.amount_converted }} {{ object.account.currency.abbr }} {{ object.account.currency.symbol }}</b>
+                    <b>{{ object.amount_converted|strip_trailing_zeros }} {{ object.account.currency.abbr }} {{ object.account.currency.symbol }}</b>
                     )
                 {% endif %} for <b>{{ object.account.name }}</b> account?</h5>
         </div>
 
         <div class="d-flex justify-content-end column-gap-2 mt-4">
             <a href="{% url 'transaction_list' %}" type="button" class="btn btn-outline-secondary">Back</a>
-            <button class="btn btn-danger" type="submit">Delete</button>
+            <button class="btn btn-outline-danger" type="submit">Delete</button>
         </div>
     </form>
 {% endblock %}

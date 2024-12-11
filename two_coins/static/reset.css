@@ -16,6 +16,8 @@ h1,
 h2,
 h3,
 h4,
+h5,
+h6,
 p,
 figure,
 blockquote,
@@ -38,6 +40,49 @@ html:focus-within {
 /* Set core body defaults */
 body {
     text-rendering: optimizeSpeed;
+    background-color: #cedeea;
 }
 
 
+main {
+    height: 100vh;
+    max-height: 100vh;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+hr.h-divider {
+    border-top: 1px solid #6C757D;
+    margin: 16px 0;
+    opacity: 0.65;
+}
+
+a {
+    color: #484848;
+    text-decoration: none;
+}
+
+.card-text {
+    color: rgba(72, 72, 72, 0.7);
+}
+
+.dropdown-item:active {
+    background-color: transparent !important;
+}
+
+.form-switch .form-check-input {
+    height: 24px;
+    width: 48px;
+}
+
+.nav-link.active {
+    background-color: #4397dc !important;
+}
+
+.nav-item:hover a:not(.active) {
+    color: #136ba8 !important;
+}
+
+.nav-link:hover:not(.active) {
+    color: #136ba8 !important;
+}

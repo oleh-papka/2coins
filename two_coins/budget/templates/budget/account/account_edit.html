@@ -1,9 +1,6 @@
 {% extends 'create_form.html' %}
 {% load static %}
-
-{% block custom_static %}
-    <link rel="stylesheet" href="{% static 'budget/css/accounts_create.css' %}">
-{% endblock %}
+{% load number_filters %}
 
 {% block form_block %}
     <form action="{% url 'account_edit' object.id %}" method="post">
@@ -40,7 +37,7 @@
                            class="col-sm-3 col-form-label">{{ field.label }}</label>
                     <div class="col">
                         <input type="color" class="form-control form-control-color" id="id_color"
-                               value="{{ object.style.color }}" name="color"
+                               value="#{{ object.color }}" name="color"
                                title="Choose your color" style="width: 5rem">
                     </div>
                 </div>
@@ -51,7 +48,7 @@
                     <div class="col">
                         <input type="text" class="form-control {% if field.errors %}is-invalid{% endif %}"
                                id="id_icon" name="{{ field.name }}"
-                               placeholder="{{ field.label }}" value="{{ object.style.icon }}">
+                               placeholder="{{ field.label }}" value="{{ object.icon }}">
                         {% if field.help_text %}
                             <small class="text-muted ms-1">{{ field.help_text }}</small>
                         {% endif %}
@@ -79,7 +76,7 @@
                     <div class="col input-group">
                         <input type="number" step="0.01"
                                class="form-control {% if field.errors %}is-invalid{% endif %}"
-                               id="id_balance" placeholder="{{ field.label }}" name="balance" value="{{ field.value }}">
+                               id="id_balance" placeholder="{{ field.label }}" name="balance" value="{{ field.value|strip_trailing_zeros }}">
                         <span class="input-group-text">{{ object.currency.abbr }}&nbsp;&nbsp;{{ object.currency.symbol }}</span>
                         {#                        <div class="input-group-text bg-body p-1">#}
                         {#                            <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">#}
@@ -109,7 +106,7 @@
                             <input type="number" step="0.01"
                                    class="form-control {% if field.errors %}is-invalid{% endif %}"
                                    id="id_initial_balance" placeholder="{{ field.label }}" name="initial_balance"
-                                   value="{{ field.value }}">
+                                   value="{{ field.value|strip_trailing_zeros }}">
                             <span class="input-group-text">
                                 {% if object.currency.abbr == object.currency.symbol %}
                                     &nbsp;{{ curr.abbr }}&nbsp;
@@ -132,7 +129,7 @@
                             <input type="number" step="0.01"
                                    class="form-control {% if field.errors %}is-invalid{% endif %}"
                                    id="id_target_balance" placeholder="{{ field.label }}" name="target_balance"
-                                   value="{{ field.value }}">
+                                   value="{{ field.value|strip_trailing_zeros }}">
                             <span class="input-group-text">
                                 {% if object.currency.abbr == object.currency.symbol %}
                                     &nbsp;{{ curr.abbr }}&nbsp;
@@ -168,7 +165,7 @@
 
         <div class="d-flex justify-content-end column-gap-2 mt-4">
             <a href="{% url 'account' object.id %}" type="button" class="btn btn-outline-danger">Cancel</a>
-            <button class="btn btn-primary" type="submit">Update</button>
+            <button class="btn btn-outline-warning" type="submit">Update</button>
         </div>
     </form>
 {% endblock %}

@@ -1,3 +1,4 @@
+import random
 import re
 from datetime import datetime, time
 
@@ -5,8 +6,8 @@ from django import forms
 from django.utils import timezone
 from django.utils.timezone import make_aware
 
+from misc.models import IconChoices
 from . import models
-from .models import Style, Account
 
 
 class BaseTransactionForm(forms.ModelForm):
@@ -42,21 +43,32 @@ class BaseStyleForm(forms.ModelForm):
         self.fields['icon'].label = f'{model_name} icon'
         self.fields['color'].label = f'{model_name} color'
 
+        style_fields = ['icon', 'color']
+        custom_fields_order = [field for field in self.fields if field not in style_fields] + style_fields
+
+        self.fields = {key: self.fields[key] for key in custom_fields_order}
+
     def clean_color(self):
-        data = self.cleaned_data.get("color")
+        color_data = self.cleaned_data.get("color")
         color_regex = re.compile(r'^#?[0-9a-fA-F]{6}$')
 
-        if not color_regex.match(data):
-            self.add_error('color', f"Wrong color field format provided '{data}'! Expected #RRGGBB HEX format.")
-            return data
+        if not color_regex.match(color_data):
+            self.add_error('color', f"Wrong color field format provided '{color_data}'! Expected #RRGGBB HEX format.")
+            return color_data
 
-        if data.startswith('#'):
-            data = data[1:]
+        if color_data.startswith('#'):
+            color_data = color_data[1:]
 
-        return data.lower()
+        return color_data.lower()
+
+    def clean_icon(self):
+        icon_data = self.cleaned_data.get("icon")
+
+        if not icon_data:
+            return random.choice(IconChoices.CHOICES)[0]
 
 
-class AccountForm(BaseStyleForm):
+class AccountCreateForm(BaseStyleForm):
     class Meta(BaseStyleForm.Meta):
         model = models.Account
 
@@ -77,31 +89,27 @@ class AccountForm(BaseStyleForm):
         balance = cleaned_data.get("balance")
         allow_negative_balance = cleaned_data.get("allow_negative_balance")
         account_type = cleaned_data.get("account_type")
-        color = self.cleaned_data.get('color')
-        icon = self.cleaned_data.get('icon')
         initial_balance = cleaned_data.get("initial_balance")
 
         if not initial_balance:
             cleaned_data["initial_balance"] = balance
 
-        if account_type == Account.SAVINGS_ACCOUNT:
+        if account_type == models.Account.SAVINGS_ACCOUNT:
             if allow_negative_balance or balance < 0:
                 self.add_error("allow_negative_balance", "Savings account balance cannot be negative!")
                 return cleaned_data
 
-        cleaned_data["style"] = Style.create_style(color=color, icon=icon)
-
         return cleaned_data
 
 
-class AccountUpdateForm(AccountForm):
-    class Meta:
-        model = Account
-        exclude = ('currency',)
+class AccountUpdateForm(AccountCreateForm):
+    class Meta(BaseStyleForm.Meta):
+        model = models.Account
+        exclude = BaseStyleForm.Meta.exclude + ('currency',)
 
     def clean_currency(self):
-        data = self.cleaned_data.get("currency")
-        return self.instance.currency if not data else data
+        currency_data = self.cleaned_data.get("currency")
+        return self.instance.currency if not currency_data else currency_data
 
 
 class CategoryForm(BaseStyleForm):

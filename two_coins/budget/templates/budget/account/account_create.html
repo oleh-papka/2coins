@@ -1,10 +1,6 @@
 {% extends 'create_form.html' %}
 {% load static %}
 
-{% block custom_static %}
-    <link rel="stylesheet" href="{% static 'budget/css/accounts_create.css' %}">
-{% endblock %}
-
 {% block form_block %}
     <form action="{% url 'account_add' %}" method="post">
         {% csrf_token %}
@@ -63,7 +59,7 @@
                         <input type="number" step="0.01"
                                class="form-control {% if field.errors %}is-invalid{% endif %}"
                                id="id_balance" placeholder="0.0" name="balance" required>
-                        <div class="input-group-text bg-body p-1">
+                        <div class="input-group-text p-1">
                             <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">
                                 {% for curr in currency_list %}
                                     <option value="{{ curr.id }}" {% if forloop.first %}selected{% endif %}>
@@ -135,7 +131,7 @@
 
         <div class="d-flex justify-content-end column-gap-2 mt-4">
             <a href="{% url 'account_list' %}" type="button" class="btn btn-outline-danger">Cancel</a>
-            <button class="btn btn-primary" type="submit" name="form_s_submit">Create</button>
+            <button class="btn btn-outline-secondary" type="submit" name="form_s_submit">Create</button>
         </div>
     </form>
 {% endblock %}

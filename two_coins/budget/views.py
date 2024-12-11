@@ -1,4 +1,5 @@
 import operator
+from datetime import datetime
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -9,10 +10,12 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView, DeleteView
 
-from misc.models import StyleFormUpdateMixin, FormInvalidMixin
+from misc.models import FormInvalidMixin
+from misc.utils import get_current_month_dates
 from profiles.models import Profile
 from . import forms, models
-from .models import Transaction, Style, Transfer
+from .models import Transaction, Transfer
+from .templatetags.number_filters import strip_trailing_zeros
 
 
 def get_template_chart_data(query_data):
@@ -43,10 +46,26 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        transactions_queryset = models.Transaction.objects.filter(account=self.object).order_by(
-            '-date').annotate(truncated_date=TruncDate('date'))
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
+
+        if not start_date and not end_date:
+            start_date, end_date = get_current_month_dates()
+        else:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+            # Include the full last day
+            end_date = datetime.combine(end_date, datetime.max.time())
+
+        context["date_range"] = f'{start_date.strftime("%m/%d/%Y")} - {end_date.strftime("%m/%d/%Y")}'
+
+        transactions_queryset = models.Transaction.objects.filter(account=self.object,
+                                                                  date__range=(start_date, end_date)).order_by(
+            '-date').annotate(
+            truncated_date=TruncDate('date'))
         transfers_queryset = models.Transfer.objects.filter(
-            Q(account_to=self.object) | Q(account_from=self.object)).order_by(
+            Q(account_to=self.object) | Q(account_from=self.object),
+            date__range=(start_date, end_date)).order_by(
             '-date').annotate(truncated_date=TruncDate('date'))
 
         transfers_list = list(transfers_queryset)
@@ -56,52 +75,14 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
 
         combined_list.sort(key=operator.attrgetter('date'), reverse=True)
 
-        combined_actions = []
-
         if not combined_list:
             return context
 
-        temp_date = combined_list[0].truncated_date
-        temp_total = 0
-        temp_actions = []
-
         for action in combined_list:
             action_type = 'txn' if isinstance(action, models.Transaction) else 'trf'
+            action.action_type = action_type
 
-            if action.truncated_date != temp_date:
-                combined_actions.append({
-                    'date': temp_date,
-                    'total': temp_total,
-                    'txns': temp_actions
-                })
-
-                temp_date = action.truncated_date
-                temp_total = 0
-                temp_actions = [{"action_type": action_type,
-                                 "action": action}]
-            else:
-                temp_actions.append({"action_type": action_type,
-                                     "action": action})
-
-            if action_type == 'txn':
-                amount = action.amount_converted if action.amount_converted else action.amount
-                temp_total += amount
-            else:
-                if action.account_from == self.object:
-                    temp_total -= action.amount_from
-                elif action.account_to == self.object:
-                    if action.amount_to:
-                        temp_total += action.amount_to
-                    else:
-                        temp_total += action.amount_from
-        else:
-            combined_actions.append({
-                'date': temp_date,
-                'total': temp_total,
-                'actions': temp_actions
-            })
-
-        context["combined_actions"] = combined_actions
+        context["combined_actions"] = combined_list
 
         return context
 
@@ -109,7 +90,7 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
 class AccountCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
     login_url = reverse_lazy('login')
     model = models.Account
-    form_class = forms.AccountForm
+    form_class = forms.AccountCreateForm
     template_name = 'budget/account/account_create.html'
     success_url = reverse_lazy('account_list')
 
@@ -117,7 +98,7 @@ class AccountCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
         account = form.save(commit=False)
         account.profile = Profile.objects.get(user=self.request.user)
         account.save()
-        messages.success(self.request, f"Account '{account.name}' created!")
+        messages.success(self.request, f"Account {account.name} created!")
 
         return super().form_valid(form)
 
@@ -135,7 +116,7 @@ class AccountUpdateView(LoginRequiredMixin, FormInvalidMixin, UpdateView):
     success_url = reverse_lazy('account_list')
 
     def form_valid(self, form):
-        messages.success(self.request, f"Account '{form.cleaned_data.get('name')}' updated!")
+        messages.success(self.request, f"Account {form.cleaned_data.get('name')} updated!")
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
@@ -152,12 +133,9 @@ class AccountDeleteView(LoginRequiredMixin, DeleteView):
 
     def form_valid(self, form):
         success_url = self.get_success_url()
-        style = self.object.style
-
         self.object.delete()
-        style.delete()
 
-        messages.success(self.request, f"Account '{self.object.name}' deleted!")
+        messages.success(self.request, f"Account {self.object.name} deleted!")
         return HttpResponseRedirect(success_url)
 
 
@@ -182,45 +160,34 @@ class CategoryDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
+
+        if not start_date and not end_date:
+            start_date, end_date = get_current_month_dates()
+        else:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+            # Include the full last day
+            end_date = datetime.combine(end_date, datetime.max.time())
+
+        context["date_range"] = f'{start_date.strftime("%m/%d/%Y")} - {end_date.strftime("%m/%d/%Y")}'
+
         transactions_queryset = models.Transaction.objects.filter(category=self.object,
-                                                                  account__profile__user=self.request.user).order_by(
+                                                                  account__profile__user=self.request.user,
+                                                                  date__range=(start_date, end_date)).order_by(
             '-date').annotate(truncated_date=TruncDate('date'))
 
         transactions_list = list(transactions_queryset)
-        transactions = []
 
         if not transactions_list:
             return context
 
-        temp_date = transactions_list[0].truncated_date
-        temp_total = 0
-        temp_transactions = []
+        for action in transactions_list:
+            action_type = 'txn' if isinstance(action, models.Transaction) else 'trf'
+            action.action_type = action_type
 
-        for transaction in transactions_list:
-            if transaction.truncated_date != temp_date:
-                transactions.append({
-                    'date': temp_date,
-                    'total': temp_total,
-                    'txns': temp_transactions
-                })
-
-                temp_date = transaction.truncated_date
-                temp_total = 0
-                temp_transactions = [transaction]
-            else:
-                temp_transactions.append(transaction)
-
-            amount = transaction.amount_converted if transaction.amount_converted else transaction.amount
-            temp_total += amount
-
-        else:
-            transactions.append({
-                'date': temp_date,
-                'total': temp_total,
-                'transactions': temp_transactions
-            })
-
-        context["transactions"] = transactions
+        context["transactions"] = transactions_list
 
         return context
 
@@ -243,15 +210,14 @@ class CategoryCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
     def form_valid(self, form):
         category = form.save(commit=False)
         category.profile = Profile.objects.get(user=self.request.user)
-        category.style = Style.create_style(color=form.cleaned_data.get('color'),
-                                            icon=form.cleaned_data.get('icon'))
+
         category.save()
-        messages.success(self.request, f"Category '{category.name}' created!")
+        messages.success(self.request, f"Category {category.name} created!")
 
         return super().form_valid(form)
 
 
-class CategoryUpdateView(LoginRequiredMixin, FormInvalidMixin, StyleFormUpdateMixin):
+class CategoryUpdateView(LoginRequiredMixin, FormInvalidMixin, UpdateView):
     login_url = reverse_lazy('login')
     model = models.Category
     form_class = forms.CategoryForm
@@ -271,12 +237,9 @@ class CategoryDeleteView(LoginRequiredMixin, DeleteView):
 
     def form_valid(self, form):
         success_url = self.get_success_url()
-        style = self.object.style
-
         self.object.delete()
-        style.delete()
 
-        messages.success(self.request, f"Category '{self.object.name}' deleted!")
+        messages.success(self.request, f"Category {self.object.name} deleted!")
         return HttpResponseRedirect(success_url)
 
 
@@ -291,12 +254,28 @@ class TransactionList(LoginRequiredMixin, ListView):
         user = self.request.user
         context = super().get_context_data(**kwargs)
 
-        transactions_queryset = models.Transaction.objects.filter(account__profile__user=user).order_by(
-            '-date').annotate(truncated_date=TruncDate('date'))
-        transfers_queryset = models.Transfer.objects.filter(account_from__profile__user=user).order_by(
-            '-date').annotate(truncated_date=TruncDate('date'))
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
 
-        total_none_flag = True if len(transactions_queryset.values('currency')) > 2 else False
+        if not start_date and not end_date:
+            start_date, end_date = get_current_month_dates()
+        else:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+            # Include the full last day
+            end_date = datetime.combine(end_date, datetime.max.time())
+
+        context["date_range"] = f'{start_date.strftime("%m/%d/%Y")} - {end_date.strftime("%m/%d/%Y")}'
+
+        transactions_queryset = models.Transaction.objects.filter(
+            account__profile__user=user,
+            date__range=(start_date, end_date)
+        ).order_by('-date').annotate(truncated_date=TruncDate('date'))
+
+        transfers_queryset = models.Transfer.objects.filter(
+            account_from__profile__user=user,
+            date__range=(start_date, end_date)
+        ).order_by('-date').annotate(truncated_date=TruncDate('date'))
 
         transfers_list = list(transfers_queryset)
         transactions_list = list(transactions_queryset)
@@ -305,44 +284,14 @@ class TransactionList(LoginRequiredMixin, ListView):
 
         combined_list.sort(key=operator.attrgetter('date'), reverse=True)
 
-        combined_actions = []
-
         if not combined_list:
             return context
 
-        temp_date = combined_list[0].truncated_date
-        temp_total = 0
-        temp_actions = []
-
         for action in combined_list:
             action_type = 'txn' if isinstance(action, models.Transaction) else 'trf'
+            action.action_type = action_type
 
-            if action.truncated_date != temp_date:
-                combined_actions.append({
-                    'date': temp_date,
-                    'total': None if total_none_flag else temp_total,
-                    'actions': temp_actions
-                })
-
-                temp_date = action.truncated_date
-                temp_total = 0
-                temp_actions = [{"action_type": action_type,
-                                 "action": action}]
-            else:
-                temp_actions.append({"action_type": action_type,
-                                     "action": action})
-
-            if action_type == 'txn':
-                amount = action.amount_converted if action.amount_converted else action.amount
-                temp_total += amount
-        else:
-            combined_actions.append({
-                'date': temp_date,
-                'total': None if total_none_flag else temp_total,
-                'actions': temp_actions
-            })
-
-        context["combined_actions"] = combined_actions
+        context["combined_actions"] = combined_list
 
         return context
 
@@ -386,16 +335,18 @@ class TransactionCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
 
     def form_valid(self, form):
         account = form.cleaned_data.get('account')
-        amount = form.cleaned_data.get('amount') if account.currency == form.cleaned_data.get(
-            'currency') else form.cleaned_data.get('amount_converted')
+        currency = form.cleaned_data.get('currency')
+        amount = form.cleaned_data.get('amount') if account.currency == currency else form.cleaned_data.get(
+            'amount_converted')
 
         if form.cleaned_data.get('transaction_type') == Transaction.INCOME:
             account.deposit(amount)
         else:
             account.withdraw(amount)
 
-        messages.success(self.request, f"Transaction '{form.cleaned_data.get('amount')}' created!")
-        messages.info(self.request, f'Updated balance of account!\nYour new balance is {account.balance}')
+        messages.success(self.request, f"Transaction {strip_trailing_zeros(amount)} {currency.symbol} created!")
+        messages.info(self.request,
+                      f'Updated balance of {account.name} account!\nYour balance is {strip_trailing_zeros(account.balance)} {account.currency.symbol}')
 
         return super().form_valid(form)
 
@@ -423,23 +374,23 @@ class TransactionUpdateView(LoginRequiredMixin, FormInvalidMixin, UpdateView):
         # Reverting account balance
         prev_transaction_amount = abs(prev_transaction.amount_converted or prev_transaction.amount)
         if prev_transaction.transaction_type == Transaction.EXPENSE:
-            prev_transaction.account.balance = F('balance') + prev_transaction_amount
+            prev_transaction.account.balance = prev_transaction.account.balance + prev_transaction_amount
         else:
-            prev_transaction.account.balance = F('balance') - prev_transaction_amount
+            prev_transaction.account.balance = prev_transaction.account.balance - prev_transaction_amount
         prev_transaction.account.save()
 
         # Updating account balance
         new_transaction.account.refresh_from_db()
         new_transaction_amount = abs(new_transaction.amount_converted or new_transaction.amount)
         if new_transaction.transaction_type == Transaction.INCOME:
-            new_transaction.account.balance = F('balance') + new_transaction_amount
+            new_transaction.account.balance = new_transaction.account.balance + new_transaction_amount
         else:
-            new_transaction.account.balance = F('balance') - new_transaction_amount
+            new_transaction.account.balance = new_transaction.account.balance - new_transaction_amount
         new_transaction.account.save()
 
         messages.success(self.request, f"Transaction updated!")
         messages.info(self.request,
-                      f'Updated balance of account!\nYour new balance is {new_transaction.account.balance}')
+                      f'Updated balance of account!\nYour balance is {strip_trailing_zeros(new_transaction.account.balance)} {new_transaction.account.currency.symbol}')
 
         return super().form_valid(form)
 
@@ -476,9 +427,10 @@ class TransactionDeleteView(LoginRequiredMixin, DeleteView):
             transaction.account.balance -= transaction_amount
         transaction.account.save()
 
-        messages.success(self.request, f"Transaction '{self.object.amount}' deleted!")
+        messages.success(self.request,
+                         f"Transaction {strip_trailing_zeros(self.object.amount)} {self.object.currency.symbol} deleted!")
         messages.info(self.request,
-                      f'Updated balance of account!\nYour new balance is {transaction.account.balance}')
+                      f'Updated balance of account!\nYour new balance is {strip_trailing_zeros(transaction.account.balance)} {transaction.account.currency.symbol}')
 
         return super().form_valid(form)
 
@@ -522,12 +474,12 @@ class TransferCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
             account_to.balance += amount_to
             account_to.save()
 
-            messages.success(self.request, f"Transfer '{account_from.name}->{account_to.name}' done!")
+            messages.success(self.request, f"Transfer {account_from.name}->{account_to.name} done!")
             messages.info(self.request,
-                          f"Updated balance of '{account_from.name}' account!\nYour new balance is {account_from.balance}")
+                          f"Updated balance of {account_from.name} account!\nYour balance is {strip_trailing_zeros(account_from.balance)} {account_from.currency.symbol}")
 
             messages.info(self.request,
-                          f"Updated balance of '{account_to.name}' account!\nYour new balance is {account_to.balance}")
+                          f"Updated balance of {account_to.name} account!\nYour balance is {strip_trailing_zeros(account_to.balance)} {account_to.currency.symbol}")
 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -582,12 +534,12 @@ class TransferUpdateView(LoginRequiredMixin, FormInvalidMixin, UpdateView):
             new_transfer.account_to.balance += amount_to
             new_transfer.account_to.save()
 
-            messages.success(self.request, f"Transfer '{account_from.name}->{account_to.name}' updated!")
+            messages.success(self.request, f"Transfer {account_from.name}->{account_to.name} updated!")
             messages.info(self.request,
-                          f"Updated balance of '{account_from.name}' account!\nYour new balance is {account_from.balance}")
+                          f"Updated balance of {account_from.name} account!\nYour balance is {strip_trailing_zeros(account_from.balance)} {account_from.currency.symbol}")
 
             messages.info(self.request,
-                          f"Updated balance of '{account_to.name}' account!\nYour new balance is {account_to.balance}")
+                          f"Updated balance of {account_to.name} account!\nYour balance is {strip_trailing_zeros(account_to.balance)} {account_to.currency.symbol}")
 
         return super().form_valid(form)
 
@@ -611,10 +563,10 @@ class TransferDeleteView(LoginRequiredMixin, DeleteView):
 
         messages.success(self.request, f"Transfer deleted!")
         messages.info(self.request,
-                      f"Updated balance of '{transfer.account_from.name}' account!\nYour new balance is {transfer.account_from.balance}")
+                      f"Updated balance of {transfer.account_from.name} account!\nYour balance is {strip_trailing_zeros(transfer.account_from.balance)} {transfer.account_from.currency.symbol}")
 
         messages.info(self.request,
-                      f"Updated balance of '{transfer.account_to.name}' account!\nYour new balance is {transfer.account_to.balance}")
+                      f"Updated balance of {transfer.account_to.name} account!\nYour balance is {strip_trailing_zeros(transfer.account_to.balance)} {transfer.account_to.currency.symbol}")
 
         return super().form_valid(form)
 
@@ -648,7 +600,5 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         context = super().get_context_data(**kwargs)
         context['last_txns'] = last_txns
-        context['data_acct'] = get_template_chart_data(data_acct_query)
-        context['data_cat'] = get_template_chart_data(data_cat_query)
 
         return context
