@@ -1,5 +1,6 @@
 {% extends 'create_form.html' %}
 {% load static %}
+{% load number_filters %}
 
 {% block form_block %}
     <form action="{% url 'account_edit' object.id %}" method="post">
@@ -75,7 +76,7 @@
                     <div class="col input-group">
                         <input type="number" step="0.01"
                                class="form-control {% if field.errors %}is-invalid{% endif %}"
-                               id="id_balance" placeholder="{{ field.label }}" name="balance" value="{{ field.value }}">
+                               id="id_balance" placeholder="{{ field.label }}" name="balance" value="{{ field.value|strip_trailing_zeros }}">
                         <span class="input-group-text">{{ object.currency.abbr }}&nbsp;&nbsp;{{ object.currency.symbol }}</span>
                         {#                        <div class="input-group-text bg-body p-1">#}
                         {#                            <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">#}
@@ -105,7 +106,7 @@
                             <input type="number" step="0.01"
                                    class="form-control {% if field.errors %}is-invalid{% endif %}"
                                    id="id_initial_balance" placeholder="{{ field.label }}" name="initial_balance"
-                                   value="{{ field.value }}">
+                                   value="{{ field.value|strip_trailing_zeros }}">
                             <span class="input-group-text">
                                 {% if object.currency.abbr == object.currency.symbol %}
                                     &nbsp;{{ curr.abbr }}&nbsp;
@@ -128,7 +129,7 @@
                             <input type="number" step="0.01"
                                    class="form-control {% if field.errors %}is-invalid{% endif %}"
                                    id="id_target_balance" placeholder="{{ field.label }}" name="target_balance"
-                                   value="{{ field.value }}">
+                                   value="{{ field.value|strip_trailing_zeros }}">
                             <span class="input-group-text">
                                 {% if object.currency.abbr == object.currency.symbol %}
                                     &nbsp;{{ curr.abbr }}&nbsp;

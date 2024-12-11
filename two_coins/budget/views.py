@@ -15,6 +15,7 @@ from misc.utils import get_current_month_dates
 from profiles.models import Profile
 from . import forms, models
 from .models import Transaction, Transfer
+from .templatetags.number_filters import strip_trailing_zeros
 
 
 def get_template_chart_data(query_data):
@@ -94,7 +95,7 @@ class AccountCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
         account = form.save(commit=False)
         account.profile = Profile.objects.get(user=self.request.user)
         account.save()
-        messages.success(self.request, f"Account '{account.name}' created!")
+        messages.success(self.request, f"Account {account.name} created!")
 
         return super().form_valid(form)
 
@@ -112,7 +113,7 @@ class AccountUpdateView(LoginRequiredMixin, FormInvalidMixin, UpdateView):
     success_url = reverse_lazy('account_list')
 
     def form_valid(self, form):
-        messages.success(self.request, f"Account '{form.cleaned_data.get('name')}' updated!")
+        messages.success(self.request, f"Account {form.cleaned_data.get('name')} updated!")
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
@@ -131,7 +132,7 @@ class AccountDeleteView(LoginRequiredMixin, DeleteView):
         success_url = self.get_success_url()
         self.object.delete()
 
-        messages.success(self.request, f"Account '{self.object.name}' deleted!")
+        messages.success(self.request, f"Account {self.object.name} deleted!")
         return HttpResponseRedirect(success_url)
 
 
@@ -207,7 +208,7 @@ class CategoryCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
         category.profile = Profile.objects.get(user=self.request.user)
 
         category.save()
-        messages.success(self.request, f"Category '{category.name}' created!")
+        messages.success(self.request, f"Category {category.name} created!")
 
         return super().form_valid(form)
 
@@ -234,7 +235,7 @@ class CategoryDeleteView(LoginRequiredMixin, DeleteView):
         success_url = self.get_success_url()
         self.object.delete()
 
-        messages.success(self.request, f"Category '{self.object.name}' deleted!")
+        messages.success(self.request, f"Category {self.object.name} deleted!")
         return HttpResponseRedirect(success_url)
 
 
@@ -325,16 +326,18 @@ class TransactionCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
 
     def form_valid(self, form):
         account = form.cleaned_data.get('account')
-        amount = form.cleaned_data.get('amount') if account.currency == form.cleaned_data.get(
-            'currency') else form.cleaned_data.get('amount_converted')
+        currency = form.cleaned_data.get('currency')
+        amount = form.cleaned_data.get('amount') if account.currency == currency else form.cleaned_data.get(
+            'amount_converted')
 
         if form.cleaned_data.get('transaction_type') == Transaction.INCOME:
             account.deposit(amount)
         else:
             account.withdraw(amount)
 
-        messages.success(self.request, f"Transaction '{form.cleaned_data.get('amount')}' created!")
-        messages.info(self.request, f'Updated balance of account!\nYour new balance is {account.balance}')
+        messages.success(self.request, f"Transaction {strip_trailing_zeros(amount)} {currency.symbol} created!")
+        messages.info(self.request,
+                      f'Updated balance of {account.name} account!\nYour balance is {strip_trailing_zeros(account.balance)} {account.currency.symbol}')
 
         return super().form_valid(form)
 
@@ -362,23 +365,23 @@ class TransactionUpdateView(LoginRequiredMixin, FormInvalidMixin, UpdateView):
         # Reverting account balance
         prev_transaction_amount = abs(prev_transaction.amount_converted or prev_transaction.amount)
         if prev_transaction.transaction_type == Transaction.EXPENSE:
-            prev_transaction.account.balance = F('balance') + prev_transaction_amount
+            prev_transaction.account.balance = prev_transaction.account.balance + prev_transaction_amount
         else:
-            prev_transaction.account.balance = F('balance') - prev_transaction_amount
+            prev_transaction.account.balance = prev_transaction.account.balance - prev_transaction_amount
         prev_transaction.account.save()
 
         # Updating account balance
         new_transaction.account.refresh_from_db()
         new_transaction_amount = abs(new_transaction.amount_converted or new_transaction.amount)
         if new_transaction.transaction_type == Transaction.INCOME:
-            new_transaction.account.balance = F('balance') + new_transaction_amount
+            new_transaction.account.balance = new_transaction.account.balance + new_transaction_amount
         else:
-            new_transaction.account.balance = F('balance') - new_transaction_amount
+            new_transaction.account.balance = new_transaction.account.balance - new_transaction_amount
         new_transaction.account.save()
 
         messages.success(self.request, f"Transaction updated!")
         messages.info(self.request,
-                      f'Updated balance of account!\nYour new balance is {new_transaction.account.balance}')
+                      f'Updated balance of account!\nYour balance is {strip_trailing_zeros(new_transaction.account.balance)} {new_transaction.account.currency.symbol}')
 
         return super().form_valid(form)
 
@@ -415,9 +418,10 @@ class TransactionDeleteView(LoginRequiredMixin, DeleteView):
             transaction.account.balance -= transaction_amount
         transaction.account.save()
 
-        messages.success(self.request, f"Transaction '{self.object.amount}' deleted!")
+        messages.success(self.request,
+                         f"Transaction {strip_trailing_zeros(self.object.amount)} {self.object.currency.symbol} deleted!")
         messages.info(self.request,
-                      f'Updated balance of account!\nYour new balance is {transaction.account.balance}')
+                      f'Updated balance of account!\nYour new balance is {strip_trailing_zeros(transaction.account.balance)} {transaction.account.currency.symbol}')
 
         return super().form_valid(form)
 
@@ -461,12 +465,12 @@ class TransferCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
             account_to.balance += amount_to
             account_to.save()
 
-            messages.success(self.request, f"Transfer '{account_from.name}->{account_to.name}' done!")
+            messages.success(self.request, f"Transfer {account_from.name}->{account_to.name} done!")
             messages.info(self.request,
-                          f"Updated balance of '{account_from.name}' account!\nYour new balance is {account_from.balance}")
+                          f"Updated balance of {account_from.name} account!\nYour balance is {strip_trailing_zeros(account_from.balance)} {account_from.currency.symbol}")
 
             messages.info(self.request,
-                          f"Updated balance of '{account_to.name}' account!\nYour new balance is {account_to.balance}")
+                          f"Updated balance of {account_to.name} account!\nYour balance is {strip_trailing_zeros(account_to.balance)} {account_to.currency.symbol}")
 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -521,12 +525,12 @@ class TransferUpdateView(LoginRequiredMixin, FormInvalidMixin, UpdateView):
             new_transfer.account_to.balance += amount_to
             new_transfer.account_to.save()
 
-            messages.success(self.request, f"Transfer '{account_from.name}->{account_to.name}' updated!")
+            messages.success(self.request, f"Transfer {account_from.name}->{account_to.name} updated!")
             messages.info(self.request,
-                          f"Updated balance of '{account_from.name}' account!\nYour new balance is {account_from.balance}")
+                          f"Updated balance of {account_from.name} account!\nYour balance is {strip_trailing_zeros(account_from.balance)} {account_from.currency.symbol}")
 
             messages.info(self.request,
-                          f"Updated balance of '{account_to.name}' account!\nYour new balance is {account_to.balance}")
+                          f"Updated balance of {account_to.name} account!\nYour balance is {strip_trailing_zeros(account_to.balance)} {account_to.currency.symbol}")
 
         return super().form_valid(form)
 
@@ -550,10 +554,10 @@ class TransferDeleteView(LoginRequiredMixin, DeleteView):
 
         messages.success(self.request, f"Transfer deleted!")
         messages.info(self.request,
-                      f"Updated balance of '{transfer.account_from.name}' account!\nYour new balance is {transfer.account_from.balance}")
+                      f"Updated balance of {transfer.account_from.name} account!\nYour balance is {strip_trailing_zeros(transfer.account_from.balance)} {transfer.account_from.currency.symbol}")
 
         messages.info(self.request,
-                      f"Updated balance of '{transfer.account_to.name}' account!\nYour new balance is {transfer.account_to.balance}")
+                      f"Updated balance of {transfer.account_to.name} account!\nYour balance is {strip_trailing_zeros(transfer.account_to.balance)} {transfer.account_to.currency.symbol}")
 
         return super().form_valid(form)
 

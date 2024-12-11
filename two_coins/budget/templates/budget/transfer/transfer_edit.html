@@ -1,5 +1,6 @@
 {% extends 'create_form.html' %}
 {% load static %}
+{% load number_filters %}
 
 {% block custom_static %}
     <link rel="stylesheet" href="{% static 'budget/css/accounts_create.css' %}">
@@ -63,7 +64,7 @@
                 <input type="number" min="0.01" step="0.01" oninput="validateFloatInput(this)"
                        class="form-control {% if form.amount_from.errors %}is-invalid{% endif %}"
                        id="id_amount_from" placeholder="{{ form.amount_from.label }}"
-                       name="amount_from" value="{{ form.amount_from.value }}" required>
+                       name="amount_from" value="{{ form.amount_from.value|strip_trailing_zeros }}" required>
                 <span class="input-group-text" id="amount_from_text">
                     {% if form.account_from.currency.abbr == form.account_from.currency.symbol %}
                         {{ form.account_from.currency.abbr }}
@@ -86,7 +87,7 @@
                 <input type="number" min="0.01" step="0.01" oninput="validateFloatInput(this)"
                        class="form-control {% if form.amount_to.errors %}is-invalid{% endif %}"
                        id="id_amount_to" placeholder="{{ form.amount_to.label }}"
-                       name="amount_to" {% if form.amount_to.value %}value="{{ form.amount_to.value }}"{% endif %}>
+                       name="amount_to" {% if form.amount_to.value %}value="{{ form.amount_to.value|strip_trailing_zeros }}"{% endif %}>
                 <span class="input-group-text" id="amount_to_text"></span>
 
                 <div class="invalid-feedback">

@@ -1,5 +1,6 @@
 {% extends 'delete_form.html' %}
 {% load static %}
+{% load number_filters %}
 
 {% block custom_static %}
     <link rel="stylesheet" href="{% static 'budget/css/accounts_create.css' %}">
@@ -10,8 +11,8 @@
         {% csrf_token %}
 
         <div class="mb-5">
-            <h5>Delete Transfer <b>{{ object.amount_from }} {{ object.account_from.currency.abbr }} {{ object.account_from.currency.symbol }}</b> → 
-                <b>{{ object.amount_to }} {{ object.account_to.currency.abbr }} {{ object.account_to.currency.symbol }}</b>
+            <h5>Delete Transfer <b>{{ object.amount_from|strip_trailing_zeros }} {{ object.account_from.currency.abbr }} {{ object.account_from.currency.symbol }}</b> → 
+                <b>{{ object.amount_to|strip_trailing_zeros }} {{ object.account_to.currency.abbr }} {{ object.account_to.currency.symbol }}</b>
                 for accounts <b>{{ object.account_from.name }}</b> → <b>{{ object.account_to.name }}</b>?</h5>
         </div>
 

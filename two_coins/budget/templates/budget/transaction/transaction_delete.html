@@ -1,15 +1,16 @@
 {% extends 'delete_form.html' %}
 {% load static %}
+{% load number_filters %}
 
 {% block form_block %}
     <form action="{% url 'transaction_delete' object.id %}" method="post">
         {% csrf_token %}
 
         <div class="mb-5">
-            <h5>Delete Transaction of <b>{{ object.amount }} {{ object.currency.abbr }} {{ object.currency.symbol }}</b>
+            <h5>Delete Transaction of <b>{{ object.amount|strip_trailing_zeros }} {{ object.currency.abbr }} {{ object.currency.symbol }}</b>
                 {% if object.amount_converted %}
                     (
-                    <b>{{ object.amount_converted }} {{ object.account.currency.abbr }} {{ object.account.currency.symbol }}</b>
+                    <b>{{ object.amount_converted|strip_trailing_zeros }} {{ object.account.currency.abbr }} {{ object.account.currency.symbol }}</b>
                     )
                 {% endif %} for <b>{{ object.account.name }}</b> account?</h5>
         </div>
