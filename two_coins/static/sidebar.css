@@ -42,18 +42,6 @@
 .nav-link {
     padding: 12px;
     height: 40px;
-    color: #484848 !important;
+    color: #484848;
 }
 
-.nav-link.active,
-.nav-item.show .nav-link {
-    color: #484848 !important;
-    background-color: #F4D03F !important;
-}
-
-.btn-outline:hover,
-.btn-outline:active,
-.btn-outline:focus,
-.btn-outline.active {
-    border-color: #F4D03F;
-}

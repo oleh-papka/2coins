@@ -54,15 +54,18 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
         else:
             start_date = datetime.strptime(start_date, '%Y-%m-%d')
             end_date = datetime.strptime(end_date, '%Y-%m-%d')
+            # Include the full last day
+            end_date = datetime.combine(end_date, datetime.max.time())
 
         context["date_range"] = f'{start_date.strftime("%m/%d/%Y")} - {end_date.strftime("%m/%d/%Y")}'
 
-        transactions_queryset = models.Transaction.objects.filter(account=self.object, date__gte=start_date,
-                                                                  date__lte=end_date).order_by('-date').annotate(
+        transactions_queryset = models.Transaction.objects.filter(account=self.object,
+                                                                  date__range=(start_date, end_date)).order_by(
+            '-date').annotate(
             truncated_date=TruncDate('date'))
         transfers_queryset = models.Transfer.objects.filter(
             Q(account_to=self.object) | Q(account_from=self.object),
-            date__gte=start_date, date__lte=end_date).order_by(
+            date__range=(start_date, end_date)).order_by(
             '-date').annotate(truncated_date=TruncDate('date'))
 
         transfers_list = list(transfers_queryset)
@@ -165,13 +168,14 @@ class CategoryDetailView(LoginRequiredMixin, DetailView):
         else:
             start_date = datetime.strptime(start_date, '%Y-%m-%d')
             end_date = datetime.strptime(end_date, '%Y-%m-%d')
+            # Include the full last day
+            end_date = datetime.combine(end_date, datetime.max.time())
 
         context["date_range"] = f'{start_date.strftime("%m/%d/%Y")} - {end_date.strftime("%m/%d/%Y")}'
 
         transactions_queryset = models.Transaction.objects.filter(category=self.object,
                                                                   account__profile__user=self.request.user,
-                                                                  date__gte=start_date,
-                                                                  date__lte=end_date).order_by(
+                                                                  date__range=(start_date, end_date)).order_by(
             '-date').annotate(truncated_date=TruncDate('date'))
 
         transactions_list = list(transactions_queryset)
@@ -258,15 +262,20 @@ class TransactionList(LoginRequiredMixin, ListView):
         else:
             start_date = datetime.strptime(start_date, '%Y-%m-%d')
             end_date = datetime.strptime(end_date, '%Y-%m-%d')
+            # Include the full last day
+            end_date = datetime.combine(end_date, datetime.max.time())
 
         context["date_range"] = f'{start_date.strftime("%m/%d/%Y")} - {end_date.strftime("%m/%d/%Y")}'
 
-        transactions_queryset = models.Transaction.objects.filter(account__profile__user=user, date__gte=start_date,
-                                                                  date__lte=end_date).order_by(
-            '-date').annotate(truncated_date=TruncDate('date'))
-        transfers_queryset = models.Transfer.objects.filter(account_from__profile__user=user, date__gte=start_date,
-                                                            date__lte=end_date).order_by(
-            '-date').annotate(truncated_date=TruncDate('date'))
+        transactions_queryset = models.Transaction.objects.filter(
+            account__profile__user=user,
+            date__range=(start_date, end_date)
+        ).order_by('-date').annotate(truncated_date=TruncDate('date'))
+
+        transfers_queryset = models.Transfer.objects.filter(
+            account_from__profile__user=user,
+            date__range=(start_date, end_date)
+        ).order_by('-date').annotate(truncated_date=TruncDate('date'))
 
         transfers_list = list(transfers_queryset)
         transactions_list = list(transactions_queryset)

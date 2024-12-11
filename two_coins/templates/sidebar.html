@@ -29,7 +29,7 @@
                 >
                     <i
                             class="fa-duotone fa-solid fa-house-chimney fa-lg fa-fw"
-                            style="margin-right: 12px; --fa-primary-color: #484848;"
+                            style="margin-right: 12px;"
                     ></i>
                     <span class="sidebar-item">Dashboard</span>
                 </a>
@@ -44,7 +44,6 @@
                             class="fa-duotone fa-solid fa-wallet fa-lg fa-fw"
                             style="
               margin-right: 12px;
-              --fa-primary-color: #484848;
             "
                     ></i>
 
@@ -61,7 +60,6 @@
                             class="fa-duotone fa-shapes fa-lg fa-fw"
                             style="
               margin-right: 12px;
-              --fa-primary-color: #484848;
             "
                     ></i>
 
@@ -78,7 +76,6 @@
                             class="fa-duotone fa-solid fa-file-invoice-dollar fa-lg fa-fw"
                             style="
               margin-right: 12px;
-              --fa-primary-color: #484848;
             "
                     ></i>
 
@@ -89,7 +86,9 @@
     </div>
 
     <div id="sidebar-bottom">
-        <a href="{% url 'transaction_add' %}" class="btn btn-outline-secondary d-flex justify-content-center align-items-center" style="min-height: 40px; min-width: 40px">
+        <a href="{% url 'transaction_add' %}"
+           class="btn btn-outline-secondary d-flex justify-content-center align-items-center"
+           style="min-height: 40px; min-width: 40px">
             <i class="fa-regular fa-minus-square fa-lg fa-fw" style="margin-right: 10px"></i>
             <span class="sidebar-item">Add transaction</span>
         </a>
