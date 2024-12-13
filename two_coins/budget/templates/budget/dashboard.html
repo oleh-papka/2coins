@@ -7,64 +7,88 @@
 
 {% block title %}2coins | Dashboard{% endblock %}
 
-{% block content %}
-    <div class="container">
-        <div class="row">
-            <div class="col-4">
-                <canvas id="accounts_chart"></canvas>
+{% block body %}
+    <div class="w-100 vh-100">
+        <div class="row m-0" style="padding: 20px; gap: 20px">
+            <div class="d-flex flex-column col shadow rounded-4" id="table-col"
+                 style="max-width: 500px; min-height: 500px; padding: 20px; background-color: #FCFCFC">
 
-                <div id="last-txns" class="d-flex flex-column rounded-4 border-2 bg-body-tertiary p-3">
-                    {% for txn in last_txns %}
-                        <div class="{% if not forloop.last %}mb-3{% endif %} border border-2 rounded p-2 d-flex justify-content-between">
-                            <div class="card-title mb-0 me-2 d-flex align-items-center">
+                <h2 class="fw-normal">Last transactions:</h2>
+                <hr class="h-divider"/>
 
-                                <div class="d-flex justify-content-center align-items-center rounded-2 me-2"
-                                     style="width: 2.5rem; height: 2.5rem; background-color: {{ txn.category.color }}2A">
-                                    <i class="{{ txn.category.icon }}"
-                                       style="color: {{ txn.category.color }}"></i>
-                                </div>
+                {% for action in combined_actions %}
+                    <div class="{% if not forloop.last %}mb-3{% endif %} border border-2 rounded-3 p-2 d-flex justify-content-between">
+                        <div class="card-title mb-0 me-2 d-flex align-items-center">
 
-                                <div class="d-flex flex-column">
-                                    <p class="m-0">
-                                        {{ txn.category.name }}
-                                        {% if txn.description %}
-                                            <small class="text-secondary">({{ txn.description|default_if_none:"" }})</small>
-                                        {% endif %}
-                                    </p>
-                                    <small class="m-0 text-secondary">
-                                        <i class="{{ txn.account.icon }}"></i>
-                                        {{ txn.account.name|default_if_none:"" }}
-                                        {% if txn.transfer_account %}
-                                            → <i class="{{ txn.transfer_account.icon }}"></i>
-                                            {{ txn.transfer_account.name|default_if_none:"" }}
-                                        {% endif %}
-                                    </small>
-                                </div>
+                            <div class="d-flex justify-content-center align-items-center rounded-2 me-2"
+                                 style="width: 2.5rem; height: 2.5rem;  {% if action.action_type == 'trf' %}background-color: #0CCAF02A{% else %}background-color: #{{ action.category.color }}2A{% endif %}">
+                                <i class="{% if action.action_type == 'trf' %}fa-duotone fa-solid fa-right-left{% else %}{{ action.category.icon }}{% endif %}"
+                                   style="{% if action.action_type == 'trf' %}color: #0CCAF0{% else %}color: #{{ action.category.color }}{% endif %}"></i>
                             </div>
 
-                            <div class="d-flex flex-column align-items-end justify-content-center ms-auto me-3">
-                                {% if txn.amount_default_currency %}
-                                    <strong class="m-0 {% if txn.txn_type == '-' %}text-danger{% else %}text-success{% endif %}">
-                                        {% if txn.amount > 0 %}
-                                            +{% endif %}{{ txn.amount|strip_trailing_zeros|int_space }} {{ txn.currency.symbol }}
-                                    </strong>
-                                    <small class="m-0 text-secondary">
-                                        {% if txn.amount > 0 %}
-                                            +{% endif %}{{ txn.amount_default_currency|strip_trailing_zeros|int_space }} {{ txn.account.currency.symbol }}
-                                    </small>
-                                {% else %}
-                                    <strong class="m-0 {% if txn.txn_type == '-' %}text-danger{% elif txn.txn_type == '>' %}text-secondary{% else %}text-success{% endif %}">
-                                        {% if txn.amount > 0 and txn.txn_type == '+' %}
-                                            +{% endif %}{{ txn.amount|strip_trailing_zeros|int_space }} {{ txn.account.currency.symbol }}
-                                    </strong>
-                                {% endif %}
+                            <div class="d-flex flex-column">
+                                <p class="m-0">
+                                    {% if action.action_type == 'trf' %}Transfer{% else %}
+                                        {{ action.category.name }}{% endif %}
+                                    {% if action.description %}
+                                        <small class="text-secondary">({{ action.description }})</small>
+                                    {% endif %}
+                                </p>
+                                <small class="m-0 text-secondary">
+                                    {% if action.action_type == 'trf' %}
+                                        <i class="{{ action.account_from.icon }} me"
+                                           style="color: #{{ action.account_from.color }}"></i>
+                                        {{ action.account_from.name }}
+
+                                        <i class="fa-duotone fa-arrow-right mx-2 text-secondary"></i>
+
+                                        <i class="{{ action.account_to.icon }} me"
+                                           style="color: #{{ action.account_to.color }}"></i>
+                                        {{ action.account_to.name }}
+                                    {% else %}
+                                        <i class="{{ action.account.icon }} me"
+                                           style="color: #{{ action.account.color }}"></i>
+                                        {{ action.account.name }}
+                                    {% endif %}
+                                </small>
                             </div>
                         </div>
-                    {% endfor %}
-                </div>
-            </div>
-            <div class="col-8">
-                <canvas id="money_chart"></canvas>
+
+                        <div class="m-auto me-3">
+                            {% if action.action_type == 'trf' %}
+                                {% if action.account_from.currency == action.account_to.currency %}
+                                    <strong class="m-0 text-secondary fs-5">
+                                        {{ action.amount_from|strip_trailing_zeros|int_space }} {{ action.account_from.currency.symbol }}
+                                    </strong>
+                                {% else %}
+                                    <strong class="m-0 text-secondary fs-5">
+                                        {{ action.amount_from|strip_trailing_zeros|int_space }} {{ action.account_from.currency.symbol }}
+                                    </strong>
+                                    <span class="m-0 text-secondary fs-5">({{ action.amount_to|strip_trailing_zeros|int_space }} {{ action.account_to.currency.symbol }}
+                                                )</span>
+                                {% endif %}
+                            {% else %}
+                                {% if action.amount_converted %}
+                                    <strong class="m-0 {% if action.transaction_type == '-' %}text-danger{% else %}text-success{% endif %}">
+                                        {% if action.amount > 0 and action.transaction_type == '+' %}
+                                            +{% elif action.amount > 0 and action.transaction_type == '-' %}
+                                            -{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.currency.symbol }}
+                                    </strong> <span class="m-0 text-secondary fs-5">
+                                            ({% if action.amount > 0 and action.transaction_type == '+' %}
+                                    +{% elif action.amount > 0 and action.transaction_type == '-' %}
+                                    -{% endif %}{{ action.amount_converted|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }})
+                                        </span>
+                                {% else %}
+                                    <strong class="m-0 fs-5 {% if action.transaction_type == '-' %}text-danger{% else %}text-success{% endif %}">
+                                        {% if action.amount > 0 and action.transaction_type == '+' %}
+                                            +{% elif action.amount > 0 and action.transaction_type == '-' %}
+                                            -{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }}
+                                    </strong>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
             </div>
         </div>
     </div>

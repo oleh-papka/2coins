@@ -578,9 +578,12 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'budget/dashboard.html'
 
     def get_context_data(self, **kwargs):
+        user = self.request.user
+        context = super().get_context_data(**kwargs)
+
         data_cat_query = (
             models.Category.objects
-            .filter(profile__user=self.request.user)
+            .filter(profile__user=user)
             .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
             .annotate(labels=F('name'))
             .values('labels', 'data')
@@ -588,7 +591,7 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
         data_acct_query = (
             models.Account.objects
-            .filter(profile__user=self.request.user)
+            .filter(profile__user=user)
             .annotate(
                 data=Coalesce(Sum('transaction__amount'), 0.0) + Cast(F('balance'), output_field=FloatField())
             )
@@ -596,9 +599,26 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             .values('data', 'labels')
         )
 
-        last_txns = models.Transaction.objects.filter(account__profile__user=self.request.user).order_by('date')[:5]
+        transactions_list = list(models.Transaction.objects.filter(
+            account__profile__user=user
+        ).order_by('-date').annotate(truncated_date=TruncDate('date')))[:5]
 
-        context = super().get_context_data(**kwargs)
-        context['last_txns'] = last_txns
+        transfers_list = list(models.Transfer.objects.filter(
+            account_from__profile__user=user
+        ).order_by('-date').annotate(truncated_date=TruncDate('date')))[:5]
+
+        combined_list = transactions_list + transfers_list
+
+        combined_list.sort(key=operator.attrgetter('date'), reverse=True)
+        combined_list = combined_list[:5]
+
+        if not combined_list:
+            return context
+
+        for action in combined_list:
+            action_type = 'txn' if isinstance(action, models.Transaction) else 'trf'
+            action.action_type = action_type
+
+        context["combined_actions"] = combined_list
 
         return context

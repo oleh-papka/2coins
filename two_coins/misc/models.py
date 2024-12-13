@@ -114,7 +114,7 @@ class StyleMixin(models.Model):
                              verbose_name="Color")
     icon = models.CharField(null=True,
                             blank=True,
-                            max_length=30,
+                            max_length=50,
                             default=random.choice(IconChoices.CHOICES)[0],
                             verbose_name="Icon",
                             help_text="Icon name from FontAwesome")
