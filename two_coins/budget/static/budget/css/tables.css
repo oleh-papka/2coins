@@ -1,0 +1,18 @@
+/* Initially hide the extra columns */
+.extra-column {
+    display: none;
+}
+
+/* When the table expands, show extra columns */
+.expanded .extra-column {
+    display: table-cell;
+}
+
+.expanded-content {
+    max-width: 700px !important;
+    width: 700px !important;
+}
+
+.table_custom {
+    --bs-table-bg: transparent !important;
+}

@@ -86,3 +86,7 @@ a {
 .nav-link:hover:not(.active) {
     color: #136ba8 !important;
 }
+
+.card {
+    background: transparent !important;
+}

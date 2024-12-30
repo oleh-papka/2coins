@@ -11,14 +11,14 @@
     <div class="w-100 vh-100">
         <div class="row m-0" style="padding: 20px; gap: 20px">
             <div class="d-flex flex-column col shadow rounded-4" id="table-col"
-                 style="max-width: 500px; min-height: 500px; padding: 20px; background-color: #FCFCFC">
+                 style="max-width: 450px; min-height: 400px; padding: 20px; background-color: #FCFCFC">
 
                 <h2 class="fw-normal">Last transactions:</h2>
                 <hr class="h-divider"/>
 
                 {% for action in combined_actions %}
                     <div class="{% if not forloop.last %}mb-3{% endif %} border border-2 rounded-3 p-2 d-flex justify-content-between">
-                        <div class="card-title mb-0 me-2 d-flex align-items-center">
+                        <div class="card-title mb-0 me-2 d-flex align-items-center" style="height: 2.5rem;">
 
                             <div class="d-flex justify-content-center align-items-center rounded-2 me-2"
                                  style="width: 2.5rem; height: 2.5rem;  {% if action.action_type == 'trf' %}background-color: #0CCAF02A{% else %}background-color: #{{ action.category.color }}2A{% endif %}">
@@ -54,17 +54,17 @@
                             </div>
                         </div>
 
-                        <div class="m-auto me-3">
+                        <div class="m-auto me-2">
                             {% if action.action_type == 'trf' %}
                                 {% if action.account_from.currency == action.account_to.currency %}
-                                    <strong class="m-0 text-secondary fs-5">
+                                    <strong class="m-0 text-secondary ">
                                         {{ action.amount_from|strip_trailing_zeros|int_space }} {{ action.account_from.currency.symbol }}
                                     </strong>
                                 {% else %}
-                                    <strong class="m-0 text-secondary fs-5">
+                                    <strong class="m-0 text-secondary ">
                                         {{ action.amount_from|strip_trailing_zeros|int_space }} {{ action.account_from.currency.symbol }}
                                     </strong>
-                                    <span class="m-0 text-secondary fs-5">({{ action.amount_to|strip_trailing_zeros|int_space }} {{ action.account_to.currency.symbol }}
+                                    <span class="m-0 text-secondary ">({{ action.amount_to|strip_trailing_zeros|int_space }} {{ action.account_to.currency.symbol }}
                                                 )</span>
                                 {% endif %}
                             {% else %}
@@ -73,13 +73,13 @@
                                         {% if action.amount > 0 and action.transaction_type == '+' %}
                                             +{% elif action.amount > 0 and action.transaction_type == '-' %}
                                             -{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.currency.symbol }}
-                                    </strong> <span class="m-0 text-secondary fs-5">
+                                    </strong> <span class="m-0 text-secondary ">
                                             ({% if action.amount > 0 and action.transaction_type == '+' %}
                                     +{% elif action.amount > 0 and action.transaction_type == '-' %}
                                     -{% endif %}{{ action.amount_converted|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }})
                                         </span>
                                 {% else %}
-                                    <strong class="m-0 fs-5 {% if action.transaction_type == '-' %}text-danger{% else %}text-success{% endif %}">
+                                    <strong class="m-0  {%  if action.transaction_type == '-' %}text-danger{% else %}text-success{% endif %}">
                                         {% if action.amount > 0 and action.transaction_type == '+' %}
                                             +{% elif action.amount > 0 and action.transaction_type == '-' %}
                                             -{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }}

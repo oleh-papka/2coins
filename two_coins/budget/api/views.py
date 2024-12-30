@@ -1,6 +1,7 @@
 from itertools import chain
 from operator import attrgetter
 
+from django.db.models import Sum
 from django.db.models.functions import TruncDate
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
@@ -103,3 +104,28 @@ class CombinedActionListView(generics.GenericAPIView):
         serializer = CombinedTxnTrfSerializer(combined_data, many=True)
 
         return Response(serializer.data)
+
+
+class TransactionChartDataView(generics.GenericAPIView):
+
+    def get(self, request, *args, **kwargs):
+        txn_data = (
+            Transaction.objects.annotate(date_only=TruncDate('date'))
+            .values('date_only')
+            .annotate(amount_total=Sum('amount'))
+            .order_by('date_only')
+        )
+
+        labels = []
+        data = []
+
+        for txn_group in txn_data:
+            labels.append(txn_group['date_only'].strftime('%d/%m'))
+            data.append(float(txn_group['amount_total']))
+
+        response_data = {
+            'labels': labels,
+            'data': data,
+        }
+
+        return Response(response_data)

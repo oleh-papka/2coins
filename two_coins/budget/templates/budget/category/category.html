@@ -5,29 +5,13 @@
 
 {% block custom_static %}
     {% load static %}
-    <link rel="stylesheet" href="{% static 'scroll_shadow.css' %}">
     <link rel="stylesheet" href="{% static 'budget/css/hover.css' %}">
+    <link rel="stylesheet" href="{% static 'budget/css/tables.css' %}">
 
     <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css"/>
-    <style>
-        /* Initially hide the extra columns */
-        .extra-column {
-            display: none;
-        }
-
-        /* When the table expands, show extra columns */
-        .expanded .extra-column {
-            display: table-cell;
-        }
-
-        .expanded-content {
-            max-width: 700px !important;
-            width: 700px !important;
-        }
-    </style>
 {% endblock %}
 
 {% block body %}
@@ -73,9 +57,9 @@
                 <div class="w-100 d-flex justify-content-between align-items-center"
                      style="height: 40px; gap: 20px;">
                     <div class="input-group" style="width: 270px;">
-                            <span class="input-group-text"><i
+                            <span class="input-group-text" style="background-color: transparent"><i
                                     class="fa-duotone fa-solid fa-calendar-days fa-lg"></i></span>
-                        <input type="text" class="form-control" name="daterange" value="{{ date_range }}">
+                        <input type="text" class="form-control" name="daterange" value="{{ date_range }}" style="background-color: transparent">
                     </div>
 
                     <button id="toggle-button" class="btn btn-outline-secondary"><i
@@ -86,7 +70,8 @@
                 <hr class="h-divider"/>
 
                 <div id="table-scroll-container" style="height: 100%; overflow-y: auto;">
-                    <table class="table table-hover" id="txn-table" style="vertical-align: middle; margin-bottom: 0">
+                    <table class="table table-hover table_custom" id="txn-table"
+                           style="vertical-align: middle; margin-bottom: 0">
                         <tbody>
                         {% for action in transactions %}
                             <tr>
@@ -151,7 +136,7 @@
                                 <td class="text-center">
                                     <span class="text-secondary">{{ action.date|date:"d/m" }}</span>
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center" style="max-width: 150px;">
                                     <span class="text-secondary">{{ action.description|default_if_none:"..." }}</span>
                                 </td>
                                 <td class="gap-2 text-end">
