@@ -41,24 +41,24 @@
 {% block body %}
     <div class="w-100 vh-100">
         <div class="row m-0 vh-100 d-flex" style="padding: 20px; gap: 20px">
-            <div class="d-flex h-100 flex-column col justify-content-between shadow" id="table-col"
-                 style="max-width: 520px; padding: 20px; border-radius: 20px; background-color: #FCFCFC">
-                <div>
-                    <div class="w-100 d-flex justify-content-between align-items-center"
-                         style="height: 40px; gap: 20px;">
-                        <div class="input-group" style="width: 270px">
+            <div class="d-flex h-100 flex-column col shadow" id="table-col"
+                 style="max-width: 520px; overflow-y: hidden; padding: 20px; border-radius: 20px; background-color: #FCFCFC">
+                <div class="w-100 d-flex justify-content-between align-items-center"
+                     style="height: 40px; gap: 20px;">
+                    <div class="input-group" style="width: 270px">
                             <span class="input-group-text"><i
                                     class="fa-duotone fa-solid fa-calendar-days fa-lg"></i></span>
-                            <input type="text" class="form-control" name="daterange" value="{{ date_range }}">
-                        </div>
-
-                        <button id="toggle-button" class="btn btn-outline-secondary"><i class="fa-solid fa-expand"></i>
-                        </button>
+                        <input type="text" class="form-control" name="daterange" value="{{ date_range }}">
                     </div>
 
-                    <hr class="h-divider"/>
+                    <button id="toggle-button" class="btn btn-outline-secondary"><i class="fa-solid fa-expand"></i>
+                    </button>
+                </div>
 
-                    <table class="table table-hover" id="txn-table" style="vertical-align: middle;">
+                <hr class="h-divider"/>
+
+                <div id="table-scroll-container" style="height: 100%; overflow-y: auto;">
+                    <table class="table table-hover" id="txn-table" style="vertical-align: middle; margin-bottom: 0">
                         <tbody>
                         {% for action in combined_actions %}
                             <tr>
@@ -166,7 +166,7 @@
                     </table>
                 </div>
 
-                <div class="card hover"
+                <div class="card hover mt-3"
                      style="width: 100%; height: 50px; border-radius: 10px; border: 1px solid rgba(72, 72, 72, 0.4);">
                     <div class="card-body d-flex justify-content-center align-items-center">
                         <a href="{% url 'transaction_add' %}" class="stretched-link"></a>
@@ -283,35 +283,45 @@
     <script>
         const ctx = document.getElementById('myChart');
 
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-                datasets: [{
-                    label: '# of Votes',
-                    data: [12, 19, 3, 5, 2, 3],
-                    borderWidth: 1,
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                },
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
+        // Fetch data from the API
+        fetch('http://localhost:8000/api/charts/transaction/')
+            .then(response => response.json())
+            .then(data => {
+                const labels = data.labels;
+                const values = data.data;
+
+                // Create the Chart.js graph
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '$',
+                            data: values,
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
                     },
-                    title: {
-                        display: true,
-                        text: 'Chart.js Bar Chart'
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'Chart.js Bar Chart with DRF'
+                            }
+                        }
                     }
-                }
-            }
-        });
+                });
+            })
+            .catch(error => console.error('Error fetching data:', error));
     </script>
 
 {% endblock %}

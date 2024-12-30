@@ -33,78 +33,63 @@
 {% block body %}
     <div class="w-100 vh-100">
         <div class="row m-0 vh-100 d-flex" style="padding: 20px; gap: 20px;">
+            <div class="d-flex h-100 flex-column col shadow" id="table-col"
+                 style="max-width: 520px; overflow-y: hidden; padding: 20px; border-radius: 20px; background-color: #FCFCFC">
 
-            <div class="d-flex h-100 flex-column col justify-content-between shadow" id="table-col"
-                 style="max-width: 520px; padding: 20px; border-radius: 20px; background-color: #FCFCFC">
-
-
-                <div>
-
-                    <div class="card"
-                         style="width: 100%; margin-bottom: 16px; border-radius: 16px; border: 1px solid rgba(72, 72, 72, 0.4);">
-                        <div class="card-body d-flex justify-content-between">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="card-title mb-0 me-2 d-flex align-items-center">
-                                    <div class="d-flex justify-content-center align-items-center rounded-3 me-2"
-                                         style="width: 40px; height: 40px; background-color: #{{ object.color }}2a">
-                                        {% if object.icon %}
-                                            <i class="{{ object.icon }} fa-xl"
-                                               style="color: #{{ object.color }}"></i>
-                                        {% endif %}
-                                    </div>
-                                    <h4>
-                                        {{ object.name }}
-                                    </h4>
+                <div class="card"
+                     style="width: 100%; margin-bottom: 16px; border-radius: 16px; border: 1px solid rgba(72, 72, 72, 0.4);">
+                    <div class="card-body d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="card-title mb-0 me-2 d-flex align-items-center">
+                                <div class="d-flex justify-content-center align-items-center rounded-3 me-2"
+                                     style="width: 40px; height: 40px; background-color: #{{ object.color }}2a">
+                                    {% if object.icon %}
+                                        <i class="{{ object.icon }} fa-xl"
+                                           style="color: #{{ object.color }}"></i>
+                                    {% endif %}
                                 </div>
-                            </div>
-
-                            <div class="d-flex gap-2 align-items-center">
-                                <a class="btn btn-outline-warning"
-                                   href="{% url 'category_edit' object.id %}">
-                                    <i class="fa-regular fa-pen-to-square me-2"></i>
-                                    Edit
-                                </a>
-
-                                <a class="btn btn-outline-danger"
-                                   href="{% url 'category_delete' object.id %}">
-                                    <i class="fa-regular fa-trash-can me-2"></i>
-                                    Delete
-                                </a>
+                                <h4>
+                                    {{ object.name }}
+                                </h4>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="w-100 d-flex justify-content-between align-items-center"
-                         style="height: 40px; gap: 20px; margin-bottom: 16px">
-                        <div class="input-group" style="width: 270px;">
+                        <div class="d-flex gap-2 align-items-center">
+                            <a class="btn btn-outline-warning"
+                               href="{% url 'category_edit' object.id %}">
+                                <i class="fa-regular fa-pen-to-square me-2"></i>
+                                Edit
+                            </a>
+
+                            <a class="btn btn-outline-danger"
+                               href="{% url 'category_delete' object.id %}">
+                                <i class="fa-regular fa-trash-can me-2"></i>
+                                Delete
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-100 d-flex justify-content-between align-items-center"
+                     style="height: 40px; gap: 20px;">
+                    <div class="input-group" style="width: 270px;">
                             <span class="input-group-text"><i
                                     class="fa-duotone fa-solid fa-calendar-days fa-lg"></i></span>
-                            <input type="text" class="form-control" name="daterange" value="{{ date_range }}">
-                        </div>
-
-                        <button id="toggle-button" class="btn btn-outline-secondary"><i
-                                class="fa-solid fa-expand"></i>
-                        </button>
+                        <input type="text" class="form-control" name="daterange" value="{{ date_range }}">
                     </div>
 
+                    <button id="toggle-button" class="btn btn-outline-secondary"><i
+                            class="fa-solid fa-expand"></i>
+                    </button>
+                </div>
 
-                    <hr class="h-divider"/>
+                <hr class="h-divider"/>
 
-                    <table class="table table-hover" id="txn-table" style="vertical-align: middle;">
+                <div id="table-scroll-container" style="height: 100%; overflow-y: auto;">
+                    <table class="table table-hover" id="txn-table" style="vertical-align: middle; margin-bottom: 0">
                         <tbody>
                         {% for action in transactions %}
                             <tr>
-{#                                <td>#}
-{#                                    <div class="d-flex align-items-center">#}
-{#                                        <div class="d-flex justify-content-center align-items-center rounded-2 me-2"#}
-{#                                             style="width: 30px; height: 30px; {% if action.action_type == 'trf' %}background-color: #0CCAF02A{% else %}background-color: #{{ action.category.color }}2A{% endif %}">#}
-{#                                            <i class="{% if action.action_type == 'trf' %}fa-duotone fa-solid fa-right-left{% else %}{{ action.category.icon }}{% endif %}"#}
-{#                                               style="{% if action.action_type == 'trf' %}color: #0CCAF0{% else %}color: #{{ action.category.color }}{% endif %}"></i>#}
-{#                                        </div>#}
-{#                                        {% if action.action_type == 'trf' %}Transfer{% else %}#}
-{#                                            {{ action.category.name }}{% endif %}#}
-{#                                    </div>#}
-{#                                </td>#}
                                 <td>
                                     <div class="d-flex align-items-center">
                                         {% if action.action_type == 'trf' %}
@@ -196,10 +181,9 @@
                         {% endfor %}
                         </tbody>
                     </table>
-
                 </div>
 
-                <div class="card hover"
+                <div class="card hover mt-3 "
                      style="width: 100%; height: 50px; border-radius: 10px; border: 1px solid rgba(72, 72, 72, 0.4);">
                     <div class="card-body d-flex justify-content-center align-items-center">
                         <a href="{% url 'transaction_add' %}" class="stretched-link"></a>
