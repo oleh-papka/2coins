@@ -28,7 +28,7 @@ class BaseStyleForm(forms.ModelForm):
     Abstract form class that provides shared styling logic for models.
     """
 
-    icon = forms.CharField(max_length=30, required=False)
+    icon = forms.CharField(max_length=50, required=False)
     color = forms.CharField(max_length=7, required=False)
 
     class Meta:
@@ -66,6 +66,8 @@ class BaseStyleForm(forms.ModelForm):
 
         if not icon_data:
             return random.choice(IconChoices.CHOICES)[0]
+        else:
+            return icon_data
 
 
 class AccountCreateForm(BaseStyleForm):
@@ -122,9 +124,6 @@ class TransactionForm(BaseTransactionForm):
         model = models.Transaction
         fields = '__all__'
 
-    def clean_amount(self):
-        return self.clean_positive_value("amount")
-
     def clean_amount_converted(self):
         return self.clean_positive_value("amount_converted")
 
@@ -134,17 +133,21 @@ class TransactionForm(BaseTransactionForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        amount = abs(cleaned_data.get('amount'))
+        amount = amount if cleaned_data.get("category").category_type == '+' else -amount
 
-        if cleaned_data.get('transaction_type') == models.Transaction.EXPENSE:
-            amount = cleaned_data.get('amount')
+        # Check if account have enough funds for expense
+        if amount < 0:
             amount_converted = cleaned_data.get('amount_converted')
             account = cleaned_data.get('account')
 
             amount_to_check = amount if not amount_converted else amount_converted
             field_name = 'amount_converted' if amount_converted else 'amount'
 
-            if amount_to_check > account.balance and not account.allow_negative_balance:
+            if abs(amount_to_check) > account.balance and not account.allow_negative_balance:
                 self.add_error(field_name, 'Insufficient funds in the account!')
+
+        cleaned_data['amount'] = amount
 
         return cleaned_data
 

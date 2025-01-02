@@ -42,7 +42,6 @@ class TransferSerializer(serializers.ModelSerializer):
 
 
 class CombinedTxnTrfSerializer(serializers.Serializer):
-    transaction_type = serializers.ChoiceField(choices=Transaction.TRANSACTION_TYPE_CHOICES, required=False)
     account = NestedAccountSerializer(required=False)
     account_from = NestedAccountSerializer(required=False)
     account_to = NestedAccountSerializer(required=False)

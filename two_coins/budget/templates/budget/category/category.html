@@ -59,7 +59,8 @@
                     <div class="input-group" style="width: 270px;">
                             <span class="input-group-text" style="background-color: transparent"><i
                                     class="fa-duotone fa-solid fa-calendar-days fa-lg"></i></span>
-                        <input type="text" class="form-control" name="daterange" value="{{ date_range }}" style="background-color: transparent">
+                        <input type="text" class="form-control" name="daterange" value="{{ date_range }}"
+                               style="background-color: transparent">
                     </div>
 
                     <button id="toggle-button" class="btn btn-outline-secondary"><i
@@ -115,28 +116,25 @@
                                         {% endif %}
                                     {% else %}
                                         {% if action.amount_converted %}
-                                            <strong class="m-0 {% if action.transaction_type == '-' %}text-danger{% else %}text-success{% endif %}">
-                                                {% if action.amount > 0 and action.transaction_type == '+' %}
-                                                    +{% elif action.amount > 0 and action.transaction_type == '-' %}
-                                                    -{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.currency.symbol }}
+                                            <strong class="m-0 {% if action.amount < 0 %}text-danger{% else %}text-success{% endif %}">
+                                                {% if action.amount > 0 %}
+                                                    +{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.currency.symbol }}
                                             </strong> <span class="m-0 text-secondary">
-                                            ({% if action.amount > 0 and action.transaction_type == '+' %}
-                                            +{% elif action.amount > 0 and action.transaction_type == '-' %}
-                                            -{% endif %}{{ action.amount_converted|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }})
+                                            ({% if action.amount > 0 %}
+                                            +{% endif %}{{ action.amount_converted|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }})
                                         </span>
                                         {% else %}
-                                            <strong class="m-0 {% if action.transaction_type == '-' %}text-danger{% else %}text-success{% endif %}">
-                                                {% if action.amount > 0 and action.transaction_type == '+' %}
-                                                    +{% elif action.amount > 0 and action.transaction_type == '-' %}
-                                                    -{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }}
+                                            <strong class="m-0 {% if action.amount < 0 %}text-danger{% else %}text-success{% endif %}">
+                                                {% if action.amount > 0 %}
+                                                    +{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }}
                                             </strong>
                                         {% endif %}
                                     {% endif %}
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center extra-column d-none ">
                                     <span class="text-secondary">{{ action.date|date:"d/m" }}</span>
                                 </td>
-                                <td class="text-center" style="max-width: 150px;">
+                                <td class="text-center extra-column d-none " style="max-width: 150px;">
                                     <span class="text-secondary">{{ action.description|default_if_none:"..." }}</span>
                                 </td>
                                 <td class="gap-2 text-end">

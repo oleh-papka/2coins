@@ -14,7 +14,7 @@ from misc.models import FormInvalidMixin
 from misc.utils import get_current_month_dates
 from profiles.models import Profile
 from . import forms, models
-from .models import Transaction, Transfer
+from .models import Transaction, Transfer, Category
 from .templatetags.number_filters import strip_trailing_zeros
 
 
@@ -310,13 +310,12 @@ class TransactionCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context['category_list'] = models.Category.objects.filter(profile__user=self.request.user).all()
+        context['category_list'] = list(
+            models.Category.objects.filter(profile__user=self.request.user).all().values('id', 'name', 'category_type'))
 
         if category_id := self.request.GET.get('category'):
             category = models.Category.objects.get(id=category_id)
             context['category'] = category
-            context[
-                'transaction_type'] = models.Transaction.INCOME if category.category_type == models.Category.INCOME else models.Transaction.EXPENSE
 
         if account_id := self.request.GET.get('account'):
             account = models.Account.objects.get(id=account_id)
@@ -329,7 +328,6 @@ class TransactionCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
                                                           'currency__abbr',
                                                           'currency__symbol'))  # to pass values to JS
         context['currency_list'] = models.Currency.objects.all()
-        context['transaction_type_list'] = models.Transaction.TRANSACTION_TYPE_CHOICES
 
         return context
 
@@ -339,7 +337,7 @@ class TransactionCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
         amount = form.cleaned_data.get('amount') if account.currency == currency else form.cleaned_data.get(
             'amount_converted')
 
-        if form.cleaned_data.get('transaction_type') == Transaction.INCOME:
+        if form.cleaned_data.get("category").category_type == '+':
             account.deposit(amount)
         else:
             account.withdraw(amount)
@@ -373,31 +371,40 @@ class TransactionUpdateView(LoginRequiredMixin, FormInvalidMixin, UpdateView):
 
         # Reverting account balance
         prev_transaction_amount = abs(prev_transaction.amount_converted or prev_transaction.amount)
-        if prev_transaction.transaction_type == Transaction.EXPENSE:
+        if prev_transaction.category.category_type == Category.EXPENSE:
             prev_transaction.account.balance = prev_transaction.account.balance + prev_transaction_amount
         else:
             prev_transaction.account.balance = prev_transaction.account.balance - prev_transaction_amount
+
         prev_transaction.account.save()
 
         # Updating account balance
         new_transaction.account.refresh_from_db()
         new_transaction_amount = abs(new_transaction.amount_converted or new_transaction.amount)
-        if new_transaction.transaction_type == Transaction.INCOME:
-            new_transaction.account.balance = new_transaction.account.balance + new_transaction_amount
-        else:
+        if new_transaction.category.category_type == Category.EXPENSE:
             new_transaction.account.balance = new_transaction.account.balance - new_transaction_amount
+        else:
+            new_transaction.account.balance = new_transaction.account.balance + new_transaction_amount
+
         new_transaction.account.save()
 
-        messages.success(self.request, f"Transaction updated!")
-        messages.info(self.request,
-                      f'Updated balance of account!\nYour balance is {strip_trailing_zeros(new_transaction.account.balance)} {new_transaction.account.currency.symbol}')
+        messages.success(self.request,
+                         f"Transaction {strip_trailing_zeros(new_transaction.amount)} {new_transaction.account.currency.symbol} updated!")
+        if prev_transaction.account == new_transaction.account:
+            messages.info(self.request,
+                          f'Updated balance of {new_transaction.account.name} account!\nYour balance is {strip_trailing_zeros(new_transaction.account.balance)} {new_transaction.account.currency.symbol}')
+        else:
+            messages.info(self.request,
+                          f'Updated balance of {prev_transaction.account.name} account ({strip_trailing_zeros(prev_transaction.account.balance)} {prev_transaction.account.currency.symbol});\n'
+                          f'Updated balance of {new_transaction.account.name} account ({strip_trailing_zeros(new_transaction.account.balance)} {new_transaction.account.currency.symbol}) ')
 
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context['category_list'] = models.Category.objects.filter(profile__user=self.request.user).all()
+        context['category_list'] = list(
+            models.Category.objects.filter(profile__user=self.request.user).all().values('id', 'name', 'category_type'))
         context['account_list'] = list(models.Account.objects.filter(
             profile__user=self.request.user).all().values('id', 'name', 'currency_id',
                                                           'currency__abbr',
@@ -405,7 +412,6 @@ class TransactionUpdateView(LoginRequiredMixin, FormInvalidMixin, UpdateView):
 
         context['profile'] = Profile.objects.get(user=self.request.user)
         context['currency_list'] = models.Currency.objects.all()
-        context['transaction_type_list'] = models.Transaction.TRANSACTION_TYPE_CHOICES
 
         return context
 
@@ -421,7 +427,7 @@ class TransactionDeleteView(LoginRequiredMixin, DeleteView):
 
         # Reverting account balance
         transaction_amount = abs(transaction.amount_converted or transaction.amount)
-        if transaction.transaction_type == Transaction.EXPENSE:
+        if transaction.category.category_type == Category.EXPENSE:
             transaction.account.balance += transaction_amount
         else:
             transaction.account.balance -= transaction_amount
@@ -430,7 +436,7 @@ class TransactionDeleteView(LoginRequiredMixin, DeleteView):
         messages.success(self.request,
                          f"Transaction {strip_trailing_zeros(self.object.amount)} {self.object.currency.symbol} deleted!")
         messages.info(self.request,
-                      f'Updated balance of account!\nYour new balance is {strip_trailing_zeros(transaction.account.balance)} {transaction.account.currency.symbol}')
+                      f'Updated balance of {transaction.account.name} account!\nYour new balance is {strip_trailing_zeros(transaction.account.balance)} {transaction.account.currency.symbol}')
 
         return super().form_valid(form)
 

@@ -76,7 +76,11 @@
                     <div class="col input-group">
                         <input type="number" step="0.01"
                                class="form-control {% if field.errors %}is-invalid{% endif %}"
-                               id="id_balance" placeholder="{{ field.label }}" name="balance" value="{{ field.value|strip_trailing_zeros }}">
+                               id="id_balance" placeholder="{{ field.label }}" name="balance"
+                               value="{{ field.value|strip_trailing_zeros }}">
+                        <div class="invalid-feedback">
+                            {{ field.errors.as_text }}
+                        </div>
                         <span class="input-group-text">{{ object.currency.abbr }}&nbsp;&nbsp;{{ object.currency.symbol }}</span>
                         {#                        <div class="input-group-text bg-body p-1">#}
                         {#                            <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">#}
@@ -92,9 +96,6 @@
                         {#                                {% endfor %}#}
                         {#                            </select>#}
                         {#                        </div>#}
-                        <div class="invalid-feedback">
-                            {{ field.errors.as_text }}
-                        </div>
                     </div>
                 </div>
             {% elif field.name == 'initial_balance' %}

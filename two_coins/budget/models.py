@@ -107,12 +107,12 @@ class Account(TimeStampMixin, StyleMixin):
 
     def withdraw(self, amount):
         with db_transaction.atomic():
-            self.balance -= amount
+            self.balance -= abs(amount)
             self.save()
 
     def deposit(self, amount):
         with db_transaction.atomic():
-            self.balance += amount
+            self.balance += abs(amount)
             self.save()
 
     def transfer(self, amount, amount_converted, to_account):
@@ -156,21 +156,6 @@ class Transaction(models.Model):
     Model for storing one transaction within an account
     """
 
-    INCOME = "+"
-    EXPENSE = "-"
-
-    TRANSACTION_TYPES = (INCOME, EXPENSE)
-    TRANSACTION_TYPE_CHOICES = [
-        (EXPENSE, "Expense"),
-        (INCOME, "Income"),
-    ]
-
-    transaction_type = models.CharField(null=False,
-                                        blank=False,
-                                        max_length=1,
-                                        choices=TRANSACTION_TYPE_CHOICES,
-                                        default=EXPENSE,
-                                        verbose_name="Transaction type")
     account = models.ForeignKey(null=False,
                                 blank=False,
                                 to=Account,

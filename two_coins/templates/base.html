@@ -22,22 +22,24 @@
 <body>
 <div class="w-100 h-100 d-flex flex-row" id="content-wrapper">
     {% if messages %}
-        <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3">
+        <div class="toast-container position-fixed top-0 end-0 p-3">
             {% for message in messages %}
-                <div class="toast {% if message.tags %}bg-{{ message.tags }}-subtle{% endif %}" role="alert"
+                <div class="toast shadow border-0" style="background-color: #FCFCFC" role="alert"
                      aria-live="assertive" aria-atomic="true">
-                    <div class="toast-header {% if message.tags %}text-bg-{{ message.tags }}{% endif %}">
-                        <strong class="me-auto">
-                            {% if message.tags == 'success' %}
-                                Done!
-                            {% elif message.tags == 'danger' %}
-                                Error!
-                            {% elif message.tags == 'warning' %}
-                                Warning!
-                            {% else %}
-                                Info
-                            {% endif %}
-                        </strong>
+                    <div class="toast-header text-{{ message.tags }}" style="font-size: 1rem;">
+                        {% if message.tags == 'success' %}
+                            <i class="fa-duotone fa-solid fa-square-check fa-lg me-2"></i>
+                            <strong class="me-auto">Successful operation</strong>
+                        {% elif message.tags == 'danger' %}
+                            <i class="fa-duotone fa-solid fa-triangle-exclamation fa-lg me-2"></i>
+                            <strong class="me-auto">Error occurred!</strong>
+                        {% elif message.tags == 'warning' %}
+                            <i class="fa-duotone fa-solid fa-triangle-exclamation fa-swap-opacity fa-lg me-2"></i>
+                            <strong class="me-auto">Warning!</strong>
+                        {% else %}
+                            <i class="fa-duotone fa-solid fa-bell fa-lg me-2"></i>
+                            <strong class="me-auto">Info</strong>
+                        {% endif %}
                         <button type="button" class="btn-close" data-bs-dismiss="toast"
                                 aria-label="Close"></button>
                     </div>
@@ -73,10 +75,6 @@
         // Creates an array of toasts (it only initializes them)
         const toast = new bootstrap.Toast(toastEl); // No need for options; use the default options
         toast.show();
-
-        setTimeout(function () {
-            toast.hide();
-        }, 5000); // 2 seconds delay before hiding
 
         return toast;
     });
