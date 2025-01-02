@@ -47,7 +47,7 @@
                     <select class="form-select" id="id_currency" aria-label="acct_type select" name="currency">
                         {% for curr in currency_list %}
                             <option value="{{ curr.id }}"
-                                    {% if form.curr.value == curr.id %}selected{% endif %}>
+                                    {% if form.currency.value == curr.id %}selected{% endif %}>
                                 {% if curr.abbr == curr.symbol %}
                                     &nbsp;{{ curr.abbr }}&nbsp;
                                 {% else %}
