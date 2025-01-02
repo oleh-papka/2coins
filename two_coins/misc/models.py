@@ -1,7 +1,6 @@
 import random
 
-from django.contrib import messages
-from django.db import models
+from django.db.models import Model, CharField, DateTimeField
 
 
 class ColorChoices:
@@ -94,42 +93,30 @@ class IconChoices:
     )
 
 
-class TimeStampMixin(models.Model):
+class TimeStampMixin(Model):
     """
     Mixin for ease adding created_at and updated_at to models.
     """
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = DateTimeField(auto_now_add=True)
+    updated_at = DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True
 
 
-class StyleMixin(models.Model):
-    color = models.CharField(null=False,
-                             blank=True,
-                             max_length=6,
-                             default=random.choice(ColorChoices.CHOICES)[0],
-                             verbose_name="Color")
-    icon = models.CharField(null=True,
-                            blank=True,
-                            max_length=50,
-                            default=random.choice(IconChoices.CHOICES)[0],
-                            verbose_name="Icon",
-                            help_text="Icon name from FontAwesome")
+class StyleMixin(Model):
+    color = CharField(null=False,
+                      blank=True,
+                      max_length=6,
+                      default=random.choice(ColorChoices.CHOICES)[0],
+                      verbose_name="Color")
+    icon = CharField(null=True,
+                     blank=True,
+                     max_length=50,
+                     default=random.choice(IconChoices.CHOICES)[0],
+                     verbose_name="Icon",
+                     help_text="Icon name from FontAwesome")
 
     class Meta:
         abstract = True
-
-
-class FormInvalidMixin:
-    def form_invalid(self, form):
-        for field, errors in form.errors.items():
-            for error in errors:
-                if field == '__all__':
-                    messages.error(self.request, error)
-                else:
-                    messages.error(self.request, f"{form[field].label}: {error}")
-
-        return super().form_invalid(form)

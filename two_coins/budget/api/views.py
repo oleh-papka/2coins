@@ -1,6 +1,3 @@
-from itertools import chain
-from operator import attrgetter
-
 from django.db.models import Sum
 from django.db.models.functions import TruncDate
 from drf_spectacular.types import OpenApiTypes
@@ -8,7 +5,9 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import mixins, generics
 from rest_framework.response import Response
 
-from .serializers import TransactionDetailedSerializer, CombinedTxnTrfSerializer, TransactionSerializer
+from misc.utils import get_date_range, get_combined_actions
+from .serializers import TransactionDetailedSerializer, TransactionSerializer, TransferSerializer, ChartDataSerializer, \
+    CombinedActionQueryParamsSerializer, CombinedActionSerializer
 from ..models import Transaction, Transfer
 
 
@@ -21,14 +20,17 @@ class TransactionCreateListView(mixins.ListModelMixin,
         parameters=[
             OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date'),
             OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date'),
+            OpenApiParameter(name='account_id', type=OpenApiTypes.INT, description='Account ID'),
+            OpenApiParameter(name='category_id', type=OpenApiTypes.INT, description='Category ID'),
         ],
-        responses={200: None},
     )
     def get(self, request, *args, **kwargs):
         user = request.user
 
         start_date = request.query_params.get('start_date', None)
         end_date = request.query_params.get('end_date', None)
+        account_id = request.query_params.get('account_id', None)
+        category_id = request.query_params.get('category_id', None)
 
         txn_filter_kwargs = {
             'account__profile__user': user
@@ -38,13 +40,15 @@ class TransactionCreateListView(mixins.ListModelMixin,
             txn_filter_kwargs['date__gte'] = start_date
         if end_date:
             txn_filter_kwargs['date__lte'] = end_date
+        if account_id:
+            txn_filter_kwargs['account__id'] = account_id
+        if category_id:
+            txn_filter_kwargs['category__id'] = category_id
 
         txn_data = Transaction.objects.filter(**txn_filter_kwargs).order_by('-date').annotate(
             truncated_date=TruncDate('date')).order_by('-date')
 
-        serializer = TransactionDetailedSerializer(txn_data, many=True)
-
-        return Response(serializer.data)
+        return Response(self.get_serializer(txn_data, many=True).data)
 
 
 class TransactionDeleteView(generics.DestroyAPIView):
@@ -52,61 +56,54 @@ class TransactionDeleteView(generics.DestroyAPIView):
     serializer_class = TransactionSerializer
 
 
+class TransferListView(generics.ListAPIView):
+    queryset = Transfer.objects.all()
+    serializer_class = TransferSerializer
+
+
 class CombinedActionListView(generics.GenericAPIView):
-    serializer_class = CombinedTxnTrfSerializer
+    serializer_class = CombinedActionSerializer
 
     @extend_schema(
         parameters=[
             OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date'),
             OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date'),
+            OpenApiParameter(name='account_id', type=OpenApiTypes.INT, description='Account ID'),
+            OpenApiParameter(name='category_id', type=OpenApiTypes.INT, description='Category ID'),
+            OpenApiParameter(name='all_transfers', type=OpenApiTypes.BOOL, description='Include all transfers'),
         ],
-        responses={200: None},
     )
     def get(self, request, *args, **kwargs):
-        user = request.user
+        serializer = CombinedActionQueryParamsSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
 
-        start_date = request.query_params.get('start_date', None)
-        end_date = request.query_params.get('end_date', None)
+        start_date = serializer.validated_data.get('start_date', None)
+        end_date = serializer.validated_data.get('end_date', None)
+        account_id = serializer.validated_data.get('account_id', None)
+        category_id = serializer.validated_data.get('category_id', None)
+        all_transfers = serializer.validated_data.get('all_transfers', False)
 
-        txn_filter_kwargs = {
-            'account__profile__user': user
-        }
-        trf_filter_kwargs = {
-            'account_from__profile__user': user
-        }
+        start_date, end_date = get_date_range(start_date, end_date)
+        combined_actions = get_combined_actions(user_id=self.request.user.id,
+                                                start_date=start_date,
+                                                end_date=end_date,
+                                                account_id=account_id,
+                                                category_id=category_id,
+                                                all_transfers=all_transfers)
+        combined_actions_serialized = []
+        for action in combined_actions:
+            if action.action_type == 'txn':
+                combined_actions_serialized.append(TransactionSerializer(action).data)
+            else:
+                combined_actions_serialized.append(TransferSerializer(action).data)
 
-        if start_date:
-            txn_filter_kwargs['date__gte'] = start_date
-            trf_filter_kwargs['date__gte'] = start_date
-        if end_date:
-            txn_filter_kwargs['date__lte'] = end_date
-            trf_filter_kwargs['date__lte'] = end_date
+        response_data = {'combined_actions': combined_actions_serialized}
 
-        txn_data = Transaction.objects.filter(**txn_filter_kwargs).order_by('-date').annotate(
-            truncated_date=TruncDate('date'))
-        trf_data = Transfer.objects.filter(**trf_filter_kwargs).order_by(
-            '-date').annotate(truncated_date=TruncDate('date'))
-
-        txn_data = list(txn_data)
-        for item in txn_data:
-            item.action_type = "txn"
-
-        trf_data = list(trf_data)
-        for item in trf_data:
-            item.action_type = "trf"
-
-        combined_data = sorted(
-            chain(txn_data, trf_data),
-            key=attrgetter('date'),
-            reverse=True
-        )
-
-        serializer = CombinedTxnTrfSerializer(combined_data, many=True)
-
-        return Response(serializer.data)
+        return Response(self.get_serializer(response_data))
 
 
 class TransactionChartDataView(generics.GenericAPIView):
+    serializer_class = ChartDataSerializer
 
     def get(self, request, *args, **kwargs):
         txn_data = (

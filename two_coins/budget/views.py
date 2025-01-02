@@ -1,29 +1,19 @@
 import operator
-from datetime import datetime
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction as db_transaction
-from django.db.models import Sum, F, FloatField, Q
-from django.db.models.functions import TruncDate, Coalesce, Cast
-from django.http import HttpResponseRedirect
+from django.db.models.functions import TruncDate
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, TemplateView, CreateView, UpdateView, DeleteView
 
-from misc.models import FormInvalidMixin
-from misc.utils import get_current_month_dates
+from misc.utils import get_date_range, get_combined_actions, add_transfer_messages
+from misc.view_mixins import FormInvalidMixin, TransferMixin
 from profiles.models import Profile
 from . import forms, models
 from .models import Transaction, Transfer, Category
 from .templatetags.number_filters import strip_trailing_zeros
-
-
-def get_template_chart_data(query_data):
-    res = {'data': [], 'labels': []}
-    for dct in query_data:
-        for k in dct.keys():
-            res[k].append(dct[k])
-    return res
 
 
 # Accounts
@@ -46,44 +36,12 @@ class AccountDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        start_date = self.request.GET.get('start_date')
-        end_date = self.request.GET.get('end_date')
-
-        if not start_date and not end_date:
-            start_date, end_date = get_current_month_dates()
-        else:
-            start_date = datetime.strptime(start_date, '%Y-%m-%d')
-            end_date = datetime.strptime(end_date, '%Y-%m-%d')
-            # Include the full last day
-            end_date = datetime.combine(end_date, datetime.max.time())
+        start_date, end_date = get_date_range(self.request.GET.get('start_date'), self.request.GET.get('end_date'))
 
         context["date_range"] = f'{start_date.strftime("%m/%d/%Y")} - {end_date.strftime("%m/%d/%Y")}'
-
-        transactions_queryset = models.Transaction.objects.filter(account=self.object,
-                                                                  date__range=(start_date, end_date)).order_by(
-            '-date').annotate(
-            truncated_date=TruncDate('date'))
-        transfers_queryset = models.Transfer.objects.filter(
-            Q(account_to=self.object) | Q(account_from=self.object),
-            date__range=(start_date, end_date)).order_by(
-            '-date').annotate(truncated_date=TruncDate('date'))
-
-        transfers_list = list(transfers_queryset)
-        transactions_list = list(transactions_queryset)
-
-        combined_list = transactions_list + transfers_list
-
-        combined_list.sort(key=operator.attrgetter('date'), reverse=True)
-
-        if not combined_list:
-            return context
-
-        for action in combined_list:
-            action_type = 'txn' if isinstance(action, models.Transaction) else 'trf'
-            action.action_type = action_type
-
-        context["combined_actions"] = combined_list
-
+        context["combined_actions"] = get_combined_actions(start_date=start_date,
+                                                           end_date=end_date,
+                                                           account_id=self.object.id)
         return context
 
 
@@ -136,7 +94,7 @@ class AccountDeleteView(LoginRequiredMixin, DeleteView):
         self.object.delete()
 
         messages.success(self.request, f"Account {self.object.name} deleted!")
-        return HttpResponseRedirect(success_url)
+        return redirect(success_url)
 
 
 # Categories
@@ -160,34 +118,14 @@ class CategoryDetailView(LoginRequiredMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        start_date = self.request.GET.get('start_date')
-        end_date = self.request.GET.get('end_date')
-
-        if not start_date and not end_date:
-            start_date, end_date = get_current_month_dates()
-        else:
-            start_date = datetime.strptime(start_date, '%Y-%m-%d')
-            end_date = datetime.strptime(end_date, '%Y-%m-%d')
-            # Include the full last day
-            end_date = datetime.combine(end_date, datetime.max.time())
+        start_date, end_date = get_date_range(self.request.GET.get('start_date'),
+                                              self.request.GET.get('end_date'))
 
         context["date_range"] = f'{start_date.strftime("%m/%d/%Y")} - {end_date.strftime("%m/%d/%Y")}'
-
-        transactions_queryset = models.Transaction.objects.filter(category=self.object,
-                                                                  account__profile__user=self.request.user,
-                                                                  date__range=(start_date, end_date)).order_by(
-            '-date').annotate(truncated_date=TruncDate('date'))
-
-        transactions_list = list(transactions_queryset)
-
-        if not transactions_list:
-            return context
-
-        for action in transactions_list:
-            action_type = 'txn' if isinstance(action, models.Transaction) else 'trf'
-            action.action_type = action_type
-
-        context["transactions"] = transactions_list
+        context["transactions"] = get_combined_actions(user_id=self.request.user.id,
+                                                       start_date=start_date,
+                                                       end_date=end_date,
+                                                       category_id=self.object.id)
 
         return context
 
@@ -240,7 +178,7 @@ class CategoryDeleteView(LoginRequiredMixin, DeleteView):
         self.object.delete()
 
         messages.success(self.request, f"Category {self.object.name} deleted!")
-        return HttpResponseRedirect(success_url)
+        return redirect(success_url)
 
 
 # Transactions
@@ -251,48 +189,15 @@ class TransactionList(LoginRequiredMixin, ListView):
     template_name = "budget/transaction/transaction_list.html"
 
     def get_context_data(self, **kwargs):
-        user = self.request.user
         context = super().get_context_data(**kwargs)
 
-        start_date = self.request.GET.get('start_date')
-        end_date = self.request.GET.get('end_date')
-
-        if not start_date and not end_date:
-            start_date, end_date = get_current_month_dates()
-        else:
-            start_date = datetime.strptime(start_date, '%Y-%m-%d')
-            end_date = datetime.strptime(end_date, '%Y-%m-%d')
-            # Include the full last day
-            end_date = datetime.combine(end_date, datetime.max.time())
+        start_date, end_date = get_date_range(self.request.GET.get('start_date'), self.request.GET.get('end_date'))
 
         context["date_range"] = f'{start_date.strftime("%m/%d/%Y")} - {end_date.strftime("%m/%d/%Y")}'
-
-        transactions_queryset = models.Transaction.objects.filter(
-            account__profile__user=user,
-            date__range=(start_date, end_date)
-        ).order_by('-date').annotate(truncated_date=TruncDate('date'))
-
-        transfers_queryset = models.Transfer.objects.filter(
-            account_from__profile__user=user,
-            date__range=(start_date, end_date)
-        ).order_by('-date').annotate(truncated_date=TruncDate('date'))
-
-        transfers_list = list(transfers_queryset)
-        transactions_list = list(transactions_queryset)
-
-        combined_list = transactions_list + transfers_list
-
-        combined_list.sort(key=operator.attrgetter('date'), reverse=True)
-
-        if not combined_list:
-            return context
-
-        for action in combined_list:
-            action_type = 'txn' if isinstance(action, models.Transaction) else 'trf'
-            action.action_type = action_type
-
-        context["combined_actions"] = combined_list
-
+        context["combined_actions"] = get_combined_actions(user_id=self.request.user.id,
+                                                           start_date=start_date,
+                                                           end_date=end_date,
+                                                           all_transfers=True)
         return context
 
     def get_queryset(self):
@@ -443,27 +348,9 @@ class TransactionDeleteView(LoginRequiredMixin, DeleteView):
 
 # Transfers
 
-class TransferCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
-    login_url = reverse_lazy('login')
-    model = models.Transfer
-    form_class = forms.TransferForm
+
+class TransferCreateView(LoginRequiredMixin, FormInvalidMixin, TransferMixin, CreateView):
     template_name = 'budget/transfer/transfer_create.html'
-    success_url = reverse_lazy('transaction_list')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        if account_id := self.request.GET.get('account'):
-            context['account_from'] = models.Account.objects.get(id=account_id)
-
-        context['account_list'] = list(models.Account.objects.filter(
-            profile__user=self.request.user).all().values('id', 'name', 'currency_id',
-                                                          'currency__abbr', 'currency__symbol'))
-
-        context['currency_list'] = models.Currency.objects.all()
-        context['profile'] = Profile.objects.get(user=self.request.user)
-
-        return context
 
     def form_valid(self, form):
         account_from = form.cleaned_data.get('account_from')
@@ -475,42 +362,18 @@ class TransferCreateView(LoginRequiredMixin, FormInvalidMixin, CreateView):
             self.object = form.save()
 
             account_from.balance -= amount_from
-            account_from.save()
+            account_from.save(update_fields=['balance'])
 
             account_to.balance += amount_to
-            account_to.save()
+            account_to.save(update_fields=['balance'])
 
-            messages.success(self.request, f"Transfer {account_from.name}->{account_to.name} done!")
-            messages.info(self.request,
-                          f"Updated balance of {account_from.name} account!\nYour balance is {strip_trailing_zeros(account_from.balance)} {account_from.currency.symbol}")
+            add_transfer_messages(self.request, account_from, account_to)
 
-            messages.info(self.request,
-                          f"Updated balance of {account_to.name} account!\nYour balance is {strip_trailing_zeros(account_to.balance)} {account_to.currency.symbol}")
-
-        return HttpResponseRedirect(self.get_success_url())
+        return redirect(self.get_success_url())
 
 
-class TransferUpdateView(LoginRequiredMixin, FormInvalidMixin, UpdateView):
-    login_url = reverse_lazy('login')
-    model = models.Transfer
-    form_class = forms.TransferForm
+class TransferUpdateView(LoginRequiredMixin, FormInvalidMixin, TransferMixin, UpdateView):
     template_name = 'budget/transfer/transfer_edit.html'
-    success_url = reverse_lazy('transaction_list')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        if account_id := self.request.GET.get('account'):
-            context['account_from'] = models.Account.objects.get(id=account_id)
-
-        context['account_list'] = list(models.Account.objects.filter(
-            profile__user=self.request.user).all().values('id', 'name', 'currency_id',
-                                                          'currency__abbr', 'currency__symbol'))
-
-        context['currency_list'] = models.Currency.objects.all()
-        context['profile'] = Profile.objects.get(user=self.request.user)
-
-        return context
 
     def form_valid(self, form):
         prev_transfer = Transfer.objects.get(pk=form.instance.pk)
@@ -540,12 +403,7 @@ class TransferUpdateView(LoginRequiredMixin, FormInvalidMixin, UpdateView):
             new_transfer.account_to.balance += amount_to
             new_transfer.account_to.save()
 
-            messages.success(self.request, f"Transfer {account_from.name}->{account_to.name} updated!")
-            messages.info(self.request,
-                          f"Updated balance of {account_from.name} account!\nYour balance is {strip_trailing_zeros(account_from.balance)} {account_from.currency.symbol}")
-
-            messages.info(self.request,
-                          f"Updated balance of {account_to.name} account!\nYour balance is {strip_trailing_zeros(account_to.balance)} {account_to.currency.symbol}")
+            add_transfer_messages(self.request, account_from, account_to)
 
         return super().form_valid(form)
 
@@ -586,24 +444,6 @@ class DashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         user = self.request.user
         context = super().get_context_data(**kwargs)
-
-        data_cat_query = (
-            models.Category.objects
-            .filter(profile__user=user)
-            .annotate(data=Coalesce(Sum('transaction__amount'), 0.0))
-            .annotate(labels=F('name'))
-            .values('labels', 'data')
-        )
-
-        data_acct_query = (
-            models.Account.objects
-            .filter(profile__user=user)
-            .annotate(
-                data=Coalesce(Sum('transaction__amount'), 0.0) + Cast(F('balance'), output_field=FloatField())
-            )
-            .annotate(labels=F('name'))
-            .values('data', 'labels')
-        )
 
         transactions_list = list(models.Transaction.objects.filter(
             account__profile__user=user

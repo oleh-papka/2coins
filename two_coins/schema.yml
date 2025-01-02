@@ -4,10 +4,41 @@ info:
   version: 0.0.1
   description: Your project description
 paths:
-  /api/combined-actions/:
+  /api/charts/transaction/:
+    get:
+      operationId: charts_transaction_retrieve
+      tags:
+      - charts
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartData'
+          description: ''
+  /api/combined_actions/:
     get:
       operationId: combined_actions_retrieve
       parameters:
+      - in: query
+        name: account_id
+        schema:
+          type: integer
+        description: Account ID
+      - in: query
+        name: all_transfers
+        schema:
+          type: boolean
+        description: Include all transfers
+      - in: query
+        name: category_id
+        schema:
+          type: integer
+        description: Category ID
       - in: query
         name: end_date
         schema:
@@ -21,18 +52,32 @@ paths:
           format: date
         description: Start date
       tags:
-      - combined-actions
+      - combined_actions
       security:
       - cookieAuth: []
       - basicAuth: []
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CombinedAction'
+          description: ''
   /api/transaction/:
     get:
-      operationId: transaction_retrieve
+      operationId: transaction_list
       parameters:
+      - in: query
+        name: account_id
+        schema:
+          type: integer
+        description: Account ID
+      - in: query
+        name: category_id
+        schema:
+          type: integer
+        description: Category ID
       - in: query
         name: end_date
         schema:
@@ -53,7 +98,13 @@ paths:
       - {}
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionDetailed'
+          description: ''
     post:
       operationId: transaction_create
       tags:
@@ -99,8 +150,49 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/transfer/:
+    get:
+      operationId: transfer_list
+      tags:
+      - transfer
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transfer'
+          description: ''
 components:
   schemas:
+    ChartData:
+      type: object
+      properties:
+        labels:
+          type: array
+          items:
+            type: string
+            format: date-time
+        data:
+          type: array
+          items:
+            type: integer
+      required:
+      - data
+      - labels
+    CombinedAction:
+      type: object
+      properties:
+        combined_actions:
+          type: array
+          items: {}
+      required:
+      - combined_actions
     NestedAccount:
       type: object
       properties:
@@ -130,8 +222,6 @@ components:
           readOnly: true
         account:
           $ref: '#/components/schemas/NestedAccount'
-        transaction_type:
-          $ref: '#/components/schemas/TransactionTypeEnum'
         amount:
           type: string
           format: decimal
@@ -160,14 +250,41 @@ components:
       - category
       - currency
       - id
-    TransactionTypeEnum:
-      enum:
-      - '-'
-      - +
-      type: string
-      description: |-
-        * `-` - Expense
-        * `+` - Income
+    Transfer:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        amount_from:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
+          title: Amount transferring from account
+        amount_to:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
+          title: Amount transferring to account
+        description:
+          type: string
+          nullable: true
+          maxLength: 50
+        date:
+          type: string
+          format: date-time
+          title: Date/time
+        account_from:
+          type: integer
+          title: From Account
+        account_to:
+          type: integer
+          title: To Account
+      required:
+      - account_from
+      - account_to
+      - amount_from
+      - id
   securitySchemes:
     basicAuth:
       type: http

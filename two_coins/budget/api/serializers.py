@@ -41,17 +41,18 @@ class TransferSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class CombinedTxnTrfSerializer(serializers.Serializer):
-    account = NestedAccountSerializer(required=False)
-    account_from = NestedAccountSerializer(required=False)
-    account_to = NestedAccountSerializer(required=False)
-    category = NestedCategorySerializer(required=False)
-    currency = NestedCurrencySerializer(required=False)
-    amount = serializers.DecimalField(max_digits=20, decimal_places=8, required=False)
-    amount_from = serializers.DecimalField(max_digits=20, decimal_places=8, required=False)
-    amount_to = serializers.DecimalField(max_digits=20, decimal_places=8, required=False)
-    amount_converted = serializers.DecimalField(max_digits=20, decimal_places=8, required=False)
-    description = serializers.CharField()
-    date = serializers.DateTimeField()
+class CombinedActionSerializer(serializers.Serializer):
+    combined_actions = serializers.ListField()
 
-    action_type = serializers.CharField()
+
+class CombinedActionQueryParamsSerializer(serializers.Serializer):
+    start_date = serializers.DateTimeField(required=False)
+    end_date = serializers.DateTimeField(required=False)
+    account_id = serializers.IntegerField(required=False)
+    category_id = serializers.IntegerField(required=False)
+    all_transfers = serializers.BooleanField(required=False)
+
+
+class ChartDataSerializer(serializers.Serializer):
+    labels = serializers.ListField(child=serializers.DateTimeField())
+    data = serializers.ListField(child=serializers.IntegerField())
