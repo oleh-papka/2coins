@@ -70,13 +70,16 @@
                             {% else %}
                                 {% if action.amount_converted %}
                                     <strong class="m-0 {% if action.amount < 0 %}text-danger{% else %}text-success{% endif %}">
-                                        {% if action.amount > 0 %}+{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.currency.symbol }}
+                                        {% if action.amount > 0 %}
+                                            +{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.currency.symbol }}
                                     </strong> <span class="m-0 text-secondary ">
-                                            ({% if action.amount > 0 %}+{% endif %}{{ action.amount_converted|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }})
+                                            ({% if action.amount > 0 %}
+                                    +{% endif %}{{ action.amount_converted|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }})
                                         </span>
                                 {% else %}
                                     <strong class="m-0  {% if action.amount < 0 %}text-danger{% else %}text-success{% endif %}">
-                                        {% if action.amount > 0 %}+{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }}
+                                        {% if action.amount > 0 %}
+                                            +{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }}
                                     </strong>
                                 {% endif %}
                             {% endif %}

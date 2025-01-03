@@ -3,42 +3,43 @@ from rest_framework import serializers
 from ..models import Transaction, Account, Transfer, Category, Currency
 
 
-class NestedAccountSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Account
-        fields = ['id', 'name', 'balance', 'currency']
-
-
-class NestedCategorySerializer(serializers.ModelSerializer):
+class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ['id', 'name', 'category_type']
+        fields = ['id', 'name', 'category_type', 'icon', 'color']
 
 
-class NestedCurrencySerializer(serializers.ModelSerializer):
+class CurrencySerializer(serializers.ModelSerializer):
     class Meta:
         model = Currency
-        fields = ['id', 'name', 'currency_type', 'symbol', 'abbr']
+        fields = '__all__'
 
 
-class TransactionDetailedSerializer(serializers.ModelSerializer):
-    account = NestedAccountSerializer()
+class AccountSerializer(serializers.ModelSerializer):
+    currency = CurrencySerializer()
 
     class Meta:
-        model = Transaction
-        fields = '__all__'
+        model = Account
+        fields = ['id', 'name', 'balance', 'currency', 'icon', 'color', 'description']
 
 
 class TransactionSerializer(serializers.ModelSerializer):
+    account = AccountSerializer()
+    category = CategorySerializer()
+    currency = CurrencySerializer()
+
     class Meta:
         model = Transaction
-        fields = '__all__'
+        fields = ['id', 'amount', 'amount_converted', 'account', 'category', 'currency', 'description', 'date']
 
 
 class TransferSerializer(serializers.ModelSerializer):
+    account_from = AccountSerializer()
+    account_to = AccountSerializer()
+
     class Meta:
         model = Transfer
-        fields = '__all__'
+        fields = ['id', 'amount_from', 'amount_to', 'account_from', 'account_to', 'date', 'description']
 
 
 class CombinedActionSerializer(serializers.Serializer):

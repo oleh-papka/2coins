@@ -6,7 +6,7 @@ from rest_framework import mixins, generics
 from rest_framework.response import Response
 
 from misc.utils import get_date_range, get_combined_actions
-from .serializers import TransactionDetailedSerializer, TransactionSerializer, TransferSerializer, ChartDataSerializer, \
+from .serializers import TransactionSerializer, TransferSerializer, ChartDataSerializer, \
     CombinedActionQueryParamsSerializer, CombinedActionSerializer
 from ..models import Transaction, Transfer
 
@@ -14,7 +14,7 @@ from ..models import Transaction, Transfer
 class TransactionCreateListView(mixins.ListModelMixin,
                                 generics.CreateAPIView):
     queryset = Transaction.objects.all()
-    serializer_class = TransactionDetailedSerializer
+    serializer_class = TransactionSerializer
 
     @extend_schema(
         parameters=[
@@ -91,15 +91,16 @@ class CombinedActionListView(generics.GenericAPIView):
                                                 category_id=category_id,
                                                 all_transfers=all_transfers)
         combined_actions_serialized = []
-        for action in combined_actions:
-            if action.action_type == 'txn':
-                combined_actions_serialized.append(TransactionSerializer(action).data)
-            else:
-                combined_actions_serialized.append(TransferSerializer(action).data)
+        if combined_actions:
+            for action in combined_actions:
+                if action.action_type == 'txn':
+                    combined_actions_serialized.append(TransactionSerializer(action).data)
+                else:
+                    combined_actions_serialized.append(TransferSerializer(action).data)
 
         response_data = {'combined_actions': combined_actions_serialized}
 
-        return Response(self.get_serializer(response_data))
+        return Response(self.get_serializer(response_data).data)
 
 
 class TransactionChartDataView(generics.GenericAPIView):

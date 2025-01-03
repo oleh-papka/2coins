@@ -45,7 +45,7 @@
                 <div id="table-scroll-container" style="height: 100%; overflow-y: auto;">
                     <table class="table table-hover table_custom" id="txn-table"
                            style="vertical-align: middle; margin-bottom: 0">
-                        <tbody>
+                        <tbody id="combined-actions-body">
                         {% for action in combined_actions %}
                             <tr>
                                 <td>
@@ -172,6 +172,18 @@
 
 {% block custom_scripts %}
     <script>
+
+        function stripTrailingZeros(number) {
+            return parseFloat(number).toString(); // Removes unnecessary trailing zeros
+        }
+
+        function formatDate(isoDate) {
+            const date = new Date(isoDate);
+            const day = String(date.getDate()).padStart(2, '0'); // Add leading zero
+            const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed
+            return `${day}/${month}`;
+        }
+
         $(function () {
             $('input[name="daterange"]').daterangepicker({
                 ranges: {
@@ -219,43 +231,190 @@
                 },
                 "drops": "auto"
             }, function (start, end, label) {
-                const url = `{% url 'transaction_list' %}?start_date=${start.format('YYYY-MM-DD')}&end_date=${end.format('YYYY-MM-DD')}`;
-                window.location.href = url;
+                fetchAndPopulateTable(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
             });
+
+
+            // Function to fetch data from the API and populate the table
+            function fetchAndPopulateTable(startDate, endDate) {
+                $.ajax({
+                    url: '{% url "budget-api:combined_actions" %}', // Update this to your API endpoint
+                    method: 'GET',
+                    data: {start_date: startDate, end_date: endDate},
+                    success: function (response) {
+                        populateTable(response.combined_actions);
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error fetching data:', error);
+                        alert('An error occurred while fetching data. Please try again.');
+                    }
+                });
+            }
+
+            // Function to populate the table dynamically
+            function populateTable(actions) {
+                const tableBody = $('#combined-actions-body'); // Ensure your table has a tbody with this ID
+                tableBody.empty(); // Clear existing rows
+
+                actions.forEach(action => {
+                    let amountDisplay = '';
+
+                    if (action.action_type === 'trf') {
+                        // For transfers
+                        if (action.account_from.currency.id === action.account_to.currency.id) {
+                            amountDisplay = `
+                    <strong class="m-0 text-secondary">
+                        ${stripTrailingZeros(action.amount_from)} ${action.account_from.currency.symbol}
+                    </strong>
+                `;
+                        } else {
+                            amountDisplay = `
+                    <strong class="m-0 text-secondary">
+                        ${stripTrailingZeros(action.amount_from)} ${action.account_from.currency.symbol}
+                    </strong>
+                    <span class="m-0 text-secondary">
+                        (${stripTrailingZeros(action.amount_to)} ${action.account_to.currency.symbol})
+                    </span>
+                `;
+                        }
+                    } else {
+                        // For transactions
+                        if (action.amount_converted) {
+                            amountDisplay = `
+                    <strong class="m-0 ${action.amount < 0 ? 'text-danger' : 'text-success'}">
+                        ${action.amount > 0 ? '+' : ''}${stripTrailingZeros(action.amount)} ${action.currency.symbol}
+                    </strong>
+                    <span class="m-0 text-secondary">
+                        (${action.amount > 0 ? '+' : ''}${stripTrailingZeros(action.amount_converted)} ${action.account.currency.symbol})
+                    </span>
+                `;
+                        } else {
+                            amountDisplay = `
+                    <strong class="m-0 ${action.amount < 0 ? 'text-danger' : 'text-success'}">
+                        ${action.amount > 0 ? '+' : ''}${stripTrailingZeros(action.amount)} ${action.account.currency.symbol}
+                    </strong>
+                `;
+                        }
+                    }
+
+
+                    const row = `
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="d-flex justify-content-center align-items-center rounded-2 me-2"
+                                 style="width: 30px; height: 30px; ${action.action_type === 'trf' ? 'background-color: #0CCAF02A' : `background-color: #${action.category.color}2A`}">
+                                <i class="${action.action_type === 'trf' ? 'fa-duotone fa-solid fa-right-left' : action.category.icon}"
+                                   style="${action.action_type === 'trf' ? 'color: #0CCAF0' : `color: #${action.category.color}`}"></i>
+                            </div>
+                            ${action.action_type === 'trf' ? 'Transfer' : action.category.name}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            ${action.action_type === 'trf' ? `
+                                <div class="d-flex justify-content-center align-items-center me-2">
+                                    <i class="${action.account_from.icon}" style="color: #${action.account_from.color}"></i>
+                                </div>
+                                ${action.account_from.name}
+                                <i class="fa-duotone fa-arrow-right mx-2 text-secondary"></i>
+                                <div class="d-flex justify-content-center align-items-center me-2">
+                                    <i class="${action.account_to.icon}" style="color: #${action.account_to.color}"></i>
+                                </div>
+                                ${action.account_to.name}
+                            ` : `
+                                <div class="d-flex justify-content-center align-items-center me-2">
+                                    <i class="${action.account.icon}" style="color: #${action.account.color}"></i>
+                                </div>
+                                ${action.account.name}
+                            `}
+                        </div>
+                    </td>
+                    <td class="text-end">
+                        ${amountDisplay}
+                    </td>
+                    <td class="extra-column d-none text-center">
+                        <span class="text-secondary">${formatDate(action.date)}</span>
+                    </td>
+                    <td class="extra-column d-none text-center" style="max-width: 150px;">
+                        <span class="text-secondary">${action.description || '...'}</span>
+                    </td>
+<td class="gap-2 text-end">
+                    <div class="dropend">
+                        <button class="btn btn-outline-secondary btn-sm" type="button"
+                                data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                                aria-expanded="false">
+                            <i class="fa-regular fa-ellipsis"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item text-warning"
+                                   href="${action.action_type === 'trf'
+                        ? '{% url "transfer_edit" 0 %}'.replace('0', action.id)
+                        : '{% url "transaction_edit" 0 %}'.replace('0', action.id)}">
+                                    <i class="fa-regular fa-pen-to-square me-2"></i>
+                                    Edit
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-danger"
+                                   href="${action.action_type === 'trf'
+                        ? '{% url "transfer_delete" 0 %}'.replace('0', action.id)
+                        : '{% url "transaction_delete" 0 %}'.replace('0', action.id)}">
+                                    <i class="fa-regular fa-trash-can-xmark me-2"></i>
+                                    Delete
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </td>
+                </tr>
+            `;
+                    tableBody.append(row);
+                });
+            }
         })
+        ;
     </script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const toggleButton = document.getElementById('toggle-button');
             const tableCol = document.getElementById('table-col');
-            const extraColumns = document.querySelectorAll('.extra-column');
             const sidebar = document.getElementById('sidebar');
             const table = document.getElementById('txn-table');
             const icon = toggleButton.querySelector('i');
 
-            toggleButton.addEventListener('click', function () {
-                // Toggle extra columns visibility
-                extraColumns.forEach(function (column) {
-                    if (column.classList.contains('d-none')) {
-                        column.classList.remove('d-none');
+            // Use event delegation for dynamically added rows
+            document.addEventListener('click', function (event) {
+                const target = event.target;
+
+                // Check if the click is on the toggle button
+                if (target.closest('#toggle-button')) {
+                    const extraColumns = document.querySelectorAll('.extra-column');
+
+                    // Toggle extra columns visibility
+                    extraColumns.forEach(function (column) {
+                        if (column.classList.contains('d-none')) {
+                            column.classList.remove('d-none');
+                        } else {
+                            column.classList.add('d-none');
+                        }
+                    });
+
+                    table.classList.toggle('expanded');
+                    tableCol.classList.toggle('expanded-content');
+                    sidebar.classList.toggle('minimized');
+
+                    if (icon.classList.contains('fa-expand')) {
+                        icon.classList.remove('fa-expand');
+                        icon.classList.add('fa-compress');
+                        icon.classList.replace('fa-solid', 'fa-regular'); // Replace solid with regular if needed
                     } else {
-                        column.classList.add('d-none');
+                        icon.classList.remove('fa-compress');
+                        icon.classList.add('fa-expand');
+                        icon.classList.replace('fa-regular', 'fa-solid'); // Replace regular with solid if needed
                     }
-                });
-
-                table.classList.toggle('expanded');
-                tableCol.classList.toggle('expanded-content');
-                sidebar.classList.toggle('minimized');
-
-                if (icon.classList.contains('fa-expand')) {
-                    icon.classList.remove('fa-expand');
-                    icon.classList.add('fa-compress');
-                    icon.classList.replace('fa-solid', 'fa-regular'); // Replace solid with regular if needed
-                } else {
-                    icon.classList.remove('fa-compress');
-                    icon.classList.add('fa-expand');
-                    icon.classList.replace('fa-regular', 'fa-solid'); // Replace regular with solid if needed
                 }
             });
         });
@@ -267,7 +426,7 @@
         const ctx = document.getElementById('myChart');
 
         // Fetch data from the API
-        fetch('http://localhost:8000/api/charts/transaction/')
+        fetch('{% url "budget-api:charts_transaction" %}')
             .then(response => response.json())
             .then(data => {
                 const labels = data.labels;

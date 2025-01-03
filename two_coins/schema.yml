@@ -103,7 +103,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TransactionDetailed'
+                  $ref: '#/components/schemas/Transaction'
           description: ''
     post:
       operationId: transaction_create
@@ -113,13 +113,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TransactionDetailed'
+              $ref: '#/components/schemas/Transaction'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/TransactionDetailed'
+              $ref: '#/components/schemas/Transaction'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/TransactionDetailed'
+              $ref: '#/components/schemas/Transaction'
         required: true
       security:
       - cookieAuth: []
@@ -130,7 +130,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TransactionDetailed'
+                $ref: '#/components/schemas/Transaction'
           description: ''
   /api/transaction/{id}:
     delete:
@@ -170,6 +170,70 @@ paths:
           description: ''
 components:
   schemas:
+    Account:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Account name
+          maxLength: 30
+        balance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
+          title: Account balance
+        currency:
+          $ref: '#/components/schemas/Currency'
+        icon:
+          type: string
+          nullable: true
+          description: Icon name from FontAwesome
+          maxLength: 50
+        color:
+          type: string
+          maxLength: 6
+        description:
+          type: string
+          nullable: true
+          maxLength: 30
+      required:
+      - currency
+      - id
+      - name
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Category name
+          maxLength: 30
+        category_type:
+          $ref: '#/components/schemas/CategoryTypeEnum'
+        icon:
+          type: string
+          nullable: true
+          description: Icon name from FontAwesome
+          maxLength: 50
+        color:
+          type: string
+          maxLength: 6
+      required:
+      - id
+      - name
+    CategoryTypeEnum:
+      enum:
+      - '-'
+      - +
+      type: string
+      description: |-
+        * `-` - Expense
+        * `+` - Income
     ChartData:
       type: object
       properties:
@@ -193,7 +257,7 @@ components:
           items: {}
       required:
       - combined_actions
-    NestedAccount:
+    Currency:
       type: object
       properties:
         id:
@@ -201,27 +265,36 @@ components:
           readOnly: true
         name:
           type: string
-          title: Account name
+          title: Currency name
           maxLength: 30
-        balance:
+        currency_type:
+          $ref: '#/components/schemas/CurrencyTypeEnum'
+        symbol:
           type: string
-          format: decimal
-          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
-          title: Account balance
-        currency:
-          type: integer
+          maxLength: 2
+        abbr:
+          type: string
+          title: Abbreviation
+          maxLength: 5
       required:
-      - currency
+      - abbr
       - id
       - name
-    TransactionDetailed:
+      - symbol
+    CurrencyTypeEnum:
+      enum:
+      - F
+      - C
+      type: string
+      description: |-
+        * `F` - Fiat money
+        * `C` - Crypto currency
+    Transaction:
       type: object
       properties:
         id:
           type: integer
           readOnly: true
-        account:
-          $ref: '#/components/schemas/NestedAccount'
         amount:
           type: string
           format: decimal
@@ -232,6 +305,12 @@ components:
           pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
           nullable: true
           title: Amount in account's currency
+        account:
+          $ref: '#/components/schemas/Account'
+        category:
+          $ref: '#/components/schemas/Category'
+        currency:
+          $ref: '#/components/schemas/Currency'
         description:
           type: string
           nullable: true
@@ -240,10 +319,6 @@ components:
           type: string
           format: date-time
           title: Date/time
-        category:
-          type: integer
-        currency:
-          type: integer
       required:
       - account
       - amount
@@ -266,20 +341,18 @@ components:
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
           title: Amount transferring to account
-        description:
-          type: string
-          nullable: true
-          maxLength: 50
+        account_from:
+          $ref: '#/components/schemas/Account'
+        account_to:
+          $ref: '#/components/schemas/Account'
         date:
           type: string
           format: date-time
           title: Date/time
-        account_from:
-          type: integer
-          title: From Account
-        account_to:
-          type: integer
-          title: To Account
+        description:
+          type: string
+          nullable: true
+          maxLength: 50
       required:
       - account_from
       - account_to
