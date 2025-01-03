@@ -94,22 +94,18 @@
                                             <strong class="m-0 text-secondary">
                                                 {{ action.amount_from|strip_trailing_zeros|int_space }} {{ action.account_from.currency.symbol }}
                                             </strong>
-                                            <span class="m-0 text-secondary">({{ action.amount_to|strip_trailing_zeros|int_space }} {{ action.account_to.currency.symbol }}
-                                                )</span>
+                                            <span class="m-0 text-secondary">({{ action.amount_to|strip_trailing_zeros|int_space }} {{ action.account_to.currency.symbol }})</span>
                                         {% endif %}
                                     {% else %}
                                         {% if action.amount_converted %}
                                             <strong class="m-0 {% if action.amount < 0 %}text-danger{% else %}text-success{% endif %}">
-                                                {% if action.amount > 0 %}
-                                                    +{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.currency.symbol }}
-                                            </strong> <span class="m-0 text-secondary">
-                                            ({% if action.amount > 0 %}
-                                            +{% endif %}{{ action.amount_converted|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }})
+                                                {% if action.amount > 0 %}+{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.currency.symbol }}
+                                            </strong><span class="m-0 text-secondary">
+                                            ({% if action.amount > 0 %}+{% endif %}{{ action.amount_converted|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }})
                                         </span>
                                         {% else %}
                                             <strong class="m-0 {% if action.amount < 0 %}text-danger{% else %}text-success{% endif %}">
-                                                {% if action.amount > 0 %}
-                                                    +{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }}
+                                                {% if action.amount > 0 %}+{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }}
                                             </strong>
                                         {% endif %}
                                     {% endif %}
@@ -172,7 +168,6 @@
 
 {% block custom_scripts %}
     <script>
-
         function stripTrailingZeros(number) {
             return parseFloat(number).toString(); // Removes unnecessary trailing zeros
         }
@@ -238,9 +233,9 @@
             // Function to fetch data from the API and populate the table
             function fetchAndPopulateTable(startDate, endDate) {
                 $.ajax({
-                    url: '{% url "budget-api:combined_actions" %}?all_transfers=true', // Update this to your API endpoint
+                    url: '{% url "budget-api:combined_actions" %}',
                     method: 'GET',
-                    data: {start_date: startDate, end_date: endDate},
+                    data: {all_transfers: true, start_date: startDate, end_date: endDate},
                     success: function (response) {
                         populateTable(response.combined_actions);
                     },
@@ -302,8 +297,8 @@
                     const row = `
                 <tr>
                     <td>
-                        <div class="d-flex align-items-center">
-                            <div class="d-flex justify-content-center align-items-center rounded-2 me-2"
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="d-flex justify-content-center align-items-center rounded-2"
                                  style="width: 30px; height: 30px; ${action.action_type === 'trf' ? 'background-color: #0CCAF02A' : `background-color: #${action.category.color}2A`}">
                                 <i class="${action.action_type === 'trf' ? 'fa-duotone fa-solid fa-right-left' : action.category.icon}"
                                    style="${action.action_type === 'trf' ? 'color: #0CCAF0' : `color: #${action.category.color}`}"></i>
@@ -312,19 +307,19 @@
                         </div>
                     </td>
                     <td>
-                        <div class="d-flex align-items-center">
+                        <div class="d-flex align-items-center gap-2">
                             ${action.action_type === 'trf' ? `
-                                <div class="d-flex justify-content-center align-items-center me-2">
+                                <div class="d-flex justify-content-center align-items-center">
                                     <i class="${action.account_from.icon}" style="color: #${action.account_from.color}"></i>
                                 </div>
                                 ${action.account_from.name}
                                 <i class="fa-duotone fa-arrow-right mx-2 text-secondary"></i>
-                                <div class="d-flex justify-content-center align-items-center me-2">
+                                <div class="d-flex justify-content-center align-items-center">
                                     <i class="${action.account_to.icon}" style="color: #${action.account_to.color}"></i>
                                 </div>
                                 ${action.account_to.name}
                             ` : `
-                                <div class="d-flex justify-content-center align-items-center me-2">
+                                <div class="d-flex justify-content-center align-items-center">
                                     <i class="${action.account.icon}" style="color: #${action.account.color}"></i>
                                 </div>
                                 ${action.account.name}
@@ -409,11 +404,11 @@
                     if (icon.classList.contains('fa-expand')) {
                         icon.classList.remove('fa-expand');
                         icon.classList.add('fa-compress');
-                        icon.classList.replace('fa-solid', 'fa-regular'); // Replace solid with regular if needed
+                        icon.classList.replace('fa-solid', 'fa-regular');
                     } else {
                         icon.classList.remove('fa-compress');
                         icon.classList.add('fa-expand');
-                        icon.classList.replace('fa-regular', 'fa-solid'); // Replace regular with solid if needed
+                        icon.classList.replace('fa-regular', 'fa-solid');
                     }
                 }
             });
