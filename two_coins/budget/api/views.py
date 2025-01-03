@@ -7,7 +7,8 @@ from rest_framework.response import Response
 
 from misc.utils import get_date_range, get_combined_actions
 from .serializers import TransactionSerializer, TransferSerializer, ChartDataSerializer, \
-    CombinedActionQueryParamsSerializer, CombinedActionSerializer
+    CombinedActionQueryParamsSerializer, CombinedActionSerializer, TransactionCombinedSerializer, \
+    TransferCombinedSerializer
 from ..models import Transaction, Transfer
 
 
@@ -94,9 +95,9 @@ class CombinedActionListView(generics.GenericAPIView):
         if combined_actions:
             for action in combined_actions:
                 if action.action_type == 'txn':
-                    combined_actions_serialized.append(TransactionSerializer(action).data)
+                    combined_actions_serialized.append(TransactionCombinedSerializer(action).data)
                 else:
-                    combined_actions_serialized.append(TransferSerializer(action).data)
+                    combined_actions_serialized.append(TransferCombinedSerializer(action).data)
 
         response_data = {'combined_actions': combined_actions_serialized}
 

@@ -33,6 +33,13 @@ class TransactionSerializer(serializers.ModelSerializer):
         fields = ['id', 'amount', 'amount_converted', 'account', 'category', 'currency', 'description', 'date']
 
 
+class TransactionCombinedSerializer(TransactionSerializer):
+    action_type = serializers.CharField()
+
+    class Meta(TransactionSerializer.Meta):
+        fields = TransactionSerializer.Meta.fields + ['action_type']
+
+
 class TransferSerializer(serializers.ModelSerializer):
     account_from = AccountSerializer()
     account_to = AccountSerializer()
@@ -40,6 +47,13 @@ class TransferSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transfer
         fields = ['id', 'amount_from', 'amount_to', 'account_from', 'account_to', 'date', 'description']
+
+
+class TransferCombinedSerializer(TransferSerializer):
+    action_type = serializers.CharField()
+
+    class Meta(TransferSerializer.Meta):
+        fields = TransferSerializer.Meta.fields + ['action_type']
 
 
 class CombinedActionSerializer(serializers.Serializer):

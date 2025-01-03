@@ -238,7 +238,7 @@
             // Function to fetch data from the API and populate the table
             function fetchAndPopulateTable(startDate, endDate) {
                 $.ajax({
-                    url: '{% url "budget-api:combined_actions" %}', // Update this to your API endpoint
+                    url: '{% url "budget-api:combined_actions" %}?all_transfers=true', // Update this to your API endpoint
                     method: 'GET',
                     data: {start_date: startDate, end_date: endDate},
                     success: function (response) {
@@ -289,6 +289,7 @@
                     </span>
                 `;
                         } else {
+                            console.log(action);
                             amountDisplay = `
                     <strong class="m-0 ${action.amount < 0 ? 'text-danger' : 'text-success'}">
                         ${action.amount > 0 ? '+' : ''}${stripTrailingZeros(action.amount)} ${action.account.currency.symbol}
@@ -373,8 +374,7 @@
                     tableBody.append(row);
                 });
             }
-        })
-        ;
+        });
     </script>
 
     <script>
