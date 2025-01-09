@@ -71,3 +71,8 @@ class CombinedActionQueryParamsSerializer(serializers.Serializer):
 class ChartDataSerializer(serializers.Serializer):
     labels = serializers.ListField(child=serializers.DateTimeField())
     data = serializers.ListField(child=serializers.IntegerField())
+
+
+class StackedBarChartDataSerializer(serializers.Serializer):
+    labels = serializers.ListField(child=serializers.DateTimeField())
+    datasets = serializers.ListField()

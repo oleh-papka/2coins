@@ -1,5 +1,7 @@
-from django.db.models import Sum
-from django.db.models.functions import TruncDate
+from collections import defaultdict
+
+from django.db.models import Sum, Case, When, F, Q
+from django.db.models.functions import TruncDate, Round
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import mixins, generics
@@ -8,7 +10,7 @@ from rest_framework.response import Response
 from misc.utils import get_date_range, get_combined_actions
 from .serializers import TransactionSerializer, TransferSerializer, ChartDataSerializer, \
     CombinedActionQueryParamsSerializer, CombinedActionSerializer, TransactionCombinedSerializer, \
-    TransferCombinedSerializer
+    TransferCombinedSerializer, StackedBarChartDataSerializer
 from ..models import Transaction, Transfer
 
 
@@ -108,23 +110,265 @@ class TransactionChartDataView(generics.GenericAPIView):
     serializer_class = ChartDataSerializer
 
     def get(self, request, *args, **kwargs):
+        start_date, end_date = get_date_range(request.query_params.get('start_date', None),
+                                              request.query_params.get('end_date', None))
+
+        absolute_values = request.query_params.get('absolute_values', None)
+        account_id = request.query_params.get('account_id', None)
+        category_id = request.query_params.get('category_id', None)
+
+        values_args = ['date_only']
+        extra_data = []
+
+        txn_filter_kwargs = {
+            'account__profile__user': request.user,
+            'date__range': (start_date, end_date),
+        }
+
+        if account_id:
+            txn_filter_kwargs['account__id'] = account_id
+            values_args.extend(['category__name', 'category__color'])
+
+            trf_data = (
+                Transfer.objects
+                .filter(Q(account_to=account_id) | Q(account_from=account_id),
+                        date__range=(start_date, end_date))
+                .annotate(date_only=TruncDate('date'))
+                .order_by('date_only')
+            )
+
+
+
+            for trf in trf_data:
+                if trf.account_from.currency == trf.account_to.currency:
+                    total_amount = -trf.amount_from if trf.account_to.id != int(account_id) else trf.amount_from
+                else:
+                    total_amount = -trf.amount_to if trf.account_to.id != int(account_id) else trf.amount_to
+
+                extra_data.append({
+                    'date_only': trf.date_only,
+                    'category__name': 'Transfer',
+                    'category__color': '0ccaf0',
+                    'total_amount': total_amount,
+                })
+
+        if category_id:
+            txn_filter_kwargs['category__id'] = category_id
+            values_args.extend(['account__name', 'account__color'])
+
         txn_data = (
-            Transaction.objects.annotate(date_only=TruncDate('date'))
-            .values('date_only')
-            .annotate(amount_total=Sum('amount'))
+            Transaction.objects
+            .filter(**txn_filter_kwargs)
+            .annotate(date_only=TruncDate('date'))
+            .values(*values_args)
+            .annotate(
+                total_amount=Round(
+                    Sum(
+                        Case(
+                            When(amount_converted__isnull=False, then=F('amount_converted')),
+                            default=F('amount'),
+                        )
+                    ),
+                    2
+                )
+            )
+            .order_by('date_only')
+        )
+
+        if extra_data:
+            txn_data = list(txn_data) + extra_data
+            txn_data.sort(key=lambda x: x['date_only'])
+
+        labels = []
+        dataset_dict = defaultdict(lambda: {'backgroundColor': None, 'data': defaultdict(float)})
+
+        group_name = values_args[-1].split('__')[0]
+
+        for txn in txn_data:
+            date = txn['date_only'].strftime('%d/%m')
+            if date not in labels:
+                labels.append(date)
+
+            label_name = txn[f'{group_name}__name']
+            label_color = txn[f'{group_name}__color']
+            total_amount = float(txn['total_amount'])
+
+            if absolute_values:
+                total_amount = abs(total_amount)
+
+            label = dataset_dict[label_name]
+            label['backgroundColor'] = label_color
+            label['data'][date] += total_amount
+
+        data = {
+            "labels": labels,
+            "datasets": [
+                {
+                    "label": label_name,
+                    "data": [label["data"][date] for date in labels],
+                    "backgroundColor": f'#{label["backgroundColor"]}6A',
+                    "borderColor": f'#{label["backgroundColor"]}',
+                    "borderRadius": {
+                        "topLeft": 5,
+                        "topRight": 5,
+                        "bottomLeft": 5,
+                        "bottomRight": 5
+                    }
+                }
+                for label_name, label in dataset_dict.items()
+            ]
+        }
+
+        return Response(data)
+
+
+class TransactionsByCategoryChartDataView(generics.GenericAPIView):
+    serializer_class = StackedBarChartDataSerializer
+
+    def get(self, request, *args, **kwargs):
+        category_type = request.query_params.get('category_type', None)
+        absolute_values = request.query_params.get('absolute_values', None)
+
+        start_date, end_date = get_date_range(request.query_params.get('start_date', None),
+                                              request.query_params.get('end_date', None))
+
+        txn_filter_kwargs = {
+            'account__profile__user': request.user,
+            'date__range': (start_date, end_date),
+        }
+
+        if category_type:
+            txn_filter_kwargs['category__category_type'] = category_type
+
+        txn_data = (
+            Transaction.objects
+            .filter(**txn_filter_kwargs)
+            .annotate(date_only=TruncDate('date'))
+            .values('date_only', 'category__name', 'category__color')
+            .annotate(
+                total_amount=Round(
+                    Sum(
+                        Case(
+                            When(amount_converted__isnull=False, then=F('amount_converted')),
+                            default=F('amount'),
+                        )
+                    ),
+                    2
+                )
+            )
             .order_by('date_only')
         )
 
         labels = []
-        data = []
+        dataset_dict = defaultdict(lambda: {'backgroundColor': None, 'data': defaultdict(float)})
 
-        for txn_group in txn_data:
-            labels.append(txn_group['date_only'].strftime('%d/%m'))
-            data.append(float(txn_group['amount_total']))
+        for txn in txn_data:
+            date = txn['date_only'].strftime('%d/%m')
+            if date not in labels:
+                labels.append(date)
 
-        response_data = {
-            'labels': labels,
-            'data': data,
+            category_name = txn['category__name']
+            category_color = txn['category__color']
+            total_amount = float(txn['total_amount'])
+
+            if absolute_values:
+                total_amount = abs(total_amount)
+
+            category = dataset_dict[category_name]
+            category['backgroundColor'] = category_color
+            category['data'][date] += total_amount
+
+        data = {
+            "labels": labels,
+            "datasets": [
+                {
+                    "label": category_name,
+                    "data": [category["data"][date] for date in labels],
+                    "backgroundColor": f'#{category["backgroundColor"]}6A',
+                    "borderColor": f'#{category["backgroundColor"]}',
+                    "borderRadius": {
+                        "topLeft": 5,
+                        "topRight": 5,
+                        "bottomLeft": 5,
+                        "bottomRight": 5
+                    }
+                }
+                for category_name, category in dataset_dict.items()
+            ]
         }
 
-        return Response(response_data)
+        return Response(data)
+
+
+class TransactionsByAccountChartDataView(generics.GenericAPIView):
+    serializer_class = StackedBarChartDataSerializer
+
+    def get(self, request, *args, **kwargs):
+        absolute_values = request.query_params.get('absolute_values', None)
+
+        start_date, end_date = get_date_range(request.query_params.get('start_date', None),
+                                              request.query_params.get('end_date', None))
+
+        txn_filter_kwargs = {
+            'account__profile__user': request.user,
+            'date__range': (start_date, end_date),
+        }
+
+        txn_data = (
+            Transaction.objects
+            .filter(**txn_filter_kwargs)
+            .annotate(date_only=TruncDate('date'))
+            .values('date_only', 'account__name', 'account__color')
+            .annotate(
+                total_amount=Round(
+                    Sum(
+                        Case(
+                            When(amount_converted__isnull=False, then=F('amount_converted')),
+                            default=F('amount'),
+                        )
+                    ),
+                    2
+                )
+            )
+            .order_by('date_only')
+        )
+
+        labels = []
+        dataset_dict = defaultdict(lambda: {'backgroundColor': None, 'data': defaultdict(float)})
+
+        for txn in txn_data:
+            date = txn['date_only'].strftime('%d/%m')
+            if date not in labels:
+                labels.append(date)
+
+            account_name = txn['account__name']
+            account_color = txn['account__color']
+            total_amount = float(txn['total_amount'])
+
+            if absolute_values:
+                total_amount = abs(total_amount)
+
+            account = dataset_dict[account_name]
+            account['backgroundColor'] = account_color
+            account['data'][date] += total_amount
+
+        data = {
+            "labels": labels,
+            "datasets": [
+                {
+                    "label": account_name,
+                    "data": [account["data"][date] for date in labels],
+                    "backgroundColor": f'#{account["backgroundColor"]}6A',
+                    "borderColor": f'#{account["backgroundColor"]}',
+                    "borderRadius": {
+                        "topLeft": 5,
+                        "topRight": 5,
+                        "bottomLeft": 5,
+                        "bottomRight": 5
+                    }
+                }
+                for account_name, account in dataset_dict.items()
+            ]
+        }
+
+        return Response(data)

@@ -64,9 +64,9 @@ class Account(TimeStampMixin, StyleMixin):
                             verbose_name="Account name")
     balance = models.DecimalField(null=False,
                                   blank=True,
-                                  default=0,
-                                  max_digits=20,
-                                  decimal_places=8,
+                                  default=0.00,
+                                  max_digits=10,
+                                  decimal_places=2,
                                   verbose_name="Account balance")
     profile = models.ForeignKey('profiles.Profile',
                                 null=False,
@@ -90,15 +90,15 @@ class Account(TimeStampMixin, StyleMixin):
     # Fields for savings account only
     initial_balance = models.DecimalField(null=True,
                                           blank=True,
-                                          default=0,
-                                          max_digits=20,
-                                          decimal_places=8,
+                                          default=0.00,
+                                          max_digits=10,
+                                          decimal_places=2,
                                           verbose_name="Initial balance")
     target_balance = models.DecimalField(null=True,
                                          blank=True,
-                                         default=0,
-                                         max_digits=20,
-                                         decimal_places=8,
+                                         default=0.00,
+                                         max_digits=10,
+                                         decimal_places=2,
                                          verbose_name="Target balance")
     deadline = models.DateField(null=True,
                                 blank=True,
@@ -173,13 +173,13 @@ class Transaction(models.Model):
                                  related_name="+")
     amount = models.DecimalField(null=False,
                                  blank=False,
-                                 max_digits=20,
-                                 decimal_places=8,
+                                 max_digits=10,
+                                 decimal_places=2,
                                  verbose_name="Amount")
     amount_converted = models.DecimalField(null=True,
                                            blank=True,
-                                           max_digits=20,
-                                           decimal_places=8,
+                                           max_digits=10,
+                                           decimal_places=2,
                                            verbose_name="Amount in account's currency")
     description = models.CharField(null=True,
                                    blank=True,
@@ -194,13 +194,13 @@ class Transaction(models.Model):
 class Transfer(models.Model):
     amount_from = models.DecimalField(null=False,
                                       blank=False,
-                                      max_digits=20,
-                                      decimal_places=8,
+                                      max_digits=10,
+                                      decimal_places=2,
                                       verbose_name="Amount transferring from account")
     amount_to = models.DecimalField(null=False,
                                     blank=True,
-                                    max_digits=20,
-                                    decimal_places=8,
+                                    max_digits=10,
+                                    decimal_places=2,
                                     verbose_name="Amount transferring to account")
     description = models.CharField(null=True,
                                    blank=True,

@@ -14,11 +14,12 @@
     <link rel="stylesheet" href="{% static 'budget/css/hover.css' %}">
     <link rel="stylesheet" href="{% static 'budget/css/tables.css' %}">
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css"/>
-
 {% endblock %}
 
 
@@ -99,13 +100,16 @@
                                     {% else %}
                                         {% if action.amount_converted %}
                                             <strong class="m-0 {% if action.amount < 0 %}text-danger{% else %}text-success{% endif %}">
-                                                {% if action.amount > 0 %}+{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.currency.symbol }}
+                                                {% if action.amount > 0 %}
+                                                    +{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.currency.symbol }}
                                             </strong><span class="m-0 text-secondary">
-                                            ({% if action.amount > 0 %}+{% endif %}{{ action.amount_converted|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }})
+                                            ({% if action.amount > 0 %}
+                                            +{% endif %}{{ action.amount_converted|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }})
                                         </span>
                                         {% else %}
                                             <strong class="m-0 {% if action.amount < 0 %}text-danger{% else %}text-success{% endif %}">
-                                                {% if action.amount > 0 %}+{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }}
+                                                {% if action.amount > 0 %}
+                                                    +{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }}
                                             </strong>
                                         {% endif %}
                                     {% endif %}
@@ -156,6 +160,7 @@
 
             <div class="d-flex h-100 flex-column col shadow"
                  style="padding: 20px; border-radius: 20px; width: 100%; background-color: #FCFCFC; flex: 1; overflow: auto;">
+
                 <canvas id="myChart"></canvas>
 
                 <hr class="h-divider"/>
@@ -164,166 +169,134 @@
     </div>
 {% endblock %}
 
-
-
 {% block custom_scripts %}
     <script>
-        function stripTrailingZeros(number) {
-            return parseFloat(number).toString(); // Removes unnecessary trailing zeros
-        }
+        // ---------------------------
+        // 1) Utility Functions
+        // ---------------------------
 
-        function formatDate(isoDate) {
+        // Removes unnecessary trailing zeros from a numeric string
+        const stripTrailingZeros = (numStr) => parseFloat(numStr).toString();
+
+        // Formats ISO date as DD/MM (e.g., "31/12")
+        const formatDate = (isoDate) => {
             const date = new Date(isoDate);
-            const day = String(date.getDate()).padStart(2, '0'); // Add leading zero
-            const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-indexed
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
             return `${day}/${month}`;
+        };
+
+        // ---------------------------
+        // 2) Table-Related Functions
+        // ---------------------------
+
+        // Ajax request to fetch data for the table
+        function fetchAndPopulateTable(startDate, endDate) {
+            $.ajax({
+                url: '{% url "budget-api:combined_actions" %}',
+                method: 'GET',
+                data: {
+                    all_transfers: true,
+                    start_date: startDate,
+                    end_date: endDate
+                },
+                success: function (response) {
+                    populateTable(response.combined_actions);
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error fetching table data:', error);
+                    alert('An error occurred while fetching table data. Please try again.');
+                }
+            });
         }
 
-        $(function () {
-            $('input[name="daterange"]').daterangepicker({
-                ranges: {
-                    'Today': [moment(), moment()],
-                    'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-                    'This Week': [moment().startOf('isoWeek'), moment().endOf('isoWeek')],
-                    'Last Week': [moment().subtract(1, 'week').startOf('isoWeek'), moment().subtract(1, 'week').endOf('isoWeek')],
-                    'This Month': [moment().startOf('month'), moment().endOf('month')],
-                    'All time': [moment().subtract(100, 'year').startOf('month'), moment()]
-                },
-                "alwaysShowCalendars": true,
-                "locale": {
-                    "format": "MM/DD/YYYY",
-                    "separator": " - ",
-                    "applyLabel": "Apply",
-                    "cancelLabel": "Cancel",
-                    "fromLabel": "From",
-                    "toLabel": "To",
-                    "customRangeLabel": "Custom",
-                    "weekLabel": "W",
-                    "daysOfWeek": [
-                        "Su",
-                        "Mo",
-                        "Tu",
-                        "We",
-                        "Th",
-                        "Fr",
-                        "Sa"
-                    ],
-                    "monthNames": [
-                        "January",
-                        "February",
-                        "March",
-                        "April",
-                        "May",
-                        "June",
-                        "July",
-                        "August",
-                        "September",
-                        "October",
-                        "November",
-                        "December"
-                    ],
-                    "firstDay": 1
-                },
-                "drops": "auto"
-            }, function (start, end, label) {
-                fetchAndPopulateTable(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
-            });
+        // Renders the table rows from the fetched data
+        function populateTable(actions) {
+            const tableBody = $('#combined-actions-body');
+            tableBody.empty(); // Clear existing rows
 
+            actions.forEach(action => {
+                let amountDisplay = '';
 
-            // Function to fetch data from the API and populate the table
-            function fetchAndPopulateTable(startDate, endDate) {
-                $.ajax({
-                    url: '{% url "budget-api:combined_actions" %}',
-                    method: 'GET',
-                    data: {all_transfers: true, start_date: startDate, end_date: endDate},
-                    success: function (response) {
-                        populateTable(response.combined_actions);
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('Error fetching data:', error);
-                        alert('An error occurred while fetching data. Please try again.');
-                    }
-                });
-            }
-
-            // Function to populate the table dynamically
-            function populateTable(actions) {
-                const tableBody = $('#combined-actions-body'); // Ensure your table has a tbody with this ID
-                tableBody.empty(); // Clear existing rows
-
-                actions.forEach(action => {
-                    let amountDisplay = '';
-
-                    if (action.action_type === 'trf') {
-                        // For transfers
-                        if (action.account_from.currency.id === action.account_to.currency.id) {
-                            amountDisplay = `
-                    <strong class="m-0 text-secondary">
-                        ${stripTrailingZeros(action.amount_from)} ${action.account_from.currency.symbol}
-                    </strong>
-                `;
-                        } else {
-                            amountDisplay = `
-                    <strong class="m-0 text-secondary">
-                        ${stripTrailingZeros(action.amount_from)} ${action.account_from.currency.symbol}
-                    </strong>
-                    <span class="m-0 text-secondary">
-                        (${stripTrailingZeros(action.amount_to)} ${action.account_to.currency.symbol})
-                    </span>
-                `;
-                        }
+                if (action.action_type === 'trf') {
+                    // -- For Transfers
+                    if (action.account_from.currency.id === action.account_to.currency.id) {
+                        amountDisplay = `
+                        <strong class="m-0 text-secondary">
+                            ${stripTrailingZeros(action.amount_from)} ${action.account_from.currency.symbol}
+                        </strong>
+                    `;
                     } else {
-                        // For transactions
-                        if (action.amount_converted) {
-                            amountDisplay = `
-                    <strong class="m-0 ${action.amount < 0 ? 'text-danger' : 'text-success'}">
-                        ${action.amount > 0 ? '+' : ''}${stripTrailingZeros(action.amount)} ${action.currency.symbol}
-                    </strong>
-                    <span class="m-0 text-secondary">
-                        (${action.amount > 0 ? '+' : ''}${stripTrailingZeros(action.amount_converted)} ${action.account.currency.symbol})
-                    </span>
-                `;
-                        } else {
-                            console.log(action);
-                            amountDisplay = `
-                    <strong class="m-0 ${action.amount < 0 ? 'text-danger' : 'text-success'}">
-                        ${action.amount > 0 ? '+' : ''}${stripTrailingZeros(action.amount)} ${action.account.currency.symbol}
-                    </strong>
-                `;
-                        }
+                        amountDisplay = `
+                        <strong class="m-0 text-secondary">
+                            ${stripTrailingZeros(action.amount_from)} ${action.account_from.currency.symbol}
+                        </strong>
+                        <span class="m-0 text-secondary">
+                            (${stripTrailingZeros(action.amount_to)} ${action.account_to.currency.symbol})
+                        </span>
+                    `;
                     }
+                } else {
+                    // -- For Transactions
+                    if (action.amount_converted) {
+                        amountDisplay = `
+                        <strong class="m-0 ${action.amount < 0 ? 'text-danger' : 'text-success'}">
+                            ${action.amount > 0 ? '+' : ''}${stripTrailingZeros(action.amount)} ${action.currency.symbol}
+                        </strong>
+                        <span class="m-0 text-secondary">
+                            (${action.amount > 0 ? '+' : ''}${stripTrailingZeros(action.amount_converted)} ${action.account.currency.symbol})
+                        </span>
+                    `;
+                    } else {
+                        amountDisplay = `
+                        <strong class="m-0 ${action.amount < 0 ? 'text-danger' : 'text-success'}">
+                            ${action.amount > 0 ? '+' : ''}${stripTrailingZeros(action.amount)} ${action.account.currency.symbol}
+                        </strong>
+                    `;
+                    }
+                }
 
-
-                    const row = `
+                const row = `
                 <tr>
                     <td>
                         <div class="d-flex align-items-center gap-2">
                             <div class="d-flex justify-content-center align-items-center rounded-2"
-                                 style="width: 30px; height: 30px; ${action.action_type === 'trf' ? 'background-color: #0CCAF02A' : `background-color: #${action.category.color}2A`}">
-                                <i class="${action.action_type === 'trf' ? 'fa-duotone fa-solid fa-right-left' : action.category.icon}"
-                                   style="${action.action_type === 'trf' ? 'color: #0CCAF0' : `color: #${action.category.color}`}"></i>
+                                 style="width: 30px; height: 30px; ${action.action_type === 'trf'
+                    ? 'background-color: #0CCAF02A'
+                    : `background-color: #${action.category.color}2A`}">
+                                <i class="${action.action_type === 'trf'
+                    ? 'fa-duotone fa-solid fa-right-left'
+                    : action.category.icon}"
+                                   style="${action.action_type === 'trf'
+                    ? 'color: #0CCAF0'
+                    : `color: #${action.category.color}`}">
+                                </i>
                             </div>
                             ${action.action_type === 'trf' ? 'Transfer' : action.category.name}
                         </div>
                     </td>
                     <td>
                         <div class="d-flex align-items-center gap-2">
-                            ${action.action_type === 'trf' ? `
-                                <div class="d-flex justify-content-center align-items-center">
-                                    <i class="${action.account_from.icon}" style="color: #${action.account_from.color}"></i>
-                                </div>
-                                ${action.account_from.name}
-                                <i class="fa-duotone fa-arrow-right mx-2 text-secondary"></i>
-                                <div class="d-flex justify-content-center align-items-center">
-                                    <i class="${action.account_to.icon}" style="color: #${action.account_to.color}"></i>
-                                </div>
-                                ${action.account_to.name}
-                            ` : `
-                                <div class="d-flex justify-content-center align-items-center">
-                                    <i class="${action.account.icon}" style="color: #${action.account.color}"></i>
-                                </div>
-                                ${action.account.name}
-                            `}
+                            ${
+                    action.action_type === 'trf'
+                        ? `
+                                    <div class="d-flex justify-content-center align-items-center">
+                                        <i class="${action.account_from.icon}" style="color: #${action.account_from.color}"></i>
+                                    </div>
+                                    ${action.account_from.name}
+                                    <i class="fa-duotone fa-arrow-right mx-2 text-secondary"></i>
+                                    <div class="d-flex justify-content-center align-items-center">
+                                        <i class="${action.account_to.icon}" style="color: #${action.account_to.color}"></i>
+                                    </div>
+                                    ${action.account_to.name}
+                                  `
+                        : `
+                                    <div class="d-flex justify-content-center align-items-center">
+                                        <i class="${action.account.icon}" style="color: #${action.account.color}"></i>
+                                    </div>
+                                    ${action.account.name}
+                                  `
+                }
                         </div>
                     </td>
                     <td class="text-end">
@@ -335,72 +308,276 @@
                     <td class="extra-column d-none text-center" style="max-width: 150px;">
                         <span class="text-secondary">${action.description || '...'}</span>
                     </td>
-<td class="gap-2 text-end">
-                    <div class="dropend">
-                        <button class="btn btn-outline-secondary btn-sm" type="button"
-                                data-bs-toggle="dropdown" data-bs-auto-close="outside"
-                                aria-expanded="false">
-                            <i class="fa-regular fa-ellipsis"></i>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <a class="dropdown-item text-warning"
-                                   href="${action.action_type === 'trf'
-                        ? '{% url "transfer_edit" 0 %}'.replace('0', action.id)
-                        : '{% url "transaction_edit" 0 %}'.replace('0', action.id)}">
-                                    <i class="fa-regular fa-pen-to-square me-2"></i>
-                                    Edit
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item text-danger"
-                                   href="${action.action_type === 'trf'
-                        ? '{% url "transfer_delete" 0 %}'.replace('0', action.id)
-                        : '{% url "transaction_delete" 0 %}'.replace('0', action.id)}">
-                                    <i class="fa-regular fa-trash-can-xmark me-2"></i>
-                                    Delete
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </td>
+                    <td class="gap-2 text-end">
+                        <div class="dropend">
+                            <button class="btn btn-outline-secondary btn-sm" type="button"
+                                    data-bs-toggle="dropdown" data-bs-auto-close="outside"
+                                    aria-expanded="false">
+                                <i class="fa-regular fa-ellipsis"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item text-warning"
+                                       href="${action.action_type === 'trf'
+                    ? '{% url "transfer_edit" 0 %}'.replace('0', action.id)
+                    : '{% url "transaction_edit" 0 %}'.replace('0', action.id)}">
+                                        <i class="fa-regular fa-pen-to-square me-2"></i>
+                                        Edit
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item text-danger"
+                                       href="${action.action_type === 'trf'
+                    ? '{% url "transfer_delete" 0 %}'.replace('0', action.id)
+                    : '{% url "transaction_delete" 0 %}'.replace('0', action.id)}">
+                                        <i class="fa-regular fa-trash-can-xmark me-2"></i>
+                                        Delete
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </td>
                 </tr>
             `;
-                    tableBody.append(row);
-                });
-            }
-        });
-    </script>
+                tableBody.append(row);
+            });
+        }
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
+        // ---------------------------
+        // 3) Chart-Related Functions
+        // ---------------------------
+
+        let myChartInstance = null; // keep reference to the chart for updates
+
+        function rgbaToRgb(rgbaString) {
+            // Use a regex to extract the numbers: rgba( R, G, B, A )
+            const match = rgbaString.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)$/i);
+            if (!match) {
+                throw new Error(`Invalid RGBA string: "${rgbaString}"`);
+            }
+
+            // match[1] = R, match[2] = G, match[3] = B, match[4] = A (optional)
+            const r = match[1];
+            const g = match[2];
+            const b = match[3];
+
+            // Return an rgb(...) string with no alpha
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+
+        const totalizer = {
+            id: 'totalizer',
+            beforeUpdate: (chart) => {
+                const {datasets} = chart.data;
+
+                // If no datasets, bail out safely
+                if (!datasets || datasets.length === 0) {
+                    chart.$totalizer = {totals: [], topmostIndices: []};
+                    return;
+                }
+
+                // Number of data points (assuming all datasets have the same length)
+                const numberOfPoints = datasets[0].data.length;
+
+                // Arrays to hold final totals and the “closest index”
+                const totals = new Array(numberOfPoints).fill(0);
+                const topmostIndices = new Array(numberOfPoints).fill(null);
+
+                // 1) First pass: sum up all visible datasets to get the final total for each index
+                datasets.forEach((dataset, datasetIndex) => {
+                    if (!chart.isDatasetVisible(datasetIndex)) return;
+
+                    dataset.data.forEach((value, i) => {
+                        totals[i] += value;
+                    });
+                });
+
+                // 2) Second pass: figure out which dataset’s partial sum is “closest” to that final total
+                //    but only if the partial sum has the same sign as the total.
+                for (let i = 0; i < numberOfPoints; i++) {
+                    let bestCandidate = 0;
+
+                    for (let d = 1; d < datasets.length; d++) {
+                        if (datasets[d].data[i] > 0 && totals[i] > 0) {
+                            bestCandidate = d;
+                        } else if (datasets[d].data[i] < 0 && totals[i] < 0) {
+                            bestCandidate = d;
+                        }
+                    }
+
+                    topmostIndices[i] = bestCandidate;
+                }
+
+                // Optionally round totals
+                for (let i = 0; i < totals.length; i++) {
+                    totals[i] = parseFloat(totals[i].toFixed(2));
+                }
+
+                // Attach to the chart object
+                chart.$totalizer = {
+                    totals,
+                    topmostIndices,
+                };
+            },
+        };
+
+        function fetchAndPopulateChart(startDate, endDate) {
+            const url = `{% url "budget-api:charts_transaction_category" %}?start_date=${startDate}&end_date=${endDate}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById('myChart').getContext('2d');
+
+                    if (!myChartInstance) {
+                        // If the chart does not exist, create it
+                        myChartInstance = new Chart(ctx, {
+                            type: 'bar',
+                            data: data,
+                            plugins: [ChartDataLabels, totalizer],
+                            options: {
+                                responsive: true,
+                                borderSkipped: false,
+                                borderWidth: 1,
+                                scales: {
+                                    x: {
+                                        stacked: true,
+                                    },
+                                    y: {
+                                        grace: 5,
+                                        stacked: true,
+                                        ticks: {
+                                            callback: function (value) {
+                                                return `${value} $`;
+                                            }
+                                        },
+                                    }
+                                },
+                                plugins: {
+                                    legend: {
+                                        position: 'top',
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'Chart for sum of all transactions by day'
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function (context) {
+                                                let label = context.dataset.label || '';
+
+                                                if (label) {
+                                                    label += ': ';
+                                                }
+                                                if (context.parsed.y !== null) {
+                                                    label += `${context.parsed.y} $`;
+                                                }
+                                                return label;
+                                            }
+                                        }
+                                    },
+                                    datalabels: {
+                                        opacity: 1,
+                                        font: {
+                                            size: 14,
+                                            color: '#000',
+                                        },
+                                        display: (ctx) => {
+                                            const dataIndex = ctx.dataIndex;
+                                            const datasetIndex = ctx.datasetIndex;
+                                            const {topmostIndices} = ctx.chart.$totalizer || {};
+                                            return datasetIndex === topmostIndices[dataIndex];
+                                        },
+                                        anchor: (ctx) => {
+                                            const total = ctx.chart.$totalizer.totals[ctx.dataIndex];
+                                            return total >= 0 ? 'end' : 'start';
+                                        },
+                                        align: (ctx) => {
+                                            const total = ctx.chart.$totalizer.totals[ctx.dataIndex];
+                                            return total >= 0 ? 'top' : 'bottom';
+                                        },
+                                        offset: 5,
+                                        formatter: (value, ctx) => {
+                                            const total = ctx.chart.$totalizer.totals[ctx.dataIndex];
+                                            return `${total} $`;
+                                        },
+                                    }
+                                }
+                            }
+                        });
+                    } else {
+                        // If it already exists, just update the data
+                        myChartInstance.data = data;
+                        myChartInstance.update();
+                    }
+                })
+                .catch(error => console.error('Error fetching chart data:', error));
+        }
+
+        // ---------------------------
+        // 4) Main Initialization
+        // ---------------------------
+        $(function () {
+
+            // Initialize the Date Range Picker
+            $('input[name="daterange"]').daterangepicker({
+                ranges: {
+                    'Today': [moment(), moment()],
+                    'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                    'This Week': [moment().startOf('isoWeek'), moment().endOf('isoWeek')],
+                    'Last Week': [moment().subtract(1, 'week').startOf('isoWeek'), moment().subtract(1, 'week').endOf('isoWeek')],
+                    'This Month': [moment().startOf('month'), moment().endOf('month')],
+                    'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                },
+                alwaysShowCalendars: true,
+                locale: {
+                    format: 'MM/DD/YYYY',
+                    separator: ' - ',
+                    applyLabel: 'Apply',
+                    cancelLabel: 'Cancel',
+                    fromLabel: 'From',
+                    toLabel: 'To',
+                    customRangeLabel: 'Custom',
+                    weekLabel: 'W',
+                    daysOfWeek: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+                    monthNames: [
+                        'January', 'February', 'March', 'April', 'May', 'June',
+                        'July', 'August', 'September', 'October', 'November', 'December'
+                    ],
+                    firstDay: 1
+                },
+                drops: 'auto'
+            }, function (start, end) {
+                // When the user applies a new date range, update both table and chart
+                const sDate = start.format('YYYY-MM-DD');
+                const eDate = end.format('YYYY-MM-DD');
+
+                fetchAndPopulateTable(sDate, eDate);
+                fetchAndPopulateChart(sDate, eDate);
+            });
+
+
+            // Toggle button for extra columns and layout adjustments
             const toggleButton = document.getElementById('toggle-button');
             const tableCol = document.getElementById('table-col');
             const sidebar = document.getElementById('sidebar');
             const table = document.getElementById('txn-table');
             const icon = toggleButton.querySelector('i');
 
-            // Use event delegation for dynamically added rows
             document.addEventListener('click', function (event) {
                 const target = event.target;
-
-                // Check if the click is on the toggle button
                 if (target.closest('#toggle-button')) {
                     const extraColumns = document.querySelectorAll('.extra-column');
-
-                    // Toggle extra columns visibility
                     extraColumns.forEach(function (column) {
-                        if (column.classList.contains('d-none')) {
-                            column.classList.remove('d-none');
-                        } else {
-                            column.classList.add('d-none');
-                        }
+                        column.classList.toggle('d-none');
                     });
 
                     table.classList.toggle('expanded');
                     tableCol.classList.toggle('expanded-content');
                     sidebar.classList.toggle('minimized');
 
+                    // Swap icons
                     if (icon.classList.contains('fa-expand')) {
                         icon.classList.remove('fa-expand');
                         icon.classList.add('fa-compress');
@@ -412,53 +589,14 @@
                     }
                 }
             });
+
+            // Optionally load default data on page load
+            const defaultStart = moment().startOf('month').format('YYYY-MM-DD');
+            const defaultEnd = moment().endOf('month').format('YYYY-MM-DD');
+
+            // Initialize the chart data (and/or table) on first load
+            fetchAndPopulateChart(defaultStart, defaultEnd);
+            // fetchAndPopulateTable(defaultStart, defaultEnd); // If table should also load by default
         });
     </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <script>
-        const ctx = document.getElementById('myChart');
-
-        // Fetch data from the API
-        fetch('{% url "budget-api:charts_transaction" %}')
-            .then(response => response.json())
-            .then(data => {
-                const labels = data.labels;
-                const values = data.data;
-
-                // Create the Chart.js graph
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: '$',
-                            data: values,
-                            borderWidth: 1,
-                            borderRadius: 4
-                        }]
-                    },
-                    options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        },
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                            },
-                            title: {
-                                display: true,
-                                text: 'Chart.js Bar Chart with DRF'
-                            }
-                        }
-                    }
-                });
-            })
-            .catch(error => console.error('Error fetching data:', error));
-    </script>
-
 {% endblock %}

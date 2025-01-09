@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="{% static 'budget/css/hover.css' %}">
     <link rel="stylesheet" href="{% static 'budget/css/tables.css' %}">
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
@@ -116,18 +118,21 @@
                                     {% else %}
                                         {% if action.amount_converted %}
                                             <strong class="m-0 {% if action.amount < 0 %}text-danger{% else %}text-success{% endif %}">
-                                                {% if action.amount > 0 %}+{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.currency.symbol }}
+                                                {% if action.amount > 0 %}
+                                                    +{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.currency.symbol }}
                                             </strong>
                                             <span class="m-0 text-secondary">
-                                            ({% if action.amount > 0 %}+{% endif %}{{ action.amount_converted|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }})</span>
+                                            ({% if action.amount > 0 %}
+                                                +{% endif %}{{ action.amount_converted|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }})</span>
                                         {% else %}
                                             <strong class="m-0 {% if action.amount < 0 %}text-danger{% else %}text-success{% endif %}">
-                                                {% if action.amount > 0 %}+{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }}
+                                                {% if action.amount > 0 %}
+                                                    +{% endif %}{{ action.amount|strip_trailing_zeros|int_space }} {{ action.account.currency.symbol }}
                                             </strong>
                                         {% endif %}
                                     {% endif %}
                                 </td>
-                                <td class="text-center extra-column d-none ">
+                                <td class="text-center">
                                     <span class="text-secondary">{{ action.date|date:"d/m" }}</span>
                                 </td>
                                 <td class="text-center extra-column d-none " style="max-width: 150px;">
@@ -172,7 +177,12 @@
             </div>
 
             <div class="d-flex h-100 flex-column col shadow"
-                 style="padding: 20px; border-radius: 20px; background-color: #FCFCFC"></div>
+                 style="padding: 20px; border-radius: 20px; width: 100%; background-color: #FCFCFC; flex: 1; overflow: auto;">
+
+                <canvas id="myChart"></canvas>
+
+                <hr class="h-divider"/>
+            </div>
         </div>
     </div>
 {% endblock %}
@@ -182,6 +192,8 @@
 {% block custom_scripts %}
     <script>
         const category_id = {{ object.id }};
+        const category_type = "{{ object.category_type }}";
+        const category_name = "{{ object.name }}";
 
         function stripTrailingZeros(number) {
             return parseFloat(number).toString(); // Removes unnecessary trailing zeros
@@ -194,6 +206,194 @@
             return `${day}/${month}`;
         }
 
+
+        // ---------------------------
+        // 3) Chart-Related Functions
+        // ---------------------------
+
+        let myChartInstance = null; // keep reference to the chart for updates
+
+        function rgbaToRgb(rgbaString) {
+            // Use a regex to extract the numbers: rgba( R, G, B, A )
+            const match = rgbaString.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)$/i);
+            if (!match) {
+                throw new Error(`Invalid RGBA string: "${rgbaString}"`);
+            }
+
+            // match[1] = R, match[2] = G, match[3] = B, match[4] = A (optional)
+            const r = match[1];
+            const g = match[2];
+            const b = match[3];
+
+            // Return an rgb(...) string with no alpha
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+
+        const totalizer = {
+            id: 'totalizer',
+            beforeUpdate: (chart) => {
+                const {datasets} = chart.data;
+
+                // If no datasets, bail out safely
+                if (!datasets || datasets.length === 0) {
+                    chart.$totalizer = {totals: [], topmostIndices: []};
+                    return;
+                }
+
+                // Number of data points (assuming all datasets have the same length)
+                const numberOfPoints = datasets[0].data.length;
+
+                // Arrays to hold final totals and the “closest index”
+                const totals = new Array(numberOfPoints).fill(0);
+                const topmostIndices = new Array(numberOfPoints).fill(null);
+
+                // 1) First pass: sum up all visible datasets to get the final total for each index
+                datasets.forEach((dataset, datasetIndex) => {
+                    if (!chart.isDatasetVisible(datasetIndex)) return;
+
+                    dataset.data.forEach((value, i) => {
+                        totals[i] += value;
+                    });
+                });
+
+                // 2) Second pass: figure out which dataset’s partial sum is “closest” to that final total
+                //    but only if the partial sum has the same sign as the total.
+                for (let i = 0; i < numberOfPoints; i++) {
+                    let bestCandidate = 0;
+
+                    for (let d = 1; d < datasets.length; d++) {
+                        if (datasets[d].data[i] > 0 && totals[i] > 0) {
+                            bestCandidate = d;
+                        } else if (datasets[d].data[i] < 0 && totals[i] < 0) {
+                            bestCandidate = d;
+                        }
+                    }
+
+                    topmostIndices[i] = bestCandidate;
+                }
+
+                // Optionally round totals
+                for (let i = 0; i < totals.length; i++) {
+                    totals[i] = parseFloat(totals[i].toFixed(2));
+                }
+
+                // Attach to the chart object
+                chart.$totalizer = {
+                    totals,
+                    topmostIndices,
+                };
+            },
+        };
+
+        function fetchAndPopulateChart(startDate, endDate) {
+            const url = `{% url "budget-api:charts_transaction" %}?start_date=${startDate}&end_date=${endDate}&category_id=${category_id}&absolute_values=${true}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const ctx = document.getElementById('myChart').getContext('2d');
+
+                    if (!myChartInstance) {
+                        // If the chart does not exist, create it
+                        myChartInstance = new Chart(ctx, {
+                            type: 'bar',
+                            data: data,
+                            plugins: [ChartDataLabels, totalizer],
+                            options: {
+                                responsive: true,
+                                borderSkipped: false,
+                                borderWidth: 1,
+                                scales: {
+                                    x: {
+                                        stacked: true,
+                                    },
+                                    y: {
+                                        beginAtZero: true,
+                                        grace: 5,
+                                        stacked: true,
+                                        ticks: {
+                                            callback: function (value) {
+                                                // Show minus sign for expenses, plus for income
+                                                if (category_type === '-') {
+                                                    return `-${value} $`;
+                                                }
+                                                return `${value} $`;
+                                            }
+                                        }
+                                    }
+                                },
+                                plugins: {
+                                    legend: {
+                                        position: 'top',
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: `Chart for sum of all transactions of Category: ${category_name}`
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function (context) {
+                                                let label = context.dataset.label || '';
+
+                                                if (label) {
+                                                    label += ': ';
+                                                }
+                                                let value = context.parsed.y;
+
+                                                if (value !== null) {
+                                                    if (category_type === '-') {
+                                                        value = -value;
+                                                    }
+
+                                                    label += `${value} $`;
+                                                }
+                                                return label;
+                                            }
+                                        }
+                                    },
+                                    datalabels: {
+                                        opacity: 1,
+                                        font: {
+                                            size: 14,
+                                            color: '#000',
+                                        },
+                                        display: (ctx) => {
+                                            const dataIndex = ctx.dataIndex;
+                                            const datasetIndex = ctx.datasetIndex;
+                                            const {topmostIndices} = ctx.chart.$totalizer || {};
+                                            return datasetIndex === topmostIndices[dataIndex];
+                                        },
+                                        anchor: (ctx) => {
+                                            const total = ctx.chart.$totalizer.totals[ctx.dataIndex];
+                                            return total >= 0 ? 'end' : 'start';
+                                        },
+                                        align: (ctx) => {
+                                            const total = ctx.chart.$totalizer.totals[ctx.dataIndex];
+                                            return total >= 0 ? 'top' : 'bottom';
+                                        },
+                                        offset: 5,
+                                        formatter: (value, ctx) => {
+                                            let total = ctx.chart.$totalizer.totals[ctx.dataIndex];
+                                            if (category_type === '-') {
+                                                total = -total;
+                                            }
+                                            return `${total} $`;
+                                        },
+                                    }
+                                }
+                            }
+                        });
+                    } else {
+                        // If it already exists, just update the data
+                        myChartInstance.data = data;
+                        myChartInstance.update();
+                    }
+                })
+                .catch(error => console.error('Error fetching chart data:', error));
+        }
+
+
         $(function () {
             $('input[name="daterange"]').daterangepicker({
                 ranges: {
@@ -202,46 +402,33 @@
                     'This Week': [moment().startOf('isoWeek'), moment().endOf('isoWeek')],
                     'Last Week': [moment().subtract(1, 'week').startOf('isoWeek'), moment().subtract(1, 'week').endOf('isoWeek')],
                     'This Month': [moment().startOf('month'), moment().endOf('month')],
-                    'All time': [moment().subtract(100, 'year').startOf('month'), moment()]
+                    'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
                 },
-                "alwaysShowCalendars": true,
-                "locale": {
-                    "format": "MM/DD/YYYY",
-                    "separator": " - ",
-                    "applyLabel": "Apply",
-                    "cancelLabel": "Cancel",
-                    "fromLabel": "From",
-                    "toLabel": "To",
-                    "customRangeLabel": "Custom",
-                    "weekLabel": "W",
-                    "daysOfWeek": [
-                        "Su",
-                        "Mo",
-                        "Tu",
-                        "We",
-                        "Th",
-                        "Fr",
-                        "Sa"
+                alwaysShowCalendars: true,
+                locale: {
+                    format: 'MM/DD/YYYY',
+                    separator: ' - ',
+                    applyLabel: 'Apply',
+                    cancelLabel: 'Cancel',
+                    fromLabel: 'From',
+                    toLabel: 'To',
+                    customRangeLabel: 'Custom',
+                    weekLabel: 'W',
+                    daysOfWeek: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+                    monthNames: [
+                        'January', 'February', 'March', 'April', 'May', 'June',
+                        'July', 'August', 'September', 'October', 'November', 'December'
                     ],
-                    "monthNames": [
-                        "January",
-                        "February",
-                        "March",
-                        "April",
-                        "May",
-                        "June",
-                        "July",
-                        "August",
-                        "September",
-                        "October",
-                        "November",
-                        "December"
-                    ],
-                    "firstDay": 1
+                    firstDay: 1
                 },
-                "drops": "auto"
-            }, function (start, end, label) {
-                fetchAndPopulateTable(start.format('YYYY-MM-DD'), end.format('YYYY-MM-DD'));
+                drops: 'auto'
+            }, function (start, end) {
+                // When the user applies a new date range, update both table and chart
+                const sDate = start.format('YYYY-MM-DD');
+                const eDate = end.format('YYYY-MM-DD');
+
+                fetchAndPopulateTable(sDate, eDate);
+                fetchAndPopulateChart(sDate, eDate);
             });
 
 
@@ -334,7 +521,7 @@
                     <td class="text-end">
                         ${amountDisplay}
                     </td>
-                    <td class="extra-column d-none text-center">
+                    <td class="text-center">
                         <span class="text-secondary">${formatDate(action.date)}</span>
                     </td>
                     <td class="extra-column d-none text-center" style="max-width: 150px;">
@@ -418,6 +605,14 @@
                 }
             });
         });
+
+
+        // Optionally load default data on page load
+        const defaultStart = moment().startOf('month').format('YYYY-MM-DD');
+        const defaultEnd = moment().endOf('month').format('YYYY-MM-DD');
+
+        // Initialize the chart data (and/or table) on first load
+        fetchAndPopulateChart(defaultStart, defaultEnd);
     </script>
 {% endblock %}
 

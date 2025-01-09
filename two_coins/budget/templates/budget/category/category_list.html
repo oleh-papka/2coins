@@ -9,6 +9,13 @@
 {% block custom_static %}
     {% load static %}
     <link rel="stylesheet" href="{% static 'budget/css/hover.css' %}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css"/>
 {% endblock %}
 
 {% block body %}
@@ -18,7 +25,8 @@
             <div class="d-flex h-100 flex-column col shadow"
                  style="max-width: 520px; padding: 20px; border-radius: 20px; background-color: #FCFCFC">
 
-                <ul class="nav nav-pills d-flex gap-3" id="pills-tab" role="tablist" style="height: 40px">
+                <ul class="nav nav-pills d-flex justify-content-between" id="pills-tab" role="tablist"
+                    style="height: 40px">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active d-flex align-items-center" id="pills-expenses-tab"
                                 data-bs-toggle="pill"
@@ -28,12 +36,21 @@
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link d-flex align-items-center" id="pills-income-tab" data-bs-toggle="pill"
+                        <button class="nav-link d-flex align-items-center" id="pills-income-tab"
+                                data-bs-toggle="pill"
                                 data-bs-target="#pills-income"
                                 type="button" role="tab" aria-controls="pills-income" aria-selected="false">
                             Income
                         </button>
                     </li>
+
+                    <li class="input-group" style="width: 270px">
+                            <span class="input-group-text" style="background-color: transparent"><i
+                                    class="fa-duotone fa-solid fa-calendar-days fa-lg"></i></span>
+                        <input type="text" class="form-control" name="daterange" value="{{ date_range }}"
+                               style="background-color: transparent">
+                    </li>
+
                 </ul>
 
                 <div class="tab-content" id="pills-tabContent">
@@ -118,7 +135,7 @@
                                     </div>
                                 {% endif %}
                             {% endfor %}
-                        
+
                             <div class="card hover"
                                  style="width: 230px; height: 150px; border-radius: 16px; border: 1px solid rgba(72, 72, 72, 0.4);">
                                 <div class="card-body d-flex justify-content-center align-items-center">
@@ -126,7 +143,7 @@
                                     <i class="fa-solid fa-plus fa-2xl text-secondary"></i>
                                 </div>
                             </div>
-                        
+
                         </div>
                     </div>
 
@@ -134,7 +151,213 @@
             </div>
 
             <div class="d-flex h-100 flex-column col shadow"
-                 style="padding: 20px; border-radius: 20px; background-color: #FCFCFC"></div>
+                 style="padding: 20px; border-radius: 20px; width: 100%; background-color: #FCFCFC; flex: 1; overflow: auto;">
+
+                <canvas id="myChart"></canvas>
+
+                <hr class="h-divider"/>
+            </div>
         </div>
     </div>
+{% endblock %}
+
+
+
+{% block custom_scripts %}
+    <script>
+        // A variable to track the currently selected category type
+        let currentCategoryType = '-';  // Default to '-' (Expenses)
+
+        // A variable to track the currently selected date range
+        let currentStartDate;
+        let currentEndDate;
+
+
+        $(function () {
+            // Initialize the Date Range Picker
+            $('input[name="daterange"]').daterangepicker({
+                ranges: {
+                    'Today': [moment(), moment()],
+                    'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                    'This Week': [moment().startOf('isoWeek'), moment().endOf('isoWeek')],
+                    'Last Week': [moment().subtract(1, 'week').startOf('isoWeek'), moment().subtract(1, 'week').endOf('isoWeek')],
+                    'This Month': [moment().startOf('month'), moment().endOf('month')],
+                    'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                },
+                alwaysShowCalendars: true,
+                locale: {
+                    format: 'MM/DD/YYYY',
+                    separator: ' - ',
+                    applyLabel: 'Apply',
+                    cancelLabel: 'Cancel',
+                    fromLabel: 'From',
+                    toLabel: 'To',
+                    customRangeLabel: 'Custom',
+                    weekLabel: 'W',
+                    daysOfWeek: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+                    monthNames: [
+                        'January', 'February', 'March', 'April', 'May', 'June',
+                        'July', 'August', 'September', 'October', 'November', 'December'
+                    ],
+                    firstDay: 1
+                },
+                drops: 'auto'
+            }, function (start, end) {
+                // Update our global variables whenever user applies new date range
+                currentStartDate = start.format('YYYY-MM-DD');
+                currentEndDate = end.format('YYYY-MM-DD');
+
+                // Fetch data & re-render the chart using *both* current category type and date range
+                fetchAndRenderChart(currentCategoryType, currentStartDate, currentEndDate);
+            });
+
+            // Optionally load default data on page load
+            const defaultStart = moment().startOf('month');
+            const defaultEnd = moment().endOf('month');
+
+            currentStartDate = defaultStart.format('YYYY-MM-DD');
+            currentEndDate = defaultEnd.format('YYYY-MM-DD');
+
+            // Fetch data & render chart for initial view
+            fetchAndRenderChart(currentCategoryType, currentStartDate, currentEndDate);
+        });
+
+
+        const ctx = document.getElementById('myChart');
+
+        // The plugin for totalizing
+        const totalizer = {
+            id: 'totalizer',
+            beforeUpdate: chart => {
+                let totals = {}
+                let utmost = 0
+                chart.data.datasets.forEach((dataset, datasetIndex) => {
+                    if (chart.isDatasetVisible(datasetIndex)) {
+                        utmost = datasetIndex
+                        dataset.data.forEach((value, index) => {
+                            totals[index] = (totals[index] || 0) + value
+                        })
+                    }
+                })
+                Object.keys(totals).forEach(index => {
+                    totals[index] = parseFloat(totals[index].toFixed(2));
+                });
+                chart.$totalizer = {
+                    totals: totals,
+                    utmost: utmost
+                }
+            }
+        }
+
+        /**
+         * Fetch data for the given categoryType, startDate, endDate
+         * and then render the chart.
+         */
+        const fetchAndRenderChart = (categoryType, startDate, endDate) => {
+            const encodedCategoryType = encodeURIComponent(categoryType);
+
+            fetch(`{% url "budget-api:charts_transaction_category" %}?category_type=${encodedCategoryType}&absolute_values=${true}&start_date=${startDate}&end_date=${endDate}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (window.myChart && typeof window.myChart.destroy === 'function') {
+                        window.myChart.destroy();
+                    }
+
+                    window.myChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: data,
+                        plugins: [ChartDataLabels, totalizer],
+                        options: {
+                            scales: {
+                                x: {
+                                    stacked: true,
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    grace: 5,
+                                    stacked: true,
+                                    ticks: {
+                                        callback: function (value) {
+                                            // Show minus sign for expenses, plus for income
+                                            if (categoryType === '-') {
+                                                return `-${value} $`;
+                                            }
+                                            return `${value} $`;
+                                        }
+                                    }
+                                },
+                            },
+                            responsive: true,
+                            borderSkipped: false,
+                            borderWidth: 1,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                title: {
+                                    display: true,
+                                    text: `Chart for Category Type: ${categoryType === '-' ? 'Expenses' : 'Income'}`
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                            label: function (context) {
+                                                let label = context.dataset.label || '';
+
+                                                if (label) {
+                                                    label += ': ';
+                                                }
+                                                let value = context.parsed.y;
+
+                                                if (value !== null) {
+                                                    if (categoryType === '-') {
+                                                        value = -value;
+                                                    }
+
+                                                    label += `${value} $`;
+                                                }
+                                                return label;
+                                            }
+                                        }
+                                },
+                                datalabels: {
+                                    opacity: 1,
+                                    anchor: 'end',
+                                    align: 'top',
+                                    font: {
+                                        size: 14,
+                                        color: '#000',
+                                    },
+                                    formatter: (value, ctx) => {
+                                        let total = ctx.chart.$totalizer.totals[ctx.dataIndex]
+                                        if (categoryType === '-') {
+                                            total = -total;
+                                        }
+                                        return `${total} $`;
+                                    },
+                                    display: function (ctx) {
+                                        return ctx.datasetIndex === ctx.chart.$totalizer.utmost;
+                                    }
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        };
+
+        // When user clicks the 'Expenses' tab
+        document.getElementById('pills-expenses-tab').addEventListener('click', () => {
+            currentCategoryType = '-';
+            // Re-fetch with the currently selected date range
+            fetchAndRenderChart(currentCategoryType, currentStartDate, currentEndDate);
+        });
+
+        // When user clicks the 'Income' tab
+        document.getElementById('pills-income-tab').addEventListener('click', () => {
+            currentCategoryType = '+';
+            // Re-fetch with the currently selected date range
+            fetchAndRenderChart(currentCategoryType, currentStartDate, currentEndDate);
+        });
+
+    </script>
 {% endblock %}

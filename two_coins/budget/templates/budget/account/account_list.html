@@ -11,15 +11,45 @@
 {% block custom_static %}
     {% load static %}
     <link rel="stylesheet" href="{% static 'budget/css/hover.css' %}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css"/>
 {% endblock %}
 
 {% block body %}
     <div class="w-100 vh-100">
         <div class="row m-0 vh-100 d-flex" style="padding: 20px; gap: 20px">
-            <div class="d-flex h-100 flex-column align-items-center col shadow"
+            <div class="d-flex h-100 flex-column col shadow"
                  style="max-width: 520px; padding: 20px; border-radius: 20px; background-color: #FCFCFC">
 
-                <div class="w-100 d-flex flex-wrap justify-content-between" style="gap: 20px; overflow-y: auto; scrollbar-width: none;">
+                <ul class="nav nav-pills d-flex justify-content-between" id="pills-tab" role="tablist"
+                    style="height: 40px">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active d-flex align-items-center" id="pills-expenses-tab"
+                                data-bs-toggle="pill"
+                                data-bs-target="#pills-expenses"
+                                type="button" role="tab" aria-controls="pills-expenses" aria-selected="true">
+                            Default accounts
+                        </button>
+                    </li>
+
+                    <li class="input-group" style="width: 270px">
+                            <span class="input-group-text" style="background-color: transparent"><i
+                                    class="fa-duotone fa-solid fa-calendar-days fa-lg"></i></span>
+                        <input type="text" class="form-control" name="daterange" value="{{ date_range }}"
+                               style="background-color: transparent">
+                    </li>
+
+                </ul>
+
+                <hr class="h-divider"/>
+
+                <div class="w-100 d-flex flex-wrap justify-content-between"
+                     style="gap: 20px; overflow-y: auto; scrollbar-width: none;">
                     {% for account in object_list %}
                         <div class="card"
                              style="width: 230px; height: 150px; border-radius: 16px; border: 1px solid rgba(72, 72, 72, 0.4);">
@@ -74,8 +104,223 @@
 
             </div>
 
-            <div class="d-flex h-100 flex-column align-items-center p-4 col shadow"
-                 style="padding: 20px; border-radius: 20px; background-color: #FCFCFC"></div>
+            <div class="d-flex h-100 flex-column col shadow"
+                 style="padding: 20px; border-radius: 20px; width: 100%; background-color: #FCFCFC; flex: 1; overflow: auto;">
+
+                <canvas id="myChart"></canvas>
+
+                <hr class="h-divider"/>
+            </div>
         </div>
     </div>
+{% endblock %}
+
+
+
+{% block custom_scripts %}
+    <script>
+        let currentStartDate;
+        let currentEndDate;
+
+
+        $(function () {
+            // Initialize the Date Range Picker
+            $('input[name="daterange"]').daterangepicker({
+                ranges: {
+                    'Today': [moment(), moment()],
+                    'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                    'This Week': [moment().startOf('isoWeek'), moment().endOf('isoWeek')],
+                    'Last Week': [moment().subtract(1, 'week').startOf('isoWeek'), moment().subtract(1, 'week').endOf('isoWeek')],
+                    'This Month': [moment().startOf('month'), moment().endOf('month')],
+                    'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                },
+                alwaysShowCalendars: true,
+                locale: {
+                    format: 'MM/DD/YYYY',
+                    separator: ' - ',
+                    applyLabel: 'Apply',
+                    cancelLabel: 'Cancel',
+                    fromLabel: 'From',
+                    toLabel: 'To',
+                    customRangeLabel: 'Custom',
+                    weekLabel: 'W',
+                    daysOfWeek: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+                    monthNames: [
+                        'January', 'February', 'March', 'April', 'May', 'June',
+                        'July', 'August', 'September', 'October', 'November', 'December'
+                    ],
+                    firstDay: 1
+                },
+                drops: 'auto'
+            }, function (start, end) {
+                // Update our global variables whenever user applies new date range
+                currentStartDate = start.format('YYYY-MM-DD');
+                currentEndDate = end.format('YYYY-MM-DD');
+
+                // Fetch data & re-render the chart using *both* current category type and date range
+                fetchAndRenderChart(currentStartDate, currentEndDate);
+            });
+
+            // Optionally load default data on page load
+            const defaultStart = moment().startOf('month');
+            const defaultEnd = moment().endOf('month');
+
+            currentStartDate = defaultStart.format('YYYY-MM-DD');
+            currentEndDate = defaultEnd.format('YYYY-MM-DD');
+
+            // Fetch data & render chart for initial view
+            fetchAndRenderChart(currentStartDate, currentEndDate);
+        });
+
+
+        const ctx = document.getElementById('myChart');
+
+        // The plugin for totalizing
+        const totalizer = {
+            id: 'totalizer',
+            beforeUpdate: (chart) => {
+                const {datasets} = chart.data;
+
+                // If no datasets, bail out safely
+                if (!datasets || datasets.length === 0) {
+                    chart.$totalizer = {totals: [], topmostIndices: []};
+                    return;
+                }
+
+                // Number of data points (assuming all datasets have the same length)
+                const numberOfPoints = datasets[0].data.length;
+
+                // Arrays to hold final totals and the “closest index”
+                const totals = new Array(numberOfPoints).fill(0);
+                const topmostIndices = new Array(numberOfPoints).fill(null);
+
+                // 1) First pass: sum up all visible datasets to get the final total for each index
+                datasets.forEach((dataset, datasetIndex) => {
+                    if (!chart.isDatasetVisible(datasetIndex)) return;
+
+                    dataset.data.forEach((value, i) => {
+                        totals[i] += value;
+                    });
+                });
+
+                // 2) Second pass: figure out which dataset’s partial sum is “closest” to that final total
+                //    but only if the partial sum has the same sign as the total.
+                for (let i = 0; i < numberOfPoints; i++) {
+                    let bestCandidate = 0;
+
+                    for (let d = 1; d < datasets.length; d++) {
+                        if (datasets[d].data[i] > 0 && totals[i] > 0) {
+                            bestCandidate = d;
+                        } else if (datasets[d].data[i] < 0 && totals[i] < 0) {
+                            bestCandidate = d;
+                        }
+                    }
+
+                    topmostIndices[i] = bestCandidate;
+                }
+
+                // Optionally round totals
+                for (let i = 0; i < totals.length; i++) {
+                    totals[i] = parseFloat(totals[i].toFixed(2));
+                }
+
+                // Attach to the chart object
+                chart.$totalizer = {
+                    totals,
+                    topmostIndices,
+                };
+            },
+        };
+
+        /**
+         * Fetch data for the given categoryType, startDate, endDate
+         * and then render the chart.
+         */
+        const fetchAndRenderChart = (startDate, endDate) => {
+            fetch(`{% url "budget-api:charts_transaction_account" %}?start_date=${startDate}&end_date=${endDate}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (window.myChart && typeof window.myChart.destroy === 'function') {
+                        window.myChart.destroy();
+                    }
+
+                    window.myChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: data,
+                        plugins: [ChartDataLabels, totalizer],
+                        options: {
+                            scales: {
+                                x: {
+                                    stacked: true,
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    grace: 5,
+                                    stacked: true,
+                                    ticks: {
+                                        callback: function (value) {
+                                            return `${value} $`;
+                                        }
+                                    }
+                                },
+                            },
+                            responsive: true,
+                            borderSkipped: false,
+                            borderWidth: 1,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                title: {
+                                    display: true,
+                                    text: `Chart for sum of transactions by accounts`
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                                let label = context.dataset.label || '';
+
+                                                if (label) {
+                                                    label += ': ';
+                                                }
+                                                if (context.parsed.y !== null) {
+                                                    label += `${context.parsed.y} $`;
+                                                }
+                                                return label;
+                                            }
+                                    }
+                                },
+                                datalabels: {
+                                    opacity: 1,
+                                    font: {
+                                        size: 14,
+                                        color: '#000',
+                                    },
+                                    display: (ctx) => {
+                                        const dataIndex = ctx.dataIndex;
+                                        const datasetIndex = ctx.datasetIndex;
+                                        const {topmostIndices} = ctx.chart.$totalizer || {};
+                                        return datasetIndex === topmostIndices[dataIndex];
+                                    },
+                                    anchor: (ctx) => {
+                                        const total = ctx.chart.$totalizer.totals[ctx.dataIndex];
+                                        return total >= 0 ? 'end' : 'start';
+                                    },
+                                    align: (ctx) => {
+                                        const total = ctx.chart.$totalizer.totals[ctx.dataIndex];
+                                        return total >= 0 ? 'top' : 'bottom';
+                                    },
+                                    offset: 5,
+                                    formatter: (value, ctx) => {
+                                        let total = ctx.chart.$totalizer.totals[ctx.dataIndex];
+                                        return `${total} $`;
+                                    },
+                                }
+                            }
+                        }
+                    });
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        };
+    </script>
 {% endblock %}

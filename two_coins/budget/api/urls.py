@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views import TransactionCreateListView, TransactionDeleteView, TransactionChartDataView, TransferListView, \
-    CombinedActionListView
+    CombinedActionListView, TransactionsByCategoryChartDataView, TransactionsByAccountChartDataView
 
 urlpatterns = [
     path('combined_actions/', CombinedActionListView.as_view(), name='combined_actions'),
@@ -11,7 +11,9 @@ urlpatterns = [
     path('transaction/', TransactionCreateListView.as_view(), name='transaction'),
     path('transaction/<int:pk>', TransactionDeleteView.as_view(), name='transaction'),
 
-    path('charts/transaction/', TransactionChartDataView.as_view(), name='charts_transaction')
+    path('charts/transaction/', TransactionChartDataView.as_view(), name='charts_transaction'),
+    path('charts/transaction/group_by_category/', TransactionsByCategoryChartDataView.as_view(), name='charts_transaction_category'),
+    path('charts/transaction/group_by_account/', TransactionsByAccountChartDataView.as_view(), name='charts_transaction_account')
 ]
 
 app_name = 'budget-api'

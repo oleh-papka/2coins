@@ -20,6 +20,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/ChartData'
           description: ''
+  /api/charts/transaction/group_by_category:
+    get:
+      operationId: charts_transaction_group_by_category_retrieve
+      tags:
+      - charts
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StackedBarChartData'
+          description: ''
   /api/combined_actions/:
     get:
       operationId: combined_actions_retrieve
@@ -183,7 +199,7 @@ components:
         balance:
           type: string
           format: decimal
-          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
           title: Account balance
         currency:
           $ref: '#/components/schemas/Currency'
@@ -289,6 +305,20 @@ components:
       description: |-
         * `F` - Fiat money
         * `C` - Crypto currency
+    StackedBarChartData:
+      type: object
+      properties:
+        labels:
+          type: array
+          items:
+            type: string
+            format: date-time
+        datasets:
+          type: array
+          items: {}
+      required:
+      - datasets
+      - labels
     Transaction:
       type: object
       properties:
@@ -298,11 +328,11 @@ components:
         amount:
           type: string
           format: decimal
-          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         amount_converted:
           type: string
           format: decimal
-          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
           nullable: true
           title: Amount in account's currency
         account:
@@ -334,12 +364,12 @@ components:
         amount_from:
           type: string
           format: decimal
-          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
           title: Amount transferring from account
         amount_to:
           type: string
           format: decimal
-          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
           title: Amount transferring to account
         account_from:
           $ref: '#/components/schemas/Account'
