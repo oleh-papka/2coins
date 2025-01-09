@@ -10,23 +10,25 @@
 {% block body %}
     <div class="w-100 vh-100">
         <div class="row m-0" style="padding: 20px; gap: 20px">
-            <div class="d-flex flex-column col shadow rounded-4" id="table-col"
-                 style="max-width: 450px; min-height: 400px; padding: 20px; background-color: #FCFCFC">
+            <div class="d-flex flex-column col shadow" id="table-col"
+                 style="max-width: 520px; overflow-y: hidden; padding: 20px; border-radius: 20px; background-color: #FCFCFC">
 
-                <h2 class="fw-normal">Last transactions:</h2>
+                <h2 class="fw-normal" style="height: 40px">Last transactions:</h2>
+
                 <hr class="h-divider"/>
 
                 {% for action in combined_actions %}
-                    <div class="{% if not forloop.last %}mb-3{% endif %} border border-2 rounded-3 p-2 d-flex justify-content-between">
-                        <div class="card-title mb-0 me-2 d-flex align-items-center" style="height: 2.5rem;">
+                    <div class="{% if not forloop.last %}mb-3{% endif %} border border-2 rounded-3 d-flex justify-content-between"
+                         style="padding: 10px;">
+                        <div class="card-title mb-0 me-2 d-flex align-items-center" style="height: 3rem;">
 
-                            <div class="d-flex justify-content-center align-items-center rounded-2 me-2"
-                                 style="width: 2.5rem; height: 2.5rem;  {% if action.action_type == 'trf' %}background-color: #0CCAF02A{% else %}background-color: #{{ action.category.color }}2A{% endif %}">
-                                <i class="{% if action.action_type == 'trf' %}fa-duotone fa-solid fa-right-left{% else %}{{ action.category.icon }}{% endif %}"
+                            <div class="d-flex justify-content-center align-items-center rounded-2"
+                                 style="width: 3rem; height: 3rem; margin-right: 10px; {% if action.action_type == 'trf' %}background-color: #0CCAF02A{% else %}background-color: #{{ action.category.color }}2A{% endif %}">
+                                <i class="{% if action.action_type == 'trf' %}fa-duotone fa-solid fa-right-left{% else %}{{ action.category.icon }}{% endif %} fa-lg"
                                    style="{% if action.action_type == 'trf' %}color: #0CCAF0{% else %}color: #{{ action.category.color }}{% endif %}"></i>
                             </div>
 
-                            <div class="d-flex flex-column">
+                            <div class="d-flex flex-column justify-content-around" style="height: 3.5rem;">
                                 <p class="m-0">
                                     {% if action.action_type == 'trf' %}Transfer{% else %}
                                         {{ action.category.name }}{% endif %}
@@ -36,17 +38,17 @@
                                 </p>
                                 <small class="m-0 text-secondary">
                                     {% if action.action_type == 'trf' %}
-                                        <i class="{{ action.account_from.icon }} me"
+                                        <i class="{{ action.account_from.icon }} fa-lg me"
                                            style="color: #{{ action.account_from.color }}"></i>
                                         {{ action.account_from.name }}
 
-                                        <i class="fa-duotone fa-arrow-right mx-2 text-secondary"></i>
+                                        <i class="fa-duotone fa-arrow-right fa-lg mx-2 text-secondary"></i>
 
-                                        <i class="{{ action.account_to.icon }} me"
+                                        <i class="{{ action.account_to.icon }} fa-lg me"
                                            style="color: #{{ action.account_to.color }}"></i>
                                         {{ action.account_to.name }}
                                     {% else %}
-                                        <i class="{{ action.account.icon }} me"
+                                        <i class="{{ action.account.icon }} fa-lg me"
                                            style="color: #{{ action.account.color }}"></i>
                                         {{ action.account.name }}
                                     {% endif %}

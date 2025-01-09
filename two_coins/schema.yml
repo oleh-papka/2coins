@@ -20,7 +20,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/ChartData'
           description: ''
-  /api/charts/transaction/group_by_category:
+  /api/charts/transaction/group_by_account/:
+    get:
+      operationId: charts_transaction_group_by_account_retrieve
+      tags:
+      - charts
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StackedBarChartData'
+          description: ''
+  /api/charts/transaction/group_by_category/:
     get:
       operationId: charts_transaction_group_by_category_retrieve
       tags:
