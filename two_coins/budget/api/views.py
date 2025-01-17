@@ -1,21 +1,21 @@
 from collections import defaultdict
 
-from django.db.models import Sum, Case, When, F, Q
-from django.db.models.functions import TruncDate, Round
+from django.db.models import Q, Case, When, F, Sum
+from django.db.models.functions import TruncDate, Round, ExtractWeek, TruncWeek, TruncMonth, ExtractMonth
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import mixins, generics
+from rest_framework import generics
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
-from misc.utils import get_date_range, get_combined_actions
+from misc.utils import get_date_range, get_combined_actions, get_current_month_dates
 from .serializers import TransactionSerializer, TransferSerializer, ChartDataSerializer, \
     CombinedActionQueryParamsSerializer, CombinedActionSerializer, TransactionCombinedSerializer, \
-    TransferCombinedSerializer, StackedBarChartDataSerializer
+    TransferCombinedSerializer, StackedChartDataSerializer
 from ..models import Transaction, Transfer
 
 
-class TransactionCreateListView(mixins.ListModelMixin,
-                                generics.CreateAPIView):
+class TransactionListView(generics.ListAPIView):
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer
 
@@ -23,9 +23,13 @@ class TransactionCreateListView(mixins.ListModelMixin,
         parameters=[
             OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date'),
             OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date'),
-            OpenApiParameter(name='account_id', type=OpenApiTypes.INT, description='Account ID'),
-            OpenApiParameter(name='category_id', type=OpenApiTypes.INT, description='Category ID'),
+            OpenApiParameter(name='account_id', type=OpenApiTypes.INT, description='Account ID to sort by'),
+            OpenApiParameter(name='category_id', type=OpenApiTypes.INT, description='Category ID to sort by'),
         ],
+        description='Get transactions within a specified date range '
+                    '(if not provided defaults to current month), '
+                    'optionally sorted by account or category.',
+        summary='Retrieves Transactions only',
     )
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -54,14 +58,41 @@ class TransactionCreateListView(mixins.ListModelMixin,
         return Response(self.get_serializer(txn_data, many=True).data)
 
 
-class TransactionDeleteView(generics.DestroyAPIView):
-    queryset = Transaction.objects.all()
-    serializer_class = TransactionSerializer
-
-
 class TransferListView(generics.ListAPIView):
     queryset = Transfer.objects.all()
     serializer_class = TransferSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date'),
+            OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date'),
+            OpenApiParameter(name='account_id', type=OpenApiTypes.INT, description='Account ID to sort by'),
+        ],
+        description='Get transfers within a specified date range '
+                    '(if not provided defaults to current month), '
+                    'optionally sorted by account.',
+        summary='Retrieves Transfers only',
+    )
+    def get(self, request, *args, **kwargs):
+        user_id = request.user.id
+
+        start_date = request.query_params.get('start_date', None)
+        end_date = request.query_params.get('end_date', None)
+        account_id = request.query_params.get('account_id', None)
+
+        if not start_date or not end_date:
+            start_date, end_date = get_current_month_dates()
+
+        if account_id:
+            transfer_filters = Q(account_to=account_id) | Q(account_from=account_id)
+        else:
+            transfer_filters = Q(account_to__profile__user_id=user_id) | Q(account_from__profile__user_id=user_id)
+
+        txn_data = Transfer.objects.filter(transfer_filters, date__range=(start_date, end_date)).order_by(
+            '-date').annotate(
+            truncated_date=TruncDate('date')).order_by('-date')
+
+        return Response(self.get_serializer(txn_data, many=True).data)
 
 
 class CombinedActionListView(generics.GenericAPIView):
@@ -71,10 +102,14 @@ class CombinedActionListView(generics.GenericAPIView):
         parameters=[
             OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date'),
             OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date'),
-            OpenApiParameter(name='account_id', type=OpenApiTypes.INT, description='Account ID'),
-            OpenApiParameter(name='category_id', type=OpenApiTypes.INT, description='Category ID'),
+            OpenApiParameter(name='account_id', type=OpenApiTypes.INT, description='Account ID to sort by'),
+            OpenApiParameter(name='category_id', type=OpenApiTypes.INT, description='Category ID to sort by'),
             OpenApiParameter(name='all_transfers', type=OpenApiTypes.BOOL, description='Include all transfers'),
         ],
+        description='Get transactions and transfers within a specified date range '
+                    '(if not provided defaults to current month), '
+                    'optionally sorted by account.',
+        summary='Retrieves Transactions and Transfers',
     )
     def get(self, request, *args, **kwargs):
         serializer = CombinedActionQueryParamsSerializer(data=request.query_params)
@@ -109,6 +144,16 @@ class CombinedActionListView(generics.GenericAPIView):
 class TransactionChartDataView(generics.GenericAPIView):
     serializer_class = ChartDataSerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date'),
+            OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date'),
+            OpenApiParameter(name='account_id', type=OpenApiTypes.INT, description='Account ID'),
+            OpenApiParameter(name='category_id', type=OpenApiTypes.INT, description='Category ID'),
+            OpenApiParameter(name='absolute_values', type=OpenApiTypes.BOOL,
+                             description='Override values to absolute values'),
+        ],
+    )
     def get(self, request, *args, **kwargs):
         start_date, end_date = get_date_range(request.query_params.get('start_date', None),
                                               request.query_params.get('end_date', None))
@@ -136,8 +181,6 @@ class TransactionChartDataView(generics.GenericAPIView):
                 .annotate(date_only=TruncDate('date'))
                 .order_by('date_only')
             )
-
-
 
             for trf in trf_data:
                 if trf.account_from.currency == trf.account_to.currency:
@@ -223,7 +266,7 @@ class TransactionChartDataView(generics.GenericAPIView):
 
 
 class TransactionsByCategoryChartDataView(generics.GenericAPIView):
-    serializer_class = StackedBarChartDataSerializer
+    serializer_class = StackedChartDataSerializer
 
     def get(self, request, *args, **kwargs):
         category_type = request.query_params.get('category_type', None)
@@ -301,7 +344,7 @@ class TransactionsByCategoryChartDataView(generics.GenericAPIView):
 
 
 class TransactionsByAccountChartDataView(generics.GenericAPIView):
-    serializer_class = StackedBarChartDataSerializer
+    serializer_class = StackedChartDataSerializer
 
     def get(self, request, *args, **kwargs):
         absolute_values = request.query_params.get('absolute_values', None)
@@ -368,6 +411,124 @@ class TransactionsByAccountChartDataView(generics.GenericAPIView):
                     }
                 }
                 for account_name, account in dataset_dict.items()
+            ]
+        }
+
+        return Response(data)
+
+
+class DashboardDoughnutChartView(generics.GenericAPIView):
+    serializer_class = StackedChartDataSerializer
+
+    def get(self, request, *args, **kwargs):
+        group_by = request.query_params.get('group_by', 'category').lower()
+        valid_groupings = {
+            'category': {
+                'name_field': 'category__name',
+                'color_field': 'category__color',
+                'label': 'Total by Category'
+            },
+            'account': {
+                'name_field': 'account__name',
+                'color_field': 'account__color',
+                'label': 'Total by Account'
+            }
+        }
+
+        grouping = valid_groupings.get(group_by)
+        if not grouping:
+            raise ValidationError({
+                'group_by': 'Invalid value. Expected "category" or "account".'
+            })
+
+        name_field = grouping['name_field']
+        color_field = grouping['color_field']
+        label = grouping['label']
+
+        txn_data = (
+            Transaction.objects
+            .filter(account__profile__user=request.user)
+            .values(name_field, color_field)
+            .annotate(
+                total=Round(
+                    Sum(
+                        Case(
+                            When(amount_converted__isnull=False, then=F('amount_converted')),
+                            default=F('amount'),
+                        )
+                    ), 2
+                )
+            )
+        )
+
+        colors = [f"#{item[color_field]}" for item in txn_data]
+
+        data = {
+            'labels': [item[name_field] for item in txn_data],
+            'datasets': [
+                {
+                    'label': label,
+                    'data': [item['total'] for item in txn_data],
+                    'backgroundColor': [f"{color}6A" for color in colors],
+                    'borderColor': colors,
+                    'borderWidth': 1
+                }
+            ]
+        }
+
+        return Response(data)
+
+
+class DashboardBalanceChartView(generics.GenericAPIView):
+    serializer_class = StackedChartDataSerializer
+
+    def get(self, request, *args, **kwargs):
+        group_by = request.query_params.get('group_by', 'week').lower()
+
+        grouping_configs = {
+            'week': {
+                'trunc_func': TruncWeek(F('date')),
+                'extract_func': ExtractWeek(F('date')),
+                'label': 'Total by Week',
+                'label_template': lambda item: f"Week {item['period_num']:02d}",
+            },
+            'month': {
+                'trunc_func': TruncMonth(F('date')),
+                'extract_func': ExtractMonth(F('date')),
+                'label': 'Total by Month',
+                'label_template': lambda item: f"Month {item['period_num']:02d}",
+            }
+        }
+
+        config = grouping_configs.get(group_by)
+        if not config:
+            raise ValidationError({
+                'group_by': 'Invalid value. Expected "week" or "month".'
+            })
+
+        queryset = (
+            Transaction.objects
+            .filter(account__profile__user=request.user)
+            .values(period=config['trunc_func'])
+            .annotate(period_num=config['extract_func'])
+            .annotate(
+                total=Sum(
+                    Case(
+                        When(amount_converted__isnull=False, then=F('amount_converted')),
+                        default=F('amount'),
+                    )
+                )
+            )
+            .order_by('period')[:12]
+        )
+
+        data = {
+            'labels': [config['label_template'](item) for item in queryset],
+            'datasets': [
+                {
+                    'label': config['label'],
+                    'data': [round(item['total'] or 0, 2) for item in queryset],
+                }
             ]
         }
 

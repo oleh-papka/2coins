@@ -73,6 +73,6 @@ class ChartDataSerializer(serializers.Serializer):
     data = serializers.ListField(child=serializers.IntegerField())
 
 
-class StackedBarChartDataSerializer(serializers.Serializer):
+class StackedChartDataSerializer(serializers.Serializer):
     labels = serializers.ListField(child=serializers.DateTimeField())
     datasets = serializers.ListField()

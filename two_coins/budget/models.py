@@ -29,7 +29,7 @@ class Currency(models.Model):
                                      verbose_name="Currency type")
     symbol = models.CharField(null=False,
                               blank=False,
-                              max_length=2,
+                              max_length=5,
                               verbose_name="Symbol",
                               unique=True)
     abbr = models.CharField(null=False,

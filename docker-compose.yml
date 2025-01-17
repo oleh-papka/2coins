@@ -4,9 +4,9 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_DB
-      - POSTGRES_USER
-      - POSTGRES_PASSWORD
+      - POSTGRES_DB=${POSTGRES_DB:-2coinsDB}
+      - POSTGRES_USER=${POSTGRES_USER:-default_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-1234}
     env_file:
       - .env
     volumes:

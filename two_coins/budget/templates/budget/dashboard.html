@@ -7,11 +7,18 @@
 
 {% block title %}2coins | Dashboard{% endblock %}
 
+{% block custom_static %}
+    {% load static %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+{% endblock %}
+
 {% block body %}
-    <div class="w-100 vh-100">
-        <div class="row m-0" style="padding: 20px; gap: 20px">
+    <div class="w-100 h-100 row" style="overflow-y: auto; margin: 0">
+        <div class="column d-flex flex-column m-0" style="padding: 20px; gap: 20px; width: 560px;">
             <div class="d-flex flex-column col shadow" id="table-col"
-                 style="max-width: 520px; overflow-y: hidden; padding: 20px; border-radius: 20px; background-color: #FCFCFC">
+                 style="flex-grow:0; padding: 20px; border-radius: 20px; background-color: #FCFCFC">
 
                 <h2 class="fw-normal" style="height: 40px">Last transactions:</h2>
 
@@ -20,15 +27,15 @@
                 {% for action in combined_actions %}
                     <div class="{% if not forloop.last %}mb-3{% endif %} border border-2 rounded-3 d-flex justify-content-between"
                          style="padding: 10px;">
-                        <div class="card-title mb-0 me-2 d-flex align-items-center" style="height: 3rem;">
+                        <div class="card-title mb-0 me-2 d-flex align-items-center" style="height: 2.5rem;">
 
                             <div class="d-flex justify-content-center align-items-center rounded-2"
-                                 style="width: 3rem; height: 3rem; margin-right: 10px; {% if action.action_type == 'trf' %}background-color: #0CCAF02A{% else %}background-color: #{{ action.category.color }}2A{% endif %}">
+                                 style="width: 2.5rem; height: 2.5rem; margin-right: 10px; {% if action.action_type == 'trf' %}background-color: #0CCAF02A{% else %}background-color: #{{ action.category.color }}2A{% endif %}">
                                 <i class="{% if action.action_type == 'trf' %}fa-duotone fa-solid fa-right-left{% else %}{{ action.category.icon }}{% endif %} fa-lg"
                                    style="{% if action.action_type == 'trf' %}color: #0CCAF0{% else %}color: #{{ action.category.color }}{% endif %}"></i>
                             </div>
 
-                            <div class="d-flex flex-column justify-content-around" style="height: 3.5rem;">
+                            <div class="d-flex flex-column justify-content-around" style="height: 2.5rem;">
                                 <p class="m-0">
                                     {% if action.action_type == 'trf' %}Transfer{% else %}
                                         {{ action.category.name }}{% endif %}
@@ -38,17 +45,17 @@
                                 </p>
                                 <small class="m-0 text-secondary">
                                     {% if action.action_type == 'trf' %}
-                                        <i class="{{ action.account_from.icon }} fa-lg me"
+                                        <i class="{{ action.account_from.icon }} fa-lx me"
                                            style="color: #{{ action.account_from.color }}"></i>
                                         {{ action.account_from.name }}
 
-                                        <i class="fa-duotone fa-arrow-right fa-lg mx-2 text-secondary"></i>
+                                        <i class="fa-duotone fa-arrow-right fa-lx mx-2 text-secondary"></i>
 
-                                        <i class="{{ action.account_to.icon }} fa-lg me"
+                                        <i class="{{ action.account_to.icon }} fa-lx me"
                                            style="color: #{{ action.account_to.color }}"></i>
                                         {{ action.account_to.name }}
                                     {% else %}
-                                        <i class="{{ action.account.icon }} fa-lg me"
+                                        <i class="{{ action.account.icon }} fa-lx me"
                                            style="color: #{{ action.account.color }}"></i>
                                         {{ action.account.name }}
                                     {% endif %}
@@ -89,6 +96,281 @@
                     </div>
                 {% endfor %}
             </div>
+
+            <div class="d-flex flex-column col shadow"
+                 style="padding: 20px; border-radius: 20px; background-color: #FCFCFC;">
+                <div class="d-flex justify-content-between">
+                    <h2 class="fw-normal" style="height: 40px">{% now "F" %} overview:</h2>
+
+                    <ul class="nav nav-pills d-flex gap-2" id="pills-tab" role="tablist"
+                        style="height: 40px; width: auto">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active d-flex align-items-center" id="pills-account-tab"
+                                    data-bs-toggle="pill"
+                                    data-bs-target="#pills-account"
+                                    type="button" role="tab" aria-controls="pills-account" aria-selected="true">
+                                Account
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link d-flex align-items-center" id="pills-category-tab"
+                                    data-bs-toggle="pill"
+                                    data-bs-target="#pills-category"
+                                    type="button" role="tab" aria-controls="pills-category" aria-selected="false">
+                                Category
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+
+                <hr class="h-divider"/>
+
+
+                <div class="tab-content" id="pills-tabContent">
+                    <div class="tab-pane show active mb-2" id="pills-account" role="tabpanel"
+                         aria-labelledby="pills-account-tab"
+                         tabindex="0">
+                        <canvas id="account-doughnut-chart"></canvas>
+                    </div>
+
+                    <div class="tab-pane mb-2" id="pills-category" role="tabpanel"
+                         aria-labelledby="pills-category-tab"
+                         tabindex="0">
+                        <canvas id="category-doughnut-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="column d-flex flex-column col m-0" style="padding: 20px 20px 20px 0; gap: 20px;">
+            <div class="d-flex flex-column col shadow"
+                 style="flex-grow:0; padding: 20px; border-radius: 20px; background-color: #FCFCFC;">
+                <div class="d-flex justify-content-between">
+                    <h2 class="fw-normal" style="height: 40px">Balance overview:</h2>
+
+
+                    <ul class="nav nav-pills d-flex gap-2" id="pills-tab" role="tablist"
+                        style="height: 40px; width: auto">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active d-flex align-items-center" id="pills-months-tab"
+                                    data-bs-toggle="pill"
+                                    data-bs-target="#pills-months"
+                                    type="button" role="tab" aria-controls="pills-months" aria-selected="true">
+                                Last 3 months
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link d-flex align-items-center" id="pills-year-tab"
+                                    data-bs-toggle="pill"
+                                    data-bs-target="#pills-year"
+                                    type="button" role="tab" aria-controls="pills-year" aria-selected="false">
+                                Year review
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <hr class="h-divider"/>
+
+
+                <div class="tab-content" id="pills-tabContent">
+                    <div class="tab-pane show active mb-2" id="pills-months" role="tabpanel"
+                         aria-labelledby="pills-months-tab"
+                         tabindex="0">
+                        <canvas id="week-chart"></canvas>
+                    </div>
+
+                    <div class="tab-pane mb-2" id="pills-year" role="tabpanel"
+                         aria-labelledby="pills-year-tab"
+                         tabindex="0">
+                        <canvas id="month-chart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+{% endblock %}
+
+
+{% block custom_scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const categoryCanvas = document.getElementById('category-doughnut-chart');
+            const accountCanvas = document.getElementById('account-doughnut-chart');
+
+            const weekCanvas = document.getElementById('week-chart');
+            const monthCanvas = document.getElementById('month-chart');
+
+            if (!categoryCanvas || !accountCanvas || !weekCanvas || !monthCanvas) {
+                console.error('Canvas elements not found!');
+                return;
+            }
+
+            const categoryCtx = categoryCanvas.getContext('2d');
+            const accountCtx = accountCanvas.getContext('2d');
+
+            const weekCtx = weekCanvas.getContext('2d');
+            const monthCtx = monthCanvas.getContext('2d');
+
+            const categoryChartRef = {instance: null};
+            const accountChartRef = {instance: null};
+
+            const weekChartRef = {instance: null};
+            const monthChartRef = {instance: null};
+
+            const fetchAndRenderBalanceChart = (ctx, url, chartInstanceRef) => {
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                            if (chartInstanceRef.instance && typeof chartInstanceRef.instance.destroy === 'function') {
+                                chartInstanceRef.instance.destroy();
+                            }
+
+                            chartInstanceRef.instance = new Chart(ctx, {
+                                type: 'bar',
+                                data: data,
+                                plugins: [ChartDataLabels],
+                                options: {
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            grace: 5,
+                                            ticks: {
+                                                callback: function (value) {
+                                                    return `${value} $`;
+                                                }
+                                            }
+                                        },
+                                    },
+                                    responsive: true,
+                                    borderRadius: 5,
+                                    borderSkipped: false,
+                                    borderWidth: 1,
+                                    plugins: {
+                                        legend: {
+                                            position: 'top',
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function (context) {
+                                                    return `${context.raw} $`;
+                                                }
+                                            },
+
+                                        },
+                                        datalabels: {
+                                            opacity: 1,
+                                            font: {
+                                                size: 14,
+                                            },
+                                            anchor: (ctx) => {
+                                                const total = ctx.raw;
+                                                return total >= 0 ? 'end' : 'start';
+                                            },
+                                            align: (ctx) => {
+                                                const total = ctx.raw;
+                                                return total >= 0 ? 'top' : 'bottom';
+                                            },
+                                            offset: 5,
+                                            formatter: (value, ctx) => {
+                                                return `${value} $`;
+                                            },
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    ).catch(error => console.error('Error fetching data:', error));
+            };
+
+
+            const fetchAndRenderDoughnutChart = (ctx, url, chartInstanceRef) => {
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                            if (chartInstanceRef.instance && typeof chartInstanceRef.instance.destroy === 'function') {
+                                chartInstanceRef.instance.destroy();
+                            }
+
+                            chartInstanceRef.instance = new Chart(ctx, {
+                                type: 'doughnut',
+                                data: data,
+                                plugins: [ChartDataLabels],
+                                options: {
+                                    responsive: true,
+                                    plugins: {
+                                        legend: {
+                                            position: 'top',
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function (context) {
+                                                    return `${context.raw} $`;
+                                                }
+                                            },
+
+                                        },
+                                        datalabels: {
+                                            backgroundColor: function (context) {
+                                                return context.dataset.borderColor;
+                                            },
+                                            borderColor: 'white',
+                                            borderRadius: 5,
+                                            borderWidth: 2,
+                                            color: 'white',
+                                            padding: 5,
+                                            formatter: (value, ctx) => {
+                                                // Calculate the sum of absolute values
+                                                const sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + Math.abs(b), 0);
+                                                // Calculate the percentage based on the absolute value
+                                                const percentage = ((Math.abs(value) / sum) * 100).toFixed(1) + '%';
+                                                return percentage;
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    ).catch(error => console.error('Error fetching data:', error));
+            };
+
+            // Fetch and render Category Doughnut Chart
+            fetchAndRenderDoughnutChart(
+                categoryCtx,
+                "{% url 'budget-api:dashboard_doughnut_chart' %}?group_by=category", // Ensure this is correctly rendered
+                categoryChartRef,
+            );
+
+            // Fetch and render Account Doughnut Chart
+            fetchAndRenderDoughnutChart(
+                accountCtx,
+                "{% url 'budget-api:dashboard_doughnut_chart'%}?group_by=account", // Ensure this is correctly rendered
+                accountChartRef,
+            );
+
+            fetchAndRenderBalanceChart(
+                weekCtx,
+                "{% url 'budget-api:dashboard_balance_chart' %}?group_by=week",
+                weekChartRef,
+            );
+
+            fetchAndRenderBalanceChart(
+                monthCtx,
+                "{% url 'budget-api:dashboard_balance_chart'%}?group_by=month",
+                monthChartRef,
+            );
+        });
+
+    </script>
 {% endblock %}
