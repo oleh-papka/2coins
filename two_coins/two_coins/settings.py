@@ -15,6 +15,24 @@ from pathlib import Path
 from django.contrib.messages import constants as message_constants
 from dotenv import load_dotenv
 
+TRUE_VALS = ('true', 't', '1')
+FALSE_VALS = ('false', 'f', '0')
+VALID_VALS = TRUE_VALS + FALSE_VALS
+
+
+def get_bool_env_variable(name: str, default: bool | None = None) -> bool:
+    value = os.environ.get(name, default)
+
+    if not value:
+        raise ValueError(f'Environment variable "{name}" is not set!')
+
+    value = value.lower()
+    if value not in VALID_VALS:
+        raise ValueError(f'Environment variable "{name}" must be one of {VALID_VALS}')
+
+    return value in TRUE_VALS
+
+
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -155,3 +173,13 @@ SPECTACULAR_SETTINGS = {
 }
 
 AUTH_USER_MODEL = 'profiles.CustomUser'
+
+ENABLE_AUTH0 = get_bool_env_variable('ENABLE_AUTH0')
+
+if ENABLE_AUTH0:
+    CSRF_COOKIE_SECURE = False  # Use True in production with HTTPS
+    SESSION_COOKIE_SECURE = False  # Use True in production with HTTPS
+
+    AUTH0_DOMAIN = os.environ.get("AUTH0_DOMAIN")
+    AUTH0_CLIENT_ID = os.environ.get("AUTH0_CLIENT_ID")
+    AUTH0_CLIENT_SECRET = os.environ.get("AUTH0_CLIENT_SECRET")
