@@ -241,11 +241,6 @@
                                         y: {
                                             beginAtZero: true,
                                             grace: 5,
-                                            ticks: {
-                                                callback: function (value) {
-                                                    return `${value} $`;
-                                                }
-                                            }
                                         },
                                     },
                                     responsive: true,
@@ -256,15 +251,10 @@
                                         legend: {
                                             position: 'top',
                                         },
-                                        tooltip: {
-                                            callbacks: {
-                                                label: function (context) {
-                                                    return `${context.raw} $`;
-                                                }
-                                            },
-
-                                        },
                                         datalabels: {
+                                            display: function (context) {
+                                                return context.dataset.data[context.dataIndex] !== 0; // Hide if value is 0
+                                            },
                                             opacity: 1,
                                             font: {
                                                 size: 14,
@@ -278,9 +268,6 @@
                                                 return total >= 0 ? 'top' : 'bottom';
                                             },
                                             offset: 5,
-                                            formatter: (value, ctx) => {
-                                                return `${value} $`;
-                                            },
                                         }
                                     }
                                 }
@@ -312,14 +299,6 @@
                                     plugins: {
                                         legend: {
                                             position: 'top',
-                                        },
-                                        tooltip: {
-                                            callbacks: {
-                                                label: function (context) {
-                                                    return `${context.raw} $`;
-                                                }
-                                            },
-
                                         },
                                         datalabels: {
                                             backgroundColor: function (context) {

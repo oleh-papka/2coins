@@ -119,13 +119,10 @@ class CategoryForm(BaseStyleForm):
         model = models.Category
 
 
-class TransactionForm(BaseTransactionForm):
+class TransactionForm(forms.ModelForm):
     class Meta:
         model = models.Transaction
         fields = '__all__'
-
-    def clean_amount_converted(self):
-        return self.clean_positive_value("amount_converted")
 
     def clean_date(self):
         data = self.cleaned_data.get("date")
@@ -133,21 +130,37 @@ class TransactionForm(BaseTransactionForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        amount = abs(cleaned_data.get('amount'))
-        amount = amount if cleaned_data.get("category").category_type == '+' else -amount
+        account = cleaned_data.get('account')
+        category = cleaned_data.get('category')
+        currency = cleaned_data.get('currency')
+        amount_raw = cleaned_data.get('amount')
+        amount_converted_raw = cleaned_data.get('amount_converted')
+
+        # Set correct positive/negative values to both amount and amount_converted
+        if category.category_type == '+':
+            amount = abs(amount_raw)
+            amount_converted = abs(amount_converted_raw) if amount_converted_raw is not None else None
+        else:
+            amount = -abs(amount_raw)
+            amount_converted = -abs(amount_converted_raw) if amount_converted_raw is not None else None
+
+        # Check if amount_converted has value when used not account's currency
+        if account.currency != currency and not amount_converted:
+            self.add_error('amount_converted', 'The transaction in different currency is not converted!.')
 
         # Check if account have enough funds for expense
-        if amount < 0:
-            amount_converted = cleaned_data.get('amount_converted')
-            account = cleaned_data.get('account')
+        if category.category_type == '-':
 
-            amount_to_check = amount if not amount_converted else amount_converted
-            field_name = 'amount_converted' if amount_converted else 'amount'
+            if not amount_converted:
+                amount_to_check, field_name = amount, 'amount'
+            else:
+                amount_to_check, field_name = amount_converted, 'amount_converted'
 
             if abs(amount_to_check) > account.balance and not account.allow_negative_balance:
                 self.add_error(field_name, 'Insufficient funds in the account!')
 
         cleaned_data['amount'] = amount
+        cleaned_data['amount_converted'] = amount_converted
 
         return cleaned_data
 

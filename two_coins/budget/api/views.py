@@ -1,7 +1,10 @@
+import itertools
 from collections import defaultdict
+from datetime import timedelta
 
 from django.db.models import Q, Case, When, F, Sum
 from django.db.models.functions import TruncDate, Round, ExtractWeek, TruncWeek, TruncMonth, ExtractMonth
+from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import generics
@@ -11,8 +14,121 @@ from rest_framework.response import Response
 from misc.utils import get_date_range, get_combined_actions, get_current_month_dates
 from .serializers import TransactionSerializer, TransferSerializer, ChartDataSerializer, \
     CombinedActionQueryParamsSerializer, CombinedActionSerializer, TransactionCombinedSerializer, \
-    TransferCombinedSerializer, StackedChartDataSerializer
-from ..models import Transaction, Transfer
+    TransferCombinedSerializer, StackedChartDataSerializer, TransactionSimpleSerializer, AccountSimpleSerializer, \
+    CategorySimpleSerializer
+from ..models import Transaction, Transfer, Account, Category, Currency
+
+
+def get_common_currencies(user, time_delta, now):
+    """Fetch currencies that appear in every transaction pair."""
+
+    currency_pairs = list(
+        Transaction.objects
+        .filter(account__profile__user=user, date__range=(time_delta, now))
+        .values_list('currency_id', 'account__currency_id')
+        .distinct()
+    )
+
+    if not currency_pairs:
+        return set()
+
+    items = set()
+    must_be_set = set()
+
+    for x, y in currency_pairs:
+        if x == y:
+            must_be_set.add(x)
+        items.add(x)
+        items.add(y)
+
+    # -- Early check: maybe must_be_set alone covers all pairs
+    if all(must_be_set.intersection(pair) for pair in currency_pairs):
+        return must_be_set
+
+    # -- Remove the 'must be' items so we only combine the rest
+    remaining_items = items - must_be_set
+    for r in range(1, len(remaining_items) + 1):
+        for combo in itertools.combinations(remaining_items, r):
+            candidate_set = must_be_set.union(combo)
+            # Check if candidate_set hits all pairs
+            if all(candidate_set.intersection(pair) for pair in currency_pairs):
+                return candidate_set
+    return set()
+
+
+@extend_schema(
+    summary='Create a new Transaction',
+)
+class TransactionCreateView(generics.CreateAPIView):
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSimpleSerializer
+
+
+class TransactionRetrieveDestroyView(generics.RetrieveDestroyAPIView):
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSimpleSerializer
+
+    @extend_schema(
+        summary='Get Transaction by id',
+    )
+    def get(self, request, *args, **kwargs):
+        return super(TransactionRetrieveDestroyView, self).get(request, *args, **kwargs)
+
+    @extend_schema(
+        summary='Delete specified Transaction by id',
+    )
+    def delete(self, request, *args, **kwargs):
+        return super(TransactionRetrieveDestroyView, self).delete(request, *args, **kwargs)
+
+
+@extend_schema(
+    summary='Create a new Account',
+)
+class AccountCreateView(generics.CreateAPIView):
+    queryset = Account.objects.all()
+    serializer_class = AccountSimpleSerializer
+
+
+class AccountRetrieveDestroyView(generics.RetrieveDestroyAPIView):
+    queryset = Account.objects.all()
+    serializer_class = AccountSimpleSerializer
+
+    @extend_schema(
+        summary='Get Account by id',
+    )
+    def get(self, request, *args, **kwargs):
+        return super(AccountRetrieveDestroyView, self).get(request, *args, **kwargs)
+
+    @extend_schema(
+        summary='Delete specified Account by id',
+    )
+    def delete(self, request, *args, **kwargs):
+        return super(AccountRetrieveDestroyView, self).delete(request, *args, **kwargs)
+
+
+@extend_schema(
+    summary='Create a new Category',
+)
+class CategoryCreateView(generics.CreateAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySimpleSerializer
+
+
+class CategoryRetrieveDestroyView(generics.RetrieveDestroyAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySimpleSerializer
+
+    @extend_schema(
+        summary='Get Category by id',
+    )
+    def get(self, request, *args, **kwargs):
+        return super(CategoryRetrieveDestroyView, self).get(request, *args, **kwargs)
+
+    @extend_schema(
+        summary='Delete specified Category by id',
+    )
+    def delete(self, request, *args, **kwargs):
+        return super(CategoryRetrieveDestroyView, self).delete(request, *args, **kwargs)
 
 
 class TransactionListView(generics.ListAPIView):
@@ -251,12 +367,6 @@ class TransactionChartDataView(generics.GenericAPIView):
                     "data": [label["data"][date] for date in labels],
                     "backgroundColor": f'#{label["backgroundColor"]}6A',
                     "borderColor": f'#{label["backgroundColor"]}',
-                    "borderRadius": {
-                        "topLeft": 5,
-                        "topRight": 5,
-                        "bottomLeft": 5,
-                        "bottomRight": 5
-                    }
                 }
                 for label_name, label in dataset_dict.items()
             ]
@@ -482,54 +592,75 @@ class DashboardDoughnutChartView(generics.GenericAPIView):
 class DashboardBalanceChartView(generics.GenericAPIView):
     serializer_class = StackedChartDataSerializer
 
-    def get(self, request, *args, **kwargs):
-        group_by = request.query_params.get('group_by', 'week').lower()
+    GROUPING_CONFIGS = {
+        'week': {
+            'trunc_func': TruncWeek(F('date')),
+            'extract_func': ExtractWeek(F('date')),
+            'label_template': lambda item: f"Week {item['period_num']:02d}",
+            'time_delta': timedelta(weeks=12),
+        },
+        'month': {
+            'trunc_func': TruncMonth(F('date')),
+            'extract_func': ExtractMonth(F('date')),
+            'label_template': lambda item: f"Month {item['period_num']:02d}",
+            'time_delta': timedelta(days=365),
+        },
+    }
 
-        grouping_configs = {
-            'week': {
-                'trunc_func': TruncWeek(F('date')),
-                'extract_func': ExtractWeek(F('date')),
-                'label': 'Total by Week',
-                'label_template': lambda item: f"Week {item['period_num']:02d}",
-            },
-            'month': {
-                'trunc_func': TruncMonth(F('date')),
-                'extract_func': ExtractMonth(F('date')),
-                'label': 'Total by Month',
-                'label_template': lambda item: f"Month {item['period_num']:02d}",
-            }
-        }
+    def get_grouping_config(self, group_by):
+        """Fetch grouping configuration based on the `group_by` parameter."""
 
-        config = grouping_configs.get(group_by)
+        config = self.GROUPING_CONFIGS.get(group_by)
+
         if not config:
             raise ValidationError({
                 'group_by': 'Invalid value. Expected "week" or "month".'
             })
 
-        queryset = (
+        return config
+
+    def get_currency_transactions(self, user, time_delta, now, currency, config):
+        """Fetch transaction data for a specific currency."""
+
+        return (
             Transaction.objects
-            .filter(account__profile__user=request.user)
+            .filter(account__profile__user=user, date__range=(time_delta, now))
             .values(period=config['trunc_func'])
-            .annotate(period_num=config['extract_func'])
             .annotate(
+                period_num=config['extract_func'],
                 total=Sum(
                     Case(
-                        When(amount_converted__isnull=False, then=F('amount_converted')),
-                        default=F('amount'),
+                        When(Q(currency_id=currency), then=F('amount')),
+                        When(Q(account__currency_id=currency), then=F('amount_converted')),
+                        default=None,
                     )
                 )
             )
             .order_by('period')[:12]
         )
 
-        data = {
-            'labels': [config['label_template'](item) for item in queryset],
-            'datasets': [
-                {
-                    'label': config['label'],
-                    'data': [round(item['total'] or 0, 2) for item in queryset],
-                }
-            ]
-        }
+    def get(self, request, *args, **kwargs):
+        group_by = request.query_params.get('group_by', 'week').lower()
+        config = self.get_grouping_config(group_by)
 
-        return Response(data)
+        now_time = timezone.now()
+        time_delta = now_time - config['time_delta']
+
+        distinct_currencies = get_common_currencies(request.user, time_delta, now_time)
+
+        datasets = []
+        labels = None
+
+        for currency in distinct_currencies:
+            queryset = self.get_currency_transactions(request.user, time_delta, now_time, currency, config)
+
+            currency_obj = Currency.objects.get(id=currency)
+            datasets.append({
+                'label': f'{currency_obj.abbr} {currency_obj.symbol}',
+                'data': [round(item['total'] or 0, 2) for item in queryset],
+            })
+
+            if not labels:
+                labels = [config['label_template'](item) for item in queryset]
+
+        return Response({'datasets': datasets, 'labels': labels or []})
