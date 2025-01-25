@@ -257,11 +257,6 @@
                                     beginAtZero: true,
                                     grace: 5,
                                     stacked: true,
-                                    ticks: {
-                                        callback: function (value) {
-                                            return `${value} $`;
-                                        }
-                                    }
                                 },
                             },
                             responsive: true,
@@ -278,16 +273,16 @@
                                 tooltip: {
                                     callbacks: {
                                         label: function (context) {
-                                                let label = context.dataset.label || '';
+                                            let label = context.dataset.label || '';
 
-                                                if (label) {
-                                                    label += ': ';
-                                                }
-                                                if (context.parsed.y !== null) {
-                                                    label += `${context.parsed.y} $`;
-                                                }
-                                                return label;
+                                            if (label) {
+                                                label += ': ';
                                             }
+                                            if (context.parsed.y !== null) {
+                                                label += `${context.parsed.y} $`;
+                                            }
+                                            return label;
+                                        }
                                     }
                                 },
                                 datalabels: {

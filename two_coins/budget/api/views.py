@@ -257,6 +257,127 @@ class CombinedActionListView(generics.GenericAPIView):
         return Response(self.get_serializer(response_data).data)
 
 
+class AccountsTransactionsChartDataView(generics.GenericAPIView):
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date'),
+            OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date'),
+            OpenApiParameter(name='account_id', type=OpenApiTypes.INT, description='Account ID'),
+        ],
+    )
+    def get(self, request, *args, **kwargs):
+        start_date, end_date = get_date_range(request.query_params.get('start_date', None),
+                                              request.query_params.get('end_date', None))
+        account_id = request.query_params.get('account_id', None)
+        if not account_id:
+            raise ValidationError(
+                {'account_id': 'Invalid value. Value must be a valid Account ID.'}
+            )
+        account_id = int(account_id)
+
+        trf_data = []
+        trf_queryset = (
+            Transfer.objects
+            .filter(
+                Q(account_to=account_id) | Q(account_from=account_id),
+                date__range=(start_date, end_date)
+            )
+            .annotate(
+                date_only=TruncDate('date'),
+                total_amount_from=Round(Sum(F('amount_from')), 2),
+                total_amount_to=Round(Sum(F('amount_to')), 2),
+            )
+            .values(
+                'date_only',
+                'total_amount_from',
+                'total_amount_to',
+                'account_from_id',
+                'account_from__currency',
+                'account_to__currency',
+            )
+            .order_by('date_only')
+        )
+
+        for trf in trf_queryset:
+            from_currency = trf['account_from__currency']
+            to_currency = trf['account_to__currency']
+            from_id = trf['account_from_id']
+            total_amount_from = trf['total_amount_from']
+            total_amount_to = trf['total_amount_to']
+
+            if from_currency == to_currency:
+                total_amount = -total_amount_from if from_id == account_id else total_amount_from
+            else:
+                total_amount = -total_amount_from if from_id == account_id else total_amount_to
+
+            trf_data.append({
+                'date_only': trf['date_only'],
+                'category__name': 'Transfer',
+                'category__color': '0ccaf0',
+                'total_amount': total_amount,
+            })
+
+        # accounts data
+        txn_queryset = (
+            Transaction.objects
+            .filter(
+                account__profile__user=request.user,
+                account_id=account_id,
+                date__range=(start_date, end_date)
+            )
+            .annotate(date_only=TruncDate('date'))
+            .values('date_only', 'category__name', 'category__color')
+            .annotate(
+                total_amount=Round(
+                    Sum(
+                        Case(
+                            When(amount_converted__isnull=False, then=F('amount_converted')),
+                            default=F('amount'),
+                        )
+                    ),
+                    2
+                )
+            )
+            .order_by('date_only')
+        )
+
+        if trf_data:
+            txn_queryset = list(txn_queryset) + trf_data
+            txn_queryset.sort(key=lambda x: x['date_only'])
+
+        labels = []
+        dataset_dict = defaultdict(lambda: {'backgroundColor': None, 'data': defaultdict(float)})
+
+        for txn in txn_queryset:
+            date = txn['date_only'].strftime('%d/%m')
+            if date not in labels:
+                labels.append(date)
+
+            label_name = txn['category__name']
+            label_color = txn['category__color']
+            total_amount = float(txn['total_amount'])
+
+            label = dataset_dict[label_name]
+            label['backgroundColor'] = label_color
+            label['data'][date] += total_amount
+
+        data = {
+            "labels": labels,
+            "datasets": [
+                {
+                    "label": label_name,
+                    "data": [label["data"][date] for date in labels],
+                    "backgroundColor": f'#{label["backgroundColor"]}6A',
+                    "borderColor": f'#{label["backgroundColor"]}',
+                }
+                for label_name, label in dataset_dict.items()
+            ]
+        }
+
+        return Response(data)
+
+
 class TransactionChartDataView(generics.GenericAPIView):
     serializer_class = ChartDataSerializer
 

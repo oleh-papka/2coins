@@ -306,7 +306,7 @@
         };
 
         function fetchAndPopulateChart(startDate, endDate) {
-            const url = `{% url "budget-api:charts_transaction" %}?start_date=${startDate}&end_date=${endDate}&account_id=${account_id}`;
+            const url = `{% url "budget-api:charts_account_transaction" %}?start_date=${startDate}&end_date=${endDate}&account_id=${account_id}`;
 
             fetch(url)
                 .then(response => response.json())
@@ -337,6 +337,11 @@
                                         beginAtZero: true,
                                         grace: 5,
                                         stacked: true,
+                                        ticks: {
+                                            callback: function (value, index, ticks) {
+                                                return Chart.Ticks.formatters.numeric.apply(this, [value, index, ticks]) + ' {{object.currency.symbol}}';
+                                            }
+                                        }
                                     }
                                 },
                                 plugins: {
