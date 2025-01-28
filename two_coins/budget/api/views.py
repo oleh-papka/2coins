@@ -1,6 +1,7 @@
 import itertools
 from collections import defaultdict
 from datetime import timedelta
+from decimal import Decimal
 
 from django.db.models import Q, Case, When, F, Sum
 from django.db.models.functions import TruncDate, Round, ExtractWeek, TruncWeek, TruncMonth, ExtractMonth
@@ -19,12 +20,19 @@ from .serializers import TransactionSerializer, TransferSerializer, ChartDataSer
 from ..models import Transaction, Transfer, Account, Category, Currency
 
 
-def get_common_currencies(user, time_delta, now):
+def get_common_currencies(user, start_date, end_date, extra_filter_kwargs=None):
     """Fetch currencies that appear in every transaction pair."""
+
+    base_filter_kwargs = {
+        'account__profile__user': user,
+        'date__range': (start_date, end_date),
+    }
+
+    filter_kwargs = base_filter_kwargs | extra_filter_kwargs if extra_filter_kwargs else base_filter_kwargs
 
     currency_pairs = list(
         Transaction.objects
-        .filter(account__profile__user=user, date__range=(time_delta, now))
+        .filter(**filter_kwargs)
         .values_list('currency_id', 'account__currency_id')
         .distinct()
     )
@@ -378,14 +386,32 @@ class AccountsTransactionsChartDataView(generics.GenericAPIView):
         return Response(data)
 
 
-class TransactionChartDataView(generics.GenericAPIView):
+#
+class CategoriesTransactionsChartDataView(generics.GenericAPIView):
     serializer_class = ChartDataSerializer
+
+    def get_currency_transactions(self, currency_id, txn_filter_kwargs):
+        return (
+            Transaction.objects
+            .filter(**txn_filter_kwargs)
+            .annotate(date_only=TruncDate('date'))
+            .values('date_only', 'account__name', 'account__color')
+            .annotate(
+                total=Sum(
+                    Case(
+                        When(Q(currency_id=currency_id), then=F('amount')),
+                        When(Q(account__currency_id=currency_id), then=F('amount_converted')),
+                        default=None,
+                    )
+                )
+            )
+            .order_by('date_only')
+        )
 
     @extend_schema(
         parameters=[
             OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date'),
             OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date'),
-            OpenApiParameter(name='account_id', type=OpenApiTypes.INT, description='Account ID'),
             OpenApiParameter(name='category_id', type=OpenApiTypes.INT, description='Category ID'),
             OpenApiParameter(name='absolute_values', type=OpenApiTypes.BOOL,
                              description='Override values to absolute values'),
@@ -394,103 +420,59 @@ class TransactionChartDataView(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         start_date, end_date = get_date_range(request.query_params.get('start_date', None),
                                               request.query_params.get('end_date', None))
-
         absolute_values = request.query_params.get('absolute_values', None)
-        account_id = request.query_params.get('account_id', None)
         category_id = request.query_params.get('category_id', None)
-
-        values_args = ['date_only']
-        extra_data = []
 
         txn_filter_kwargs = {
             'account__profile__user': request.user,
             'date__range': (start_date, end_date),
+            'category_id': category_id,
         }
 
-        if account_id:
-            txn_filter_kwargs['account__id'] = account_id
-            values_args.extend(['category__name', 'category__color'])
+        distinct_currencies = get_common_currencies(request.user, start_date, end_date, txn_filter_kwargs)
 
-            trf_data = (
-                Transfer.objects
-                .filter(Q(account_to=account_id) | Q(account_from=account_id),
-                        date__range=(start_date, end_date))
-                .annotate(date_only=TruncDate('date'))
-                .order_by('date_only')
-            )
-
-            for trf in trf_data:
-                if trf.account_from.currency == trf.account_to.currency:
-                    total_amount = -trf.amount_from if trf.account_to.id != int(account_id) else trf.amount_from
-                else:
-                    total_amount = -trf.amount_to if trf.account_to.id != int(account_id) else trf.amount_to
-
-                extra_data.append({
-                    'date_only': trf.date_only,
-                    'category__name': 'Transfer',
-                    'category__color': '0ccaf0',
-                    'total_amount': total_amount,
-                })
-
-        if category_id:
-            txn_filter_kwargs['category__id'] = category_id
-            values_args.extend(['account__name', 'account__color'])
-
-        txn_data = (
-            Transaction.objects
-            .filter(**txn_filter_kwargs)
-            .annotate(date_only=TruncDate('date'))
-            .values(*values_args)
-            .annotate(
-                total_amount=Round(
-                    Sum(
-                        Case(
-                            When(amount_converted__isnull=False, then=F('amount_converted')),
-                            default=F('amount'),
-                        )
-                    ),
-                    2
-                )
-            )
-            .order_by('date_only')
-        )
-
-        if extra_data:
-            txn_data = list(txn_data) + extra_data
-            txn_data.sort(key=lambda x: x['date_only'])
-
+        datasets = []
         labels = []
-        dataset_dict = defaultdict(lambda: {'backgroundColor': None, 'data': defaultdict(float)})
 
-        group_name = values_args[-1].split('__')[0]
+        for currency in distinct_currencies:
+            queryset = self.get_currency_transactions(currency, txn_filter_kwargs)
 
-        for txn in txn_data:
-            date = txn['date_only'].strftime('%d/%m')
-            if date not in labels:
-                labels.append(date)
+            currency_obj = Currency.objects.get(id=currency)
 
-            label_name = txn[f'{group_name}__name']
-            label_color = txn[f'{group_name}__color']
-            total_amount = float(txn['total_amount'])
+            dataset_dict = defaultdict(lambda: {'color': None, 'data': defaultdict(Decimal)})
 
-            if absolute_values:
-                total_amount = abs(total_amount)
+            for txn in queryset:
+                date = txn['date_only'].strftime('%d/%m')
 
-            label = dataset_dict[label_name]
-            label['backgroundColor'] = label_color
-            label['data'][date] += total_amount
+                if not date in labels:
+                    labels.append(date)
+
+                label_name = f"{txn['account__name']}"
+                label_color = txn['account__color']
+                total_amount = round(txn['total'] or 0, 2)
+
+                if absolute_values:
+                    total_amount = abs(total_amount)
+
+                label = dataset_dict[label_name]
+                label['color'] = label_color
+                label['data'][date] += total_amount
+
+            dataset = [{
+                "label": label_name,
+                "data": [label["data"][date] for date in labels],
+                "backgroundColor": f'#{label["color"]}6A',
+                "borderColor": f'#{label["color"]}',
+                "stack": f"{currency_obj.symbol}"
+            } for label_name, label in dataset_dict.items()
+                if any(label["data"][date] for date in labels)
+            ]
+
+            datasets += dataset
 
         data = {
             "labels": labels,
-            "datasets": [
-                {
-                    "label": label_name,
-                    "data": [label["data"][date] for date in labels],
-                    "backgroundColor": f'#{label["backgroundColor"]}6A',
-                    "borderColor": f'#{label["backgroundColor"]}',
-                }
-                for label_name, label in dataset_dict.items()
-            ]
+            "datasets": datasets,
         }
 
         return Response(data)
@@ -740,19 +722,19 @@ class DashboardBalanceChartView(generics.GenericAPIView):
 
         return config
 
-    def get_currency_transactions(self, user, time_delta, now, currency, config):
+    def get_currency_transactions(self, user, start_date, end_date, currency_id, config):
         """Fetch transaction data for a specific currency."""
 
         return (
             Transaction.objects
-            .filter(account__profile__user=user, date__range=(time_delta, now))
+            .filter(account__profile__user=user, date__range=(start_date, end_date))
             .values(period=config['trunc_func'])
             .annotate(
                 period_num=config['extract_func'],
                 total=Sum(
                     Case(
-                        When(Q(currency_id=currency), then=F('amount')),
-                        When(Q(account__currency_id=currency), then=F('amount_converted')),
+                        When(Q(currency_id=currency_id), then=F('amount')),
+                        When(Q(account__currency_id=currency_id), then=F('amount_converted')),
                         default=None,
                     )
                 )
@@ -764,20 +746,21 @@ class DashboardBalanceChartView(generics.GenericAPIView):
         group_by = request.query_params.get('group_by', 'week').lower()
         config = self.get_grouping_config(group_by)
 
-        now_time = timezone.now()
-        time_delta = now_time - config['time_delta']
+        start_date = timezone.now()
+        end_date = start_date - config['time_delta']
 
-        distinct_currencies = get_common_currencies(request.user, time_delta, now_time)
+        distinct_currencies = get_common_currencies(request.user, end_date, start_date)
 
         datasets = []
         labels = None
 
         for currency in distinct_currencies:
-            queryset = self.get_currency_transactions(request.user, time_delta, now_time, currency, config)
+            queryset = self.get_currency_transactions(request.user, end_date, start_date, currency, config)
 
             currency_obj = Currency.objects.get(id=currency)
             datasets.append({
-                'label': f'{currency_obj.abbr} {currency_obj.symbol}',
+                'label': currency_obj.abbr,
+                'symbol': currency_obj.symbol,
                 'data': [round(item['total'] or 0, 2) for item in queryset],
             })
 

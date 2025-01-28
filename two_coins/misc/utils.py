@@ -20,6 +20,7 @@ def get_current_month_dates():
     today = datetime.today()
     # First day of the current month
     first_day = today.replace(day=1)
+    first_day = datetime.combine(first_day, datetime.min.time())
 
     # First day of the next month, then subtract one day to get the last day of the current month
     last_day = (first_day + timedelta(days=32)).replace(day=1) - timedelta(days=1)

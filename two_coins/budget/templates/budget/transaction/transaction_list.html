@@ -447,11 +447,6 @@
                                     y: {
                                         grace: 5,
                                         stacked: true,
-                                        ticks: {
-                                            callback: function (value) {
-                                                return `${value} $`;
-                                            }
-                                        },
                                     }
                                 },
                                 plugins: {
@@ -471,7 +466,7 @@
                                                     label += ': ';
                                                 }
                                                 if (context.parsed.y !== null) {
-                                                    label += `${context.parsed.y} $`;
+                                                    label += `${context.parsed.y}`;
                                                 }
                                                 return label;
                                             }
@@ -500,7 +495,7 @@
                                         offset: 5,
                                         formatter: (value, ctx) => {
                                             const total = ctx.chart.$totalizer.totals[ctx.dataIndex];
-                                            return `${total} $`;
+                                            return `${total}`;
                                         },
                                     }
                                 }

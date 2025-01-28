@@ -279,7 +279,7 @@
                                                 label += ': ';
                                             }
                                             if (context.parsed.y !== null) {
-                                                label += `${context.parsed.y} $`;
+                                                label += `${context.parsed.y}`;
                                             }
                                             return label;
                                         }
@@ -308,7 +308,7 @@
                                     offset: 5,
                                     formatter: (value, ctx) => {
                                         let total = ctx.chart.$totalizer.totals[ctx.dataIndex];
-                                        return `${total} $`;
+                                        return `${total}`;
                                     },
                                 }
                             }

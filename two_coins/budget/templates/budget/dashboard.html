@@ -251,6 +251,27 @@
                                         legend: {
                                             position: 'top',
                                         },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function (context) {
+                                                    // Your dataset label
+                                                    let label = context.dataset.label || '';
+                                                    if (label) {
+                                                        label += ': ';
+                                                    }
+
+                                                    // Grab the stack property (e.g. your currency symbol)
+                                                    const currencySymbol = context.dataset.symbol || '';
+
+                                                    // The actual numeric value
+                                                    let value = context.parsed.y;
+                                                    // Incorporate the symbol
+                                                    label += `${value} ${currencySymbol}`;
+
+                                                    return label;
+                                                }
+                                            }
+                                        },
                                         datalabels: {
                                             display: function (context) {
                                                 return context.dataset.data[context.dataIndex] !== 0; // Hide if value is 0
@@ -266,6 +287,9 @@
                                             align: (ctx) => {
                                                 const total = ctx.raw;
                                                 return total >= 0 ? 'top' : 'bottom';
+                                            },
+                                            formatter: (value, ctx) => {
+                                                return `${value} ${ctx.dataset.symbol}`;
                                             },
                                             offset: 5,
                                         }

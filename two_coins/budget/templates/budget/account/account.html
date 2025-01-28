@@ -352,6 +352,23 @@
                                         display: true,
                                         text: `Chart for sum of all transactions of Account: ${account_name}`
                                     },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function (context) {
+                                                // Your dataset label
+                                                let label = context.dataset.label || '';
+                                                if (label) {
+                                                    label += ': ';
+                                                }
+
+                                                // The actual numeric value
+                                                let value = context.parsed.y;
+                                                label += `${value} {{object.currency.symbol}}`;
+
+                                                return label;
+                                            }
+                                        }
+                                    },
                                     datalabels: {
                                         opacity: 1,
                                         font: {
@@ -371,6 +388,11 @@
                                         align: (ctx) => {
                                             const total = ctx.chart.$totalizer.totals[ctx.dataIndex];
                                             return total >= 0 ? 'top' : 'bottom';
+                                        },
+                                        formatter: (value, ctx) => {
+                                            let total = ctx.chart.$totalizer.totals[ctx.dataIndex];
+
+                                            return `${total}` + ' {{object.currency.symbol}}';
                                         },
                                         offset: 5,
                                     }

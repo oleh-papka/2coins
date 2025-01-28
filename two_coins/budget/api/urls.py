@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import TransactionChartDataView, TransferListView, \
+from .views import CategoriesTransactionsChartDataView, TransferListView, \
     CombinedActionListView, TransactionsByCategoryChartDataView, TransactionsByAccountChartDataView, \
     TransactionListView, DashboardDoughnutChartView, DashboardBalanceChartView, TransactionCreateView, \
     CategoryCreateView, AccountCreateView, TransactionRetrieveDestroyView, AccountRetrieveDestroyView, \
@@ -19,7 +19,7 @@ urlpatterns = [
     path('accounts/', AccountCreateView.as_view(), name='account_add'),
     path('accounts/<int:id>/', AccountRetrieveDestroyView.as_view(), name='account_get_delete'),
 
-    path('charts/transactions/', TransactionChartDataView.as_view(), name='charts_transaction'),
+    path('charts/transactions/', CategoriesTransactionsChartDataView.as_view(), name='charts_transaction'),
     path('charts/account/transactions/', AccountsTransactionsChartDataView.as_view(), name='charts_account_transaction'),
     path('charts/transaction/group_by_category/', TransactionsByCategoryChartDataView.as_view(),
          name='charts_transaction_category'),
