@@ -1,10 +1,6 @@
 from django.urls import path
 
-from .views import CategoriesTransactionsChartDataView, TransferListView, \
-    CombinedActionListView, TransactionsByCategoryChartDataView, TransactionsByAccountChartDataView, \
-    TransactionListView, DashboardDoughnutChartView, DashboardBalanceChartView, TransactionCreateView, \
-    CategoryCreateView, AccountCreateView, TransactionRetrieveDestroyView, AccountRetrieveDestroyView, \
-    CategoryRetrieveDestroyView, AccountsTransactionsChartDataView
+from budget.api.views import *
 
 urlpatterns = [
     path('combined_actions/', CombinedActionListView.as_view(), name='combined_actions'),
@@ -19,14 +15,15 @@ urlpatterns = [
     path('accounts/', AccountCreateView.as_view(), name='account_add'),
     path('accounts/<int:id>/', AccountRetrieveDestroyView.as_view(), name='account_get_delete'),
 
-    path('charts/transactions/', CategoriesTransactionsChartDataView.as_view(), name='charts_transaction'),
-    path('charts/account/transactions/', AccountsTransactionsChartDataView.as_view(), name='charts_account_transaction'),
+    path('charts/transactions/', TransactionsForSingleCategoryBarChart.as_view(), name='charts_transaction'),
+    path('charts/account/transactions/', TransactionsForSingleAccountBarChart.as_view(),
+         name='charts_account_transaction'),
     path('charts/transaction/group_by_category/', TransactionsByCategoryChartDataView.as_view(),
          name='charts_transaction_category'),
-    path('charts/transaction/group_by_account/', TransactionsByAccountChartDataView.as_view(),
+    path('charts/transaction/group_by_account/', TransactionsByAccountBarChart.as_view(),
          name='charts_transaction_account'),
-    path('charts/doughnut/', DashboardDoughnutChartView.as_view(), name='dashboard_doughnut_chart'),
-    path('charts/balance/', DashboardBalanceChartView.as_view(), name='dashboard_balance_chart'),
+    path('charts/doughnut/', BalanceByTypeDoughnutChart.as_view(), name='dashboard_doughnut_chart'),
+    path('charts/balance/', BalanceByPeriodBarChart.as_view(), name='dashboard_balance_chart'),
 ]
 
 app_name = 'budget-api'
