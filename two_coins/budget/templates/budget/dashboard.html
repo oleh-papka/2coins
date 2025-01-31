@@ -352,26 +352,26 @@
             // Fetch and render Category Doughnut Chart
             fetchAndRenderDoughnutChart(
                 categoryCtx,
-                "{% url 'budget-api:dashboard_doughnut_chart' %}?group_by=category", // Ensure this is correctly rendered
+                "{% url 'budget-api:chart_balance_by_group' %}?group_by=category", // Ensure this is correctly rendered
                 categoryChartRef,
             );
 
             // Fetch and render Account Doughnut Chart
             fetchAndRenderDoughnutChart(
                 accountCtx,
-                "{% url 'budget-api:dashboard_doughnut_chart'%}?group_by=account", // Ensure this is correctly rendered
+                "{% url 'budget-api:chart_balance_by_group'%}?group_by=account", // Ensure this is correctly rendered
                 accountChartRef,
             );
 
             fetchAndRenderBalanceChart(
                 weekCtx,
-                "{% url 'budget-api:dashboard_balance_chart' %}?group_by=week",
+                "{% url 'budget-api:chart_balance_by_period' %}?group_by=week",
                 weekChartRef,
             );
 
             fetchAndRenderBalanceChart(
                 monthCtx,
-                "{% url 'budget-api:dashboard_balance_chart'%}?group_by=month",
+                "{% url 'budget-api:chart_balance_by_period'%}?group_by=month",
                 monthChartRef,
             );
         });

@@ -21,8 +21,7 @@ class TransferListView(generics.ListAPIView):
             OpenApiParameter(name='account_id', type=OpenApiTypes.INT, description='Account ID to sort by'),
         ],
         description='Get transfers within a specified date range '
-                    '(if not provided defaults to current month), '
-                    'optionally sorted by account.',
+                    '(if not provided defaults to current month), optionally sorted by account',
         summary='Retrieves Transfers only',
     )
     def get(self, request, *args, **kwargs):

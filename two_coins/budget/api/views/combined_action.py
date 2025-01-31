@@ -21,8 +21,7 @@ class CombinedActionListView(generics.GenericAPIView):
             OpenApiParameter(name='all_transfers', type=OpenApiTypes.BOOL, description='Include all transfers'),
         ],
         description='Get transactions and transfers within a specified date range '
-                    '(if not provided defaults to current month), '
-                    'optionally sorted by account.',
+                    '(if not provided defaults to current month), optionally sorted by account and or category',
         summary='Retrieves Transactions and Transfers',
     )
     def get(self, request, *args, **kwargs):

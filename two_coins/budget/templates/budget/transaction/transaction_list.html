@@ -449,7 +449,7 @@
         };
 
         function fetchAndPopulateChart(startDate, endDate) {
-            const url = `{% url "budget-api:charts_transaction_category" %}?start_date=${startDate}&end_date=${endDate}`;
+            const url = `{% url "budget-api:chart_transactions_by_categories" %}?start_date=${startDate}&end_date=${endDate}`;
 
             fetch(url)
                 .then(response => response.json())

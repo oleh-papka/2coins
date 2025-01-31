@@ -45,8 +45,7 @@ class TransactionListView(generics.ListAPIView):
             OpenApiParameter(name='category_id', type=OpenApiTypes.INT, description='Category ID to sort by'),
         ],
         description='Get transactions within a specified date range '
-                    '(if not provided defaults to current month), '
-                    'optionally sorted by account or category.',
+                    '(if not provided defaults to current month), optionally sorted by account and or category',
         summary='Retrieves Transactions only',
     )
     def get(self, request, *args, **kwargs):

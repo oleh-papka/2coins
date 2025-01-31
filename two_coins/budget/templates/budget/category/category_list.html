@@ -317,7 +317,7 @@
         const fetchAndRenderChart = (categoryType, startDate, endDate) => {
             const encodedCategoryType = encodeURIComponent(categoryType);
 
-            fetch(`{% url "budget-api:charts_transaction_category" %}?category_type=${encodedCategoryType}&absolute_values=${true}&start_date=${startDate}&end_date=${endDate}`)
+            fetch(`{% url "budget-api:chart_transactions_by_categories" %}?category_type=${encodedCategoryType}&absolute_values=${true}&start_date=${startDate}&end_date=${endDate}`)
                 .then(response => response.json())
                 .then(data => {
                     if (window.myChart && typeof window.myChart.destroy === 'function') {
@@ -337,15 +337,6 @@
                                     beginAtZero: true,
                                     grace: 5,
                                     stacked: true,
-                                    ticks: {
-                                        callback: function (value) {
-                                            // Show minus sign for expenses
-                                            if (category_type === '-') {
-                                                return `-${value}`;
-                                            }
-                                            return `${value}`;
-                                        }
-                                    }
                                 },
                             },
                             responsive: true,
@@ -380,11 +371,6 @@
                                             // The actual numeric value
                                             let value = context.parsed.y;
                                             if (value !== null) {
-                                                // Flip sign if needed
-                                                if (category_type === '-') {
-                                                    value = -value;
-                                                }
-
                                                 // Incorporate the symbol
                                                 label += `${value} ${currencySymbol}`;
                                             }
@@ -433,11 +419,6 @@
 
                                         // Retrieve the total for this stack & data index (as in the multi-stack totalizer example)
                                         let total = chart.$totalizer[stackSymbol].totals[dataIndex];
-
-                                        // Flip sign if necessary
-                                        if (category_type === '-') {
-                                            total = -total;
-                                        }
 
                                         // Return something that includes the symbol
                                         return `${total} ${stackSymbol}`;

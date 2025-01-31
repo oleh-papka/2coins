@@ -237,7 +237,7 @@
          * and then render the chart.
          */
         const fetchAndRenderChart = (startDate, endDate) => {
-            fetch(`{% url "budget-api:charts_transaction_account" %}?start_date=${startDate}&end_date=${endDate}`)
+            fetch(`{% url "budget-api:chart_transactions_by_accounts" %}?start_date=${startDate}&end_date=${endDate}`)
                 .then(response => response.json())
                 .then(data => {
                     if (window.myChart && typeof window.myChart.destroy === 'function') {

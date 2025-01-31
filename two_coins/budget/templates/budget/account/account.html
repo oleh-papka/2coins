@@ -306,7 +306,7 @@
         };
 
         function fetchAndPopulateChart(startDate, endDate) {
-            const url = `{% url "budget-api:charts_account_transaction" %}?start_date=${startDate}&end_date=${endDate}&account_id=${account_id}`;
+            const url = `{% url "budget-api:chart_transactions_by_account" account_id=object.id %}?start_date=${startDate}&end_date=${endDate}`;
 
             fetch(url)
                 .then(response => response.json())

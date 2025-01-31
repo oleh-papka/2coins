@@ -1,29 +1,52 @@
-from django.urls import path
+from django.urls import path, include
 
 from budget.api.views import *
 
+# Categories
 urlpatterns = [
-    path('combined_actions/', CombinedActionListView.as_view(), name='combined_actions'),
+    path('categories', CategoryCreateView.as_view(), name='category_add'),
+    path('categories/<int:category_id>', CategoryRetrieveDestroyView.as_view(), name='category_get_delete'),
+]
 
-    path('transfers/', TransferListView.as_view(), name='transfer'),
+# Accounts
+urlpatterns += [
+    path('accounts', AccountCreateView.as_view(), name='account_add'),
+    path('accounts/<int:account_id>', AccountRetrieveDestroyView.as_view(), name='account_get_delete'),
+]
 
-    path('transactions/', TransactionListView.as_view(), name='transaction'),
-    path('transactions/', TransactionCreateView.as_view(), name='transaction_add'),
-    path('transactions/<int:id>/', TransactionRetrieveDestroyView.as_view(), name='transaction_get_delete'),
-    path('categories/', CategoryCreateView.as_view(), name='category_add'),
-    path('categories/<int:id>/', CategoryRetrieveDestroyView.as_view(), name='category_get_delete'),
-    path('accounts/', AccountCreateView.as_view(), name='account_add'),
-    path('accounts/<int:id>/', AccountRetrieveDestroyView.as_view(), name='account_get_delete'),
+# Transfers
+urlpatterns += [
+    path('transfers', TransferListView.as_view(), name='transfer'),
+]
 
-    path('charts/transactions/', TransactionsForSingleCategoryBarChart.as_view(), name='charts_transaction'),
-    path('charts/account/transactions/', TransactionsForSingleAccountBarChart.as_view(),
-         name='charts_account_transaction'),
-    path('charts/transaction/group_by_category/', TransactionsByCategoryChartDataView.as_view(),
-         name='charts_transaction_category'),
-    path('charts/transaction/group_by_account/', TransactionsByAccountBarChart.as_view(),
-         name='charts_transaction_account'),
-    path('charts/doughnut/', BalanceByTypeDoughnutChart.as_view(), name='dashboard_doughnut_chart'),
-    path('charts/balance/', BalanceByPeriodBarChart.as_view(), name='dashboard_balance_chart'),
+# Combined Transfers and Transactions
+urlpatterns += [
+    path('combined-actions', CombinedActionListView.as_view(), name='combined_actions'),
+]
+
+# Transactions
+urlpatterns += [
+    path('transactions', TransactionListView.as_view(), name='transaction'),
+    path('transactions', TransactionCreateView.as_view(), name='transaction_add'),
+    path('transactions/<int:transaction_id>', TransactionRetrieveDestroyView.as_view(), name='transaction_get_delete'),
+]
+
+# Charts
+charts_urlpatterns = [
+    path('categories/<int:category_id>', TransactionsByCategory.as_view(),
+         name='chart_transactions_by_category'),
+    path('categories/', TransactionsByCategories.as_view(), name='chart_transactions_by_categories'),
+
+    path('accounts/<int:account_id>', TransactionsByAccount.as_view(),
+         name='chart_transactions_by_account'),
+    path('accounts', TransactionsByAccounts.as_view(), name='chart_transactions_by_accounts'),
+
+    path('balance-by-group', BalanceByType.as_view(), name='chart_balance_by_group'),
+    path('balance-by-period', BalanceByPeriod.as_view(), name='chart_balance_by_period'),
+]
+
+urlpatterns += [
+    path('charts/', include(charts_urlpatterns)),
 ]
 
 app_name = 'budget-api'

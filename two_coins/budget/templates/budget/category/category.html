@@ -313,7 +313,7 @@
 
 
         function fetchAndPopulateChart(startDate, endDate) {
-            const url = `{% url "budget-api:charts_transaction" %}?start_date=${startDate}&end_date=${endDate}&category_id=${category_id}&absolute_values=true`;
+            const url = `{% url "budget-api:chart_transactions_by_category" category_id=object.id %}?start_date=${startDate}&end_date=${endDate}`;
 
             fetch(url)
                 .then(response => response.json())
@@ -345,15 +345,6 @@
                                         beginAtZero: true,
                                         grace: 5,
                                         stacked: true,
-                                        ticks: {
-                                            callback: function (value) {
-                                                // Show minus sign for expenses
-                                                if (category_type === '-') {
-                                                    return `-${value}`;
-                                                }
-                                                return `${value}`;
-                                            }
-                                        }
                                     }
                                 },
                                 plugins: {
@@ -379,11 +370,6 @@
                                                 // The actual numeric value
                                                 let value = context.parsed.y;
                                                 if (value !== null) {
-                                                    // Flip sign if needed
-                                                    if (category_type === '-') {
-                                                        value = -value;
-                                                    }
-
                                                     // Incorporate the symbol
                                                     label += `${value} ${currencySymbol}`;
                                                 }
@@ -432,11 +418,6 @@
 
                                             // Retrieve the total for this stack & data index (as in the multi-stack totalizer example)
                                             let total = chart.$totalizer[stackSymbol].totals[dataIndex];
-
-                                            // Flip sign if necessary
-                                            if (category_type === '-') {
-                                                total = -total;
-                                            }
 
                                             // Return something that includes the symbol
                                             return `${total} ${stackSymbol}`;

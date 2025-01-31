@@ -2,92 +2,154 @@ openapi: 3.0.3
 info:
   title: 2coins API
   version: 0.0.1
-  description: 2coins API provides basic functionality for the app. Documentation
-    generated with drf-spectacular.
+  description: 2coins API provides functionality for the app testing and fetching
+    data for charts. Documentation generated with drf-spectacular.
 paths:
-  /api/charts/balance/:
-    get:
-      operationId: charts_balance_retrieve
+  /api/accounts:
+    post:
+      operationId: accounts_create
+      summary: Create a new Account
       tags:
-      - charts
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountSimple'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AccountSimple'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AccountSimple'
+        required: true
       security:
       - cookieAuth: []
       - basicAuth: []
       - {}
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StackedChartData'
+                $ref: '#/components/schemas/AccountSimple'
           description: ''
-  /api/charts/doughnut/:
+  /api/accounts/{account_id}:
     get:
-      operationId: charts_doughnut_retrieve
-      tags:
-      - charts
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StackedChartData'
-          description: ''
-  /api/charts/transaction/group_by_account/:
-    get:
-      operationId: charts_transaction_group_by_account_retrieve
-      tags:
-      - charts
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StackedChartData'
-          description: ''
-  /api/charts/transaction/group_by_category/:
-    get:
-      operationId: charts_transaction_group_by_category_retrieve
-      tags:
-      - charts
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StackedChartData'
-          description: ''
-  /api/charts/transactions/:
-    get:
-      operationId: charts_transactions_retrieve
+      operationId: accounts_retrieve
+      summary: Get Account by id
       parameters:
-      - in: query
-        name: absolute_values
-        schema:
-          type: boolean
-        description: Override values to absolute values
-      - in: query
+      - in: path
         name: account_id
         schema:
           type: integer
-        description: Account ID
-      - in: query
+        required: true
+      tags:
+      - accounts
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountSimple'
+          description: ''
+    delete:
+      operationId: accounts_destroy
+      summary: Delete specified Account by id
+      parameters:
+      - in: path
+        name: account_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - accounts
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/categories:
+    post:
+      operationId: categories_create
+      summary: Create a new Category
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategorySimple'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategorySimple'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategorySimple'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategorySimple'
+          description: ''
+  /api/categories/{category_id}:
+    get:
+      operationId: categories_retrieve
+      summary: Get Category by id
+      parameters:
+      - in: path
         name: category_id
         schema:
           type: integer
-        description: Category ID
+        required: true
+      tags:
+      - categories
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategorySimple'
+          description: ''
+    delete:
+      operationId: categories_destroy
+      summary: Delete specified Category by id
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - categories
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/charts/accounts:
+    get:
+      operationId: chart_transactions_by_accounts
+      summary: Transactions by Categories
+      parameters:
       - in: query
         name: end_date
         schema:
@@ -113,11 +175,164 @@ paths:
               schema:
                 $ref: '#/components/schemas/ChartData'
           description: ''
-  /api/combined_actions/:
+  /api/charts/accounts/{account_id}:
+    get:
+      operationId: chart_transactions_by_account
+      summary: Transactions by specified Account
+      parameters:
+      - in: path
+        name: account_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date
+      tags:
+      - charts
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartData'
+          description: ''
+  /api/charts/balance-by-group:
+    get:
+      operationId: charts_balance_by_group_retrieve
+      summary: Transactions sum by specified group type
+      parameters:
+      - in: query
+        name: group_by
+        schema:
+          type: string
+          enum:
+          - account
+          - category
+        description: Grouping type for transaction sums
+      tags:
+      - charts
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartData'
+          description: ''
+  /api/charts/balance-by-period:
+    get:
+      operationId: charts_balance_by_period_retrieve
+      summary: Transactions sum by specified group period
+      parameters:
+      - in: query
+        name: group_by
+        schema:
+          type: string
+          enum:
+          - month
+          - week
+        description: Grouping period for transaction sums
+      tags:
+      - charts
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartData'
+          description: ''
+  /api/charts/categories/:
+    get:
+      operationId: chart_transactions_by_categories
+      summary: Transactions by Accounts
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date
+      tags:
+      - charts
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartData'
+          description: ''
+  /api/charts/categories/{category_id}:
+    get:
+      operationId: chart_transactions_by_category
+      summary: Transactions by specified Category
+      parameters:
+      - in: path
+        name: category_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date
+        description: End date
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date
+        description: Start date
+      tags:
+      - charts
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartData'
+          description: ''
+  /api/combined-actions:
     get:
       operationId: combined_actions_retrieve
       description: Get transactions and transfers within a specified date range (if
-        not provided defaults to current month), optionally sorted by account.
+        not provided defaults to current month), optionally sorted by account and
+        or category
       summary: Retrieves Transactions and Transfers
       parameters:
       - in: query
@@ -148,7 +363,7 @@ paths:
           format: date
         description: Start date
       tags:
-      - combined_actions
+      - combined-actions
       security:
       - cookieAuth: []
       - basicAuth: []
@@ -160,11 +375,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/CombinedAction'
           description: ''
-  /api/transactions/:
+  /api/transactions:
     get:
       operationId: transactions_list
       description: Get transactions within a specified date range (if not provided
-        defaults to current month), optionally sorted by account or category.
+        defaults to current month), optionally sorted by account and or category
       summary: Retrieves Transactions only
       parameters:
       - in: query
@@ -204,11 +419,80 @@ paths:
                 items:
                   $ref: '#/components/schemas/Transaction'
           description: ''
-  /api/transfers/:
+    post:
+      operationId: transactions_create
+      summary: Create a new Transaction
+      tags:
+      - transactions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionSimple'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TransactionSimple'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TransactionSimple'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionSimple'
+          description: ''
+  /api/transactions/{transaction_id}:
+    get:
+      operationId: transactions_retrieve
+      summary: Get Transaction by id
+      parameters:
+      - in: path
+        name: transaction_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - transactions
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionSimple'
+          description: ''
+    delete:
+      operationId: transactions_destroy
+      summary: Delete specified Transaction by id
+      parameters:
+      - in: path
+        name: transaction_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - transactions
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/transfers:
     get:
       operationId: transfers_list
       description: Get transfers within a specified date range (if not provided defaults
-        to current month), optionally sorted by account.
+        to current month), optionally sorted by account
       summary: Retrieves Transfers only
       parameters:
       - in: query
@@ -278,6 +562,27 @@ components:
       - currency
       - id
       - name
+    AccountSimple:
+      type: object
+      properties:
+        name:
+          type: string
+          title: Account name
+          maxLength: 30
+        balance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          title: Account balance
+        currency_id:
+          type: integer
+        description:
+          type: string
+          nullable: true
+          maxLength: 30
+      required:
+      - currency_id
+      - name
     Category:
       type: object
       properties:
@@ -301,6 +606,17 @@ components:
       required:
       - id
       - name
+    CategorySimple:
+      type: object
+      properties:
+        name:
+          type: string
+          title: Category name
+          maxLength: 30
+        category_type:
+          $ref: '#/components/schemas/CategoryTypeEnum'
+      required:
+      - name
     CategoryTypeEnum:
       enum:
       - '-'
@@ -317,12 +633,11 @@ components:
           items:
             type: string
             format: date-time
-        data:
+        datasets:
           type: array
-          items:
-            type: integer
+          items: {}
       required:
-      - data
+      - datasets
       - labels
     CombinedAction:
       type: object
@@ -364,20 +679,6 @@ components:
       description: |-
         * `F` - Fiat money
         * `C` - Crypto currency
-    StackedChartData:
-      type: object
-      properties:
-        labels:
-          type: array
-          items:
-            type: string
-            format: date-time
-        datasets:
-          type: array
-          items: {}
-      required:
-      - datasets
-      - labels
     Transaction:
       type: object
       properties:
@@ -414,6 +715,38 @@ components:
       - category
       - currency
       - id
+    TransactionSimple:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        amount_converted:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+          title: Amount in account's currency
+        account_id:
+          type: integer
+        category_id:
+          type: integer
+        currency_id:
+          type: integer
+        description:
+          type: string
+          nullable: true
+          maxLength: 50
+        date:
+          type: string
+          format: date-time
+          title: Date/time
+      required:
+      - account_id
+      - amount
+      - category_id
+      - currency_id
     Transfer:
       type: object
       properties:

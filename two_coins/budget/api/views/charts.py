@@ -13,12 +13,12 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from budget.api.serializers import ChartDataSerializer
-from budget.models import Transaction, Transfer, Currency
+from budget.models import Transaction, Transfer, Currency, Account, Category
 from misc.utils import get_date_range
 
 
 def get_common_currencies(user, start_date, end_date, extra_filter_kwargs=None):
-    """Fetch currencies that appear in every transaction pair."""
+    """Fetch currencies that appear in every transaction."""
 
     base_filter_kwargs = {
         'account__profile__user': user,
@@ -61,23 +61,23 @@ def get_common_currencies(user, start_date, end_date, extra_filter_kwargs=None):
     return set()
 
 
-class TransactionsForSingleAccountBarChart(generics.GenericAPIView):
+class TransactionsByAccount(generics.GenericAPIView):
     serializer_class = ChartDataSerializer
 
     @extend_schema(
+        operation_id='chart_transactions_by_account',
         parameters=[
             OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date'),
             OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date'),
-            OpenApiParameter(name='account_id', type=OpenApiTypes.INT, description='Account ID'),
         ],
+        summary='Transactions by specified Account',
     )
-    def get(self, request, *args, **kwargs):
+    def get(self, request, account_id, *args, **kwargs):
         start_date, end_date = get_date_range(request.query_params.get('start_date', None),
                                               request.query_params.get('end_date', None))
-        account_id = request.query_params.get('account_id', None)
-        if not account_id:
+        if not Account.objects.get(id=account_id):
             raise ValidationError(
-                {'account_id': 'Invalid value. Value must be a valid Account ID.'}
+                {'account_id': 'Invalid value. Value must be a valid Account ID'}
             )
         account_id = int(account_id)
 
@@ -183,7 +183,7 @@ class TransactionsForSingleAccountBarChart(generics.GenericAPIView):
         return Response(data)
 
 
-class TransactionsForSingleCategoryBarChart(generics.GenericAPIView):
+class TransactionsByCategory(generics.GenericAPIView):
     serializer_class = ChartDataSerializer
 
     def get_currency_transactions(self, currency_id, txn_filter_kwargs):
@@ -205,19 +205,22 @@ class TransactionsForSingleCategoryBarChart(generics.GenericAPIView):
         )
 
     @extend_schema(
+        operation_id='chart_transactions_by_category',
         parameters=[
             OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date'),
             OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date'),
-            OpenApiParameter(name='category_id', type=OpenApiTypes.INT, description='Category ID'),
-            OpenApiParameter(name='absolute_values', type=OpenApiTypes.BOOL,
-                             description='Override values to absolute values'),
         ],
+        summary='Transactions by specified Category',
     )
-    def get(self, request, *args, **kwargs):
+    def get(self, request, category_id, *args, **kwargs):
         start_date, end_date = get_date_range(request.query_params.get('start_date', None),
                                               request.query_params.get('end_date', None))
-        absolute_values = request.query_params.get('absolute_values', None)
-        category_id = request.query_params.get('category_id', None)
+
+        if not Category.objects.get(id=category_id):
+            raise ValidationError(
+                {'category_id': 'Invalid value. Value must be a valid Category ID'}
+            )
+        category_id = int(category_id)
 
         txn_filter_kwargs = {
             'account__profile__user': request.user,
@@ -245,9 +248,6 @@ class TransactionsForSingleCategoryBarChart(generics.GenericAPIView):
                 account_name = txn['account__name']
                 total_amount = round(txn['total'] or 0, 2)
 
-                if absolute_values:
-                    total_amount = abs(total_amount)
-
                 account = dataset_dict[account_name]
                 account['color'] = txn['account__color']
                 account['data'][date] += total_amount
@@ -267,7 +267,7 @@ class TransactionsForSingleCategoryBarChart(generics.GenericAPIView):
         return Response({"labels": labels, "datasets": datasets, })
 
 
-class TransactionsByCategoryChartDataView(generics.GenericAPIView):
+class TransactionsByCategories(generics.GenericAPIView):
     serializer_class = ChartDataSerializer
 
     def get_currency_transactions(self, user, start_date, end_date, currency_id, category_type=None):
@@ -298,9 +298,16 @@ class TransactionsByCategoryChartDataView(generics.GenericAPIView):
             .order_by('date_only')
         )
 
+    @extend_schema(
+        operation_id='chart_transactions_by_categories',
+        parameters=[
+            OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date'),
+            OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date'),
+        ],
+        summary='Transactions by Accounts',
+    )
     def get(self, request, *args, **kwargs):
         category_type = request.query_params.get('category_type', None)
-        absolute_values = request.query_params.get('absolute_values', None)
 
         start_date, end_date = get_date_range(request.query_params.get('start_date', None),
                                               request.query_params.get('end_date', None))
@@ -325,9 +332,6 @@ class TransactionsByCategoryChartDataView(generics.GenericAPIView):
                 category_name = txn['category__name']
                 total_amount = round(txn['total'] or 0, 2)
 
-                if absolute_values:
-                    total_amount = abs(total_amount)
-
                 category = dataset_dict[category_name]
                 category['color'] = txn['category__color']
                 category['data'][date] += float(total_amount)
@@ -347,7 +351,7 @@ class TransactionsByCategoryChartDataView(generics.GenericAPIView):
         return Response({"labels": labels, "datasets": datasets, })
 
 
-class TransactionsByAccountBarChart(generics.GenericAPIView):
+class TransactionsByAccounts(generics.GenericAPIView):
     serializer_class = ChartDataSerializer
 
     def get_currency_transactions(self, user, start_date, end_date, currency_id):
@@ -370,6 +374,14 @@ class TransactionsByAccountBarChart(generics.GenericAPIView):
             .order_by('date_only')
         )
 
+    @extend_schema(
+        operation_id='chart_transactions_by_accounts',
+        parameters=[
+            OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date'),
+            OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date'),
+        ],
+        summary='Transactions by Categories',
+    )
     def get(self, request, *args, **kwargs):
         start_date, end_date = get_date_range(request.query_params.get('start_date', None),
                                               request.query_params.get('end_date', None))
@@ -413,7 +425,7 @@ class TransactionsByAccountBarChart(generics.GenericAPIView):
         return Response({"labels": labels, "datasets": datasets, })
 
 
-class BalanceByTypeDoughnutChart(generics.GenericAPIView):
+class BalanceByType(generics.GenericAPIView):
     serializer_class = ChartDataSerializer
 
     GROUPING_CONFIGS = {
@@ -436,7 +448,7 @@ class BalanceByTypeDoughnutChart(generics.GenericAPIView):
 
         if not config:
             raise ValidationError({
-                'group_by': 'Invalid value. Expected "category" or "account".'
+                'group_by': 'Invalid value. Expected "category" or "account"'
             })
 
         return config
@@ -468,6 +480,17 @@ class BalanceByTypeDoughnutChart(generics.GenericAPIView):
             .order_by(config['name'])
         )
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='group_by',
+                type=OpenApiTypes.STR,
+                description='Grouping type for transaction sums',
+                enum=['category', 'account'],
+            ),
+        ],
+        summary='Transactions sum by specified group type',
+    )
     def get(self, request, *args, **kwargs):
         group_by = request.query_params.get('group_by', 'category').lower()
         datasets = []
@@ -500,7 +523,7 @@ class BalanceByTypeDoughnutChart(generics.GenericAPIView):
         return Response({'labels': labels, 'datasets': datasets})
 
 
-class BalanceByPeriodBarChart(generics.GenericAPIView):
+class BalanceByPeriod(generics.GenericAPIView):
     serializer_class = ChartDataSerializer
 
     GROUPING_CONFIGS = {
@@ -525,7 +548,7 @@ class BalanceByPeriodBarChart(generics.GenericAPIView):
 
         if not config:
             raise ValidationError({
-                'group_by': 'Invalid value. Expected "week" or "month".'
+                'group_by': 'Invalid value. Expected "week" or "month"'
             })
 
         return config
@@ -550,6 +573,17 @@ class BalanceByPeriodBarChart(generics.GenericAPIView):
             .order_by('period')[:12]
         )
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='group_by',
+                type=OpenApiTypes.STR,
+                description='Grouping period for transaction sums',
+                enum=['week', 'month'],
+            ),
+        ],
+        summary='Transactions sum by specified group period',
+    )
     def get(self, request, *args, **kwargs):
         group_by = request.query_params.get('group_by', 'week').lower()
         config = self.get_grouping_config(group_by)
