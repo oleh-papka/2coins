@@ -336,7 +336,7 @@
                                             padding: 5,
                                             formatter: (value, ctx) => {
                                                 // Calculate the sum of absolute values
-                                                const sum = ctx.chart.data.datasets[0].data.reduce((a, b) => a + Math.abs(b), 0);
+                                                const sum = ctx.chart.data.datasets[ctx.datasetIndex].data.reduce((a, b) => a + Math.abs(b), 0);
                                                 // Calculate the percentage based on the absolute value
                                                 const percentage = ((Math.abs(value) / sum) * 100).toFixed(1) + '%';
                                                 return percentage;
