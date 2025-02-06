@@ -4,7 +4,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.db.models import Q, Case, When, F, Sum
-from django.db.models.functions import TruncDate, Round, ExtractWeek, TruncWeek, TruncMonth, ExtractMonth
+from django.db.models.functions import TruncDate, Round, ExtractWeek, TruncWeek, TruncMonth, ExtractMonth, Coalesce
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
@@ -289,8 +289,7 @@ class TransactionsByCategories(generics.GenericAPIView):
             .annotate(
                 total=Sum(
                     Case(
-                        When(Q(currency_id=currency_id), then=F('amount')),
-                        When(Q(account__currency_id=currency_id), then=F('amount_converted')),
+                        When(Q(account__currency_id=currency_id), then=Coalesce(F('amount_converted'), F('amount'))),
                         default=None,
                     )
                 )
@@ -304,7 +303,7 @@ class TransactionsByCategories(generics.GenericAPIView):
             OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date'),
             OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date'),
         ],
-        summary='Transactions by Accounts',
+        summary='Transactions by Categories',
     )
     def get(self, request, *args, **kwargs):
         category_type = request.query_params.get('category_type', None)
@@ -365,8 +364,7 @@ class TransactionsByAccounts(generics.GenericAPIView):
             .annotate(
                 total=Sum(
                     Case(
-                        When(Q(currency_id=currency_id), then=F('amount')),
-                        When(Q(account__currency_id=currency_id), then=F('amount_converted')),
+                        When(Q(account__currency_id=currency_id), then=Coalesce(F('amount_converted'), F('amount'))),
                         default=None,
                     )
                 )
@@ -380,7 +378,7 @@ class TransactionsByAccounts(generics.GenericAPIView):
             OpenApiParameter(name='start_date', type=OpenApiTypes.DATE, description='Start date'),
             OpenApiParameter(name='end_date', type=OpenApiTypes.DATE, description='End date'),
         ],
-        summary='Transactions by Categories',
+        summary='Transactions by Accounts',
     )
     def get(self, request, *args, **kwargs):
         start_date, end_date = get_date_range(request.query_params.get('start_date', None),
@@ -564,8 +562,7 @@ class BalanceByPeriod(generics.GenericAPIView):
                 period_num=config['extract_func'],
                 total=Sum(
                     Case(
-                        When(Q(currency_id=currency_id), then=F('amount')),
-                        When(Q(account__currency_id=currency_id), then=F('amount_converted')),
+                        When(Q(account__currency_id=currency_id), then=Coalesce(F('amount_converted'), F('amount'))),
                         default=None,
                     )
                 )

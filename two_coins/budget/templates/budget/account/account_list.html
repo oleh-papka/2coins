@@ -180,55 +180,80 @@
             id: 'totalizer',
             beforeUpdate: (chart) => {
                 const {datasets} = chart.data;
-
-                // If no datasets, bail out safely
                 if (!datasets || datasets.length === 0) {
-                    chart.$totalizer = {totals: [], topmostIndices: []};
+                    chart.$totalizer = {};
                     return;
                 }
 
-                // Number of data points (assuming all datasets have the same length)
-                const numberOfPoints = datasets[0].data.length;
+                // 1) Group visible datasets by their `stack` property
+                const stackGroups = {};  // { [stackKey]: { datasetIndices: number[], totals: number[], topmostIndices: number[] } }
 
-                // Arrays to hold final totals and the “closest index”
-                const totals = new Array(numberOfPoints).fill(0);
-                const topmostIndices = new Array(numberOfPoints).fill(null);
+                datasets.forEach((ds, dsIndex) => {
+                    if (!chart.isDatasetVisible(dsIndex)) return;  // skip hidden
+                    const stackKey = ds.stack || '__defaultStack';
 
-                // 1) First pass: sum up all visible datasets to get the final total for each index
-                datasets.forEach((dataset, datasetIndex) => {
-                    if (!chart.isDatasetVisible(datasetIndex)) return;
-
-                    dataset.data.forEach((value, i) => {
-                        totals[i] += value;
-                    });
+                    if (!stackGroups[stackKey]) {
+                        stackGroups[stackKey] = {
+                            datasetIndices: [],
+                            totals: [],
+                            topmostIndices: []
+                        };
+                    }
+                    stackGroups[stackKey].datasetIndices.push(dsIndex);
                 });
 
-                // 2) Second pass: figure out which dataset’s partial sum is “closest” to that final total
-                //    but only if the partial sum has the same sign as the total.
-                for (let i = 0; i < numberOfPoints; i++) {
-                    let bestCandidate = 0;
+                // If no visible datasets, exit
+                if (Object.keys(stackGroups).length === 0) {
+                    chart.$totalizer = {};
+                    return;
+                }
 
-                    for (let d = 1; d < datasets.length; d++) {
-                        if (datasets[d].data[i] > 0 && totals[i] > 0) {
-                            bestCandidate = d;
-                        } else if (datasets[d].data[i] < 0 && totals[i] < 0) {
-                            bestCandidate = d;
-                        }
+                // 2) For each stack group, compute "totals" and "topmostIndices"
+                Object.keys(stackGroups).forEach(stackKey => {
+                    const group = stackGroups[stackKey];
+                    const firstIndex = group.datasetIndices[0];
+                    const numberOfPoints = datasets[firstIndex].data.length;
+
+                    // Initialize totals to 0 for each x-position
+                    group.totals = new Array(numberOfPoints).fill(0);
+
+                    // Sum up all datasets in this stack
+                    group.datasetIndices.forEach(dsIndex => {
+                        const ds = datasets[dsIndex];
+                        ds.data.forEach((value, i) => {
+                            group.totals[i] += value;
+                        });
+                    });
+
+                    // Determine "topmost" dataset index for each x-position (last dataset with same sign as total)
+                    group.topmostIndices = new Array(numberOfPoints).fill(null);
+                    for (let i = 0; i < numberOfPoints; i++) {
+                        const total = group.totals[i];
+                        let bestCandidate = null;
+
+                        group.datasetIndices.forEach(dsIndex => {
+                            const value = datasets[dsIndex].data[i];
+                            // same-sign check
+                            if ((total > 0 && value > 0) || (total < 0 && value < 0)) {
+                                bestCandidate = dsIndex;
+                            }
+                        });
+
+                        group.topmostIndices[i] = bestCandidate;
                     }
 
-                    topmostIndices[i] = bestCandidate;
-                }
+                    // Optionally round each total
+                    group.totals = group.totals.map(val => parseFloat(val.toFixed(2)));
+                });
 
-                // Optionally round totals
-                for (let i = 0; i < totals.length; i++) {
-                    totals[i] = parseFloat(totals[i].toFixed(2));
-                }
-
-                // Attach to the chart object
-                chart.$totalizer = {
-                    totals,
-                    topmostIndices,
-                };
+                // 3) Attach the results to `chart.$totalizer`
+                chart.$totalizer = {};
+                Object.keys(stackGroups).forEach(stackKey => {
+                    chart.$totalizer[stackKey] = {
+                        totals: stackGroups[stackKey].totals,
+                        topmostIndices: stackGroups[stackKey].topmostIndices
+                    };
+                });
             },
         };
 
@@ -279,42 +304,69 @@
                                 tooltip: {
                                     callbacks: {
                                         label: function (context) {
+                                            // Your dataset label
                                             let label = context.dataset.label || '';
-
                                             if (label) {
                                                 label += ': ';
                                             }
-                                            if (context.parsed.y !== null) {
-                                                label += `${context.parsed.y}`;
+
+                                            // Grab the stack property (e.g. your currency symbol)
+                                            const currencySymbol = context.dataset.stack || '';
+
+                                            // The actual numeric value
+                                            let value = context.parsed.y;
+                                            if (value !== null) {
+                                                // Incorporate the symbol
+                                                label += `${value} ${currencySymbol}`;
                                             }
+
                                             return label;
                                         }
                                     }
                                 },
                                 datalabels: {
-                                    opacity: 1,
+                                    // Example: only show label on the 'topmost' dataset within the stack
+                                    display: (ctx) => {
+                                        const {datasetIndex, dataIndex, chart} = ctx;
+                                        const dataset = chart.data.datasets[datasetIndex];
+
+                                        // Identify the stack key used by this dataset
+                                        const stackKey = dataset.stack || '__defaultStack';
+                                        // The topmostIndex for this bar
+                                        const topmostIndex = chart.$totalizer[stackKey].topmostIndices[dataIndex];
+
+                                        // Display a label only if this dataset is the "topmost" in that stack
+                                        return (datasetIndex === topmostIndex);
+                                    },
+                                    anchor: (ctx) => {
+                                        const {dataset, dataIndex, chart} = ctx;
+                                        const stackKey = dataset.stack || '__defaultStack';
+                                        const total = chart.$totalizer[stackKey].totals[dataIndex];
+                                        return total >= 0 ? 'end' : 'start';
+                                    },
+                                    align: (ctx) => {
+                                        const {dataset, dataIndex, chart} = ctx;
+                                        const stackKey = dataset.stack || '__defaultStack';
+                                        const total = chart.$totalizer[stackKey].totals[dataIndex];
+                                        return total >= 0 ? 'top' : 'bottom';
+                                    },
+                                    offset: 5,
                                     font: {
                                         size: 14,
                                         color: '#000',
                                     },
-                                    display: (ctx) => {
-                                        const dataIndex = ctx.dataIndex;
-                                        const datasetIndex = ctx.datasetIndex;
-                                        const {topmostIndices} = ctx.chart.$totalizer || {};
-                                        return datasetIndex === topmostIndices[dataIndex];
-                                    },
-                                    anchor: (ctx) => {
-                                        const total = ctx.chart.$totalizer.totals[ctx.dataIndex];
-                                        return total >= 0 ? 'end' : 'start';
-                                    },
-                                    align: (ctx) => {
-                                        const total = ctx.chart.$totalizer.totals[ctx.dataIndex];
-                                        return total >= 0 ? 'top' : 'bottom';
-                                    },
-                                    offset: 5,
                                     formatter: (value, ctx) => {
-                                        let total = ctx.chart.$totalizer.totals[ctx.dataIndex];
-                                        return `${total}`;
+                                        // Retrieve the dataset for the current bar
+                                        const {dataset, dataIndex, chart} = ctx;
+
+                                        // Access the stack name (in your case, the currency symbol)
+                                        const stackSymbol = dataset.stack || '__defaultStack';
+
+                                        // Retrieve the total for this stack & data index (as in the multi-stack totalizer example)
+                                        let total = chart.$totalizer[stackSymbol].totals[dataIndex];
+
+                                        // Return something that includes the symbol
+                                        return `${total} ${stackSymbol}`;
                                     },
                                 }
                             }

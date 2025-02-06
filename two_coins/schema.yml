@@ -148,7 +148,7 @@ paths:
   /api/charts/accounts:
     get:
       operationId: chart_transactions_by_accounts
-      summary: Transactions by Categories
+      summary: Transactions by Accounts
       parameters:
       - in: query
         name: end_date
@@ -265,7 +265,7 @@ paths:
   /api/charts/categories/:
     get:
       operationId: chart_transactions_by_categories
-      summary: Transactions by Accounts
+      summary: Transactions by Categories
       parameters:
       - in: query
         name: end_date
