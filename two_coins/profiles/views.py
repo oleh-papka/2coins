@@ -69,7 +69,7 @@ class CustomLoginView(LoginView):
     def form_valid(self, form):
         login(self.request, form.get_user())
         messages.success(self.request, f"Logged in as {form.cleaned_data.get('username')}.")
-        return redirect("account_list")
+        return redirect("dashboard")
 
     def form_invalid(self, form):
         messages.error(self.request, "Invalid username or password.")
@@ -125,7 +125,7 @@ class Auth0LogoutView(View):
 class CustomRegisterView(CreateView):
     form_class = CustomUserCreationForm
     template_name = 'users/register.html'
-    success_url = reverse_lazy('account_list')
+    success_url = reverse_lazy('dashboard')
 
     def form_valid(self, form):
         response = super().form_valid(form)

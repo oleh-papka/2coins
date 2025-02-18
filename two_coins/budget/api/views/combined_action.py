@@ -1,6 +1,6 @@
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import generics
+from rest_framework import generics, permissions
 from rest_framework.response import Response
 
 from budget.api.serializers import CombinedActionQueryParamsSerializer, CombinedActionSerializer, \
@@ -11,6 +11,7 @@ from misc.utils import get_date_range, get_combined_actions
 
 class CombinedActionListView(generics.GenericAPIView):
     serializer_class = CombinedActionSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
         parameters=[

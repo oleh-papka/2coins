@@ -1,41 +1,17 @@
 from django.db.models.functions import TruncDate
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import generics
+from rest_framework import generics, permissions
 from rest_framework.response import Response
 
-from budget.api.serializers import TransactionSerializer, TransactionSimpleSerializer
+from budget.api.serializers import TransactionSerializer
 from budget.models import Transaction
-
-
-@extend_schema(
-    summary='Create a new Transaction',
-)
-class TransactionCreateView(generics.CreateAPIView):
-    queryset = Transaction.objects.all()
-    serializer_class = TransactionSimpleSerializer
-
-
-class TransactionRetrieveDestroyView(generics.RetrieveDestroyAPIView):
-    queryset = Transaction.objects.all()
-    serializer_class = TransactionSimpleSerializer
-
-    @extend_schema(
-        summary='Get Transaction by id',
-    )
-    def get(self, request, *args, **kwargs):
-        return super(TransactionRetrieveDestroyView, self).get(request, *args, **kwargs)
-
-    @extend_schema(
-        summary='Delete specified Transaction by id',
-    )
-    def delete(self, request, *args, **kwargs):
-        return super(TransactionRetrieveDestroyView, self).delete(request, *args, **kwargs)
 
 
 class TransactionListView(generics.ListAPIView):
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
         parameters=[

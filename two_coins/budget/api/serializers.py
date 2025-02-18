@@ -9,12 +9,6 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'category_type', 'icon', 'color']
 
 
-class CategorySimpleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = ['name', 'category_type']
-
-
 class CurrencySerializer(serializers.ModelSerializer):
     class Meta:
         model = Currency
@@ -29,14 +23,6 @@ class AccountSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'balance', 'currency', 'icon', 'color', 'description']
 
 
-class AccountSimpleSerializer(serializers.ModelSerializer):
-    currency_id = serializers.IntegerField()
-
-    class Meta:
-        model = Account
-        fields = ['name', 'balance', 'currency_id', 'description']
-
-
 class TransactionSerializer(serializers.ModelSerializer):
     account = AccountSerializer()
     category = CategorySerializer()
@@ -45,16 +31,6 @@ class TransactionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Transaction
         fields = ['id', 'amount', 'amount_converted', 'account', 'category', 'currency', 'description', 'date']
-
-
-class TransactionSimpleSerializer(serializers.ModelSerializer):
-    account_id = serializers.IntegerField()
-    category_id = serializers.IntegerField()
-    currency_id = serializers.IntegerField()
-
-    class Meta:
-        model = Transaction
-        fields = ['amount', 'amount_converted', 'account_id', 'category_id', 'currency_id', 'description', 'date']
 
 
 class TransactionCombinedSerializer(TransactionSerializer):

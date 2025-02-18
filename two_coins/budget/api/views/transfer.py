@@ -2,7 +2,7 @@ from django.db.models import Q
 from django.db.models.functions import TruncDate
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import generics
+from rest_framework import generics, permissions
 from rest_framework.response import Response
 
 from budget.api.serializers import TransferSerializer
@@ -13,6 +13,7 @@ from misc.utils import get_current_month_dates
 class TransferListView(generics.ListAPIView):
     queryset = Transfer.objects.all()
     serializer_class = TransferSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
         parameters=[

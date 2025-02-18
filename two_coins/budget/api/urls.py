@@ -2,33 +2,10 @@ from django.urls import path, include
 
 from budget.api.views import *
 
-# Categories
 urlpatterns = [
-    path('categories', CategoryCreateView.as_view(), name='category_add'),
-    path('categories/<int:category_id>', CategoryRetrieveDestroyView.as_view(), name='category_get_delete'),
-]
-
-# Accounts
-urlpatterns += [
-    path('accounts', AccountCreateView.as_view(), name='account_add'),
-    path('accounts/<int:account_id>', AccountRetrieveDestroyView.as_view(), name='account_get_delete'),
-]
-
-# Transfers
-urlpatterns += [
     path('transfers', TransferListView.as_view(), name='transfer'),
-]
-
-# Combined Transfers and Transactions
-urlpatterns += [
     path('combined-actions', CombinedActionListView.as_view(), name='combined_actions'),
-]
-
-# Transactions
-urlpatterns += [
     path('transactions', TransactionListView.as_view(), name='transaction'),
-    path('transactions', TransactionCreateView.as_view(), name='transaction_add'),
-    path('transactions/<int:transaction_id>', TransactionRetrieveDestroyView.as_view(), name='transaction_get_delete'),
 ]
 
 # Charts

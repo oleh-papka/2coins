@@ -79,9 +79,7 @@ ROOT_URLCONF = 'two_coins.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [
-            './templates/'
-        ],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -176,7 +174,7 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     'TITLE': '2coins API',
-    'DESCRIPTION': '2coins API provides functionality for the app testing and fetching data for charts. '
+    'DESCRIPTION': '2coins API provides functionality for fetching data for charts. '
                    'Documentation generated with drf-spectacular.',
     'VERSION': '0.0.1',
     'SERVE_INCLUDE_SCHEMA': False,

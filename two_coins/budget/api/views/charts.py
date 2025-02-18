@@ -8,7 +8,7 @@ from django.db.models.functions import TruncDate, Round, ExtractWeek, TruncWeek,
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
-from rest_framework import generics
+from rest_framework import generics, permissions
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
@@ -63,6 +63,7 @@ def get_common_currencies(user, start_date, end_date, extra_filter_kwargs=None):
 
 class TransactionsByAccount(generics.GenericAPIView):
     serializer_class = ChartDataSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
         operation_id='chart_transactions_by_account',
@@ -185,6 +186,7 @@ class TransactionsByAccount(generics.GenericAPIView):
 
 class TransactionsByCategory(generics.GenericAPIView):
     serializer_class = ChartDataSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_currency_transactions(self, currency_id, txn_filter_kwargs):
         return (
@@ -269,6 +271,7 @@ class TransactionsByCategory(generics.GenericAPIView):
 
 class TransactionsByCategories(generics.GenericAPIView):
     serializer_class = ChartDataSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_currency_transactions(self, user, start_date, end_date, currency_id, category_type=None):
         """Fetch transaction data for a specific currency."""
@@ -352,6 +355,7 @@ class TransactionsByCategories(generics.GenericAPIView):
 
 class TransactionsByAccounts(generics.GenericAPIView):
     serializer_class = ChartDataSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_currency_transactions(self, user, start_date, end_date, currency_id):
         """Fetch transaction data for a specific currency."""
@@ -425,6 +429,7 @@ class TransactionsByAccounts(generics.GenericAPIView):
 
 class BalanceByType(generics.GenericAPIView):
     serializer_class = ChartDataSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     GROUPING_CONFIGS = {
         'category': {
@@ -523,6 +528,7 @@ class BalanceByType(generics.GenericAPIView):
 
 class BalanceByPeriod(generics.GenericAPIView):
     serializer_class = ChartDataSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
     GROUPING_CONFIGS = {
         'week': {

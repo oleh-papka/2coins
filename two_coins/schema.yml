@@ -2,149 +2,9 @@ openapi: 3.0.3
 info:
   title: 2coins API
   version: 0.0.1
-  description: 2coins API provides functionality for the app testing and fetching
-    data for charts. Documentation generated with drf-spectacular.
+  description: 2coins API provides functionality for fetching data for charts. Documentation
+    generated with drf-spectacular.
 paths:
-  /api/accounts:
-    post:
-      operationId: accounts_create
-      summary: Create a new Account
-      tags:
-      - accounts
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AccountSimple'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AccountSimple'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AccountSimple'
-        required: true
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccountSimple'
-          description: ''
-  /api/accounts/{account_id}:
-    get:
-      operationId: accounts_retrieve
-      summary: Get Account by id
-      parameters:
-      - in: path
-        name: account_id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - accounts
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccountSimple'
-          description: ''
-    delete:
-      operationId: accounts_destroy
-      summary: Delete specified Account by id
-      parameters:
-      - in: path
-        name: account_id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - accounts
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '204':
-          description: No response body
-  /api/categories:
-    post:
-      operationId: categories_create
-      summary: Create a new Category
-      tags:
-      - categories
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CategorySimple'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CategorySimple'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/CategorySimple'
-        required: true
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CategorySimple'
-          description: ''
-  /api/categories/{category_id}:
-    get:
-      operationId: categories_retrieve
-      summary: Get Category by id
-      parameters:
-      - in: path
-        name: category_id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - categories
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CategorySimple'
-          description: ''
-    delete:
-      operationId: categories_destroy
-      summary: Delete specified Category by id
-      parameters:
-      - in: path
-        name: category_id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - categories
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '204':
-          description: No response body
   /api/charts/accounts:
     get:
       operationId: chart_transactions_by_accounts
@@ -167,7 +27,6 @@ paths:
       security:
       - cookieAuth: []
       - basicAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -202,7 +61,6 @@ paths:
       security:
       - cookieAuth: []
       - basicAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -228,7 +86,6 @@ paths:
       security:
       - cookieAuth: []
       - basicAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -254,7 +111,6 @@ paths:
       security:
       - cookieAuth: []
       - basicAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -284,7 +140,6 @@ paths:
       security:
       - cookieAuth: []
       - basicAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -319,7 +174,6 @@ paths:
       security:
       - cookieAuth: []
       - basicAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -367,7 +221,6 @@ paths:
       security:
       - cookieAuth: []
       - basicAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -409,7 +262,6 @@ paths:
       security:
       - cookieAuth: []
       - basicAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -419,75 +271,6 @@ paths:
                 items:
                   $ref: '#/components/schemas/Transaction'
           description: ''
-    post:
-      operationId: transactions_create
-      summary: Create a new Transaction
-      tags:
-      - transactions
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TransactionSimple'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TransactionSimple'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TransactionSimple'
-        required: true
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TransactionSimple'
-          description: ''
-  /api/transactions/{transaction_id}:
-    get:
-      operationId: transactions_retrieve
-      summary: Get Transaction by id
-      parameters:
-      - in: path
-        name: transaction_id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - transactions
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TransactionSimple'
-          description: ''
-    delete:
-      operationId: transactions_destroy
-      summary: Delete specified Transaction by id
-      parameters:
-      - in: path
-        name: transaction_id
-        schema:
-          type: integer
-        required: true
-      tags:
-      - transactions
-      security:
-      - cookieAuth: []
-      - basicAuth: []
-      - {}
-      responses:
-        '204':
-          description: No response body
   /api/transfers:
     get:
       operationId: transfers_list
@@ -517,7 +300,6 @@ paths:
       security:
       - cookieAuth: []
       - basicAuth: []
-      - {}
       responses:
         '200':
           content:
@@ -562,27 +344,6 @@ components:
       - currency
       - id
       - name
-    AccountSimple:
-      type: object
-      properties:
-        name:
-          type: string
-          title: Account name
-          maxLength: 30
-        balance:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-          title: Account balance
-        currency_id:
-          type: integer
-        description:
-          type: string
-          nullable: true
-          maxLength: 30
-      required:
-      - currency_id
-      - name
     Category:
       type: object
       properties:
@@ -605,17 +366,6 @@ components:
           maxLength: 6
       required:
       - id
-      - name
-    CategorySimple:
-      type: object
-      properties:
-        name:
-          type: string
-          title: Category name
-          maxLength: 30
-        category_type:
-          $ref: '#/components/schemas/CategoryTypeEnum'
-      required:
       - name
     CategoryTypeEnum:
       enum:
@@ -715,38 +465,6 @@ components:
       - category
       - currency
       - id
-    TransactionSimple:
-      type: object
-      properties:
-        amount:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-        amount_converted:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-          nullable: true
-          title: Amount in account's currency
-        account_id:
-          type: integer
-        category_id:
-          type: integer
-        currency_id:
-          type: integer
-        description:
-          type: string
-          nullable: true
-          maxLength: 50
-        date:
-          type: string
-          format: date-time
-          title: Date/time
-      required:
-      - account_id
-      - amount
-      - category_id
-      - currency_id
     Transfer:
       type: object
       properties:
