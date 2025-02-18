@@ -46,11 +46,11 @@ def get_common_currencies(user, start_date, end_date, extra_filter_kwargs=None):
         items.add(x)
         items.add(y)
 
-    # -- Early check: maybe must_be_set alone covers all pairs
+    # Early check: maybe must_be_set alone covers all pairs
     if all(must_be_set.intersection(pair) for pair in currency_pairs):
         return must_be_set
 
-    # -- Remove the 'must be' items so we only combine the rest
+    # Remove the 'must be' items so we only combine the rest
     remaining_items = items - must_be_set
     for r in range(1, len(remaining_items) + 1):
         for combo in itertools.combinations(remaining_items, r):
@@ -497,7 +497,7 @@ class BalanceByType(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         group_by = request.query_params.get('group_by', 'category').lower()
         datasets = []
-        labels = None
+        labels = []
 
         config = self.get_grouping_config(group_by)
         name = config['name']
@@ -520,10 +520,11 @@ class BalanceByType(generics.GenericAPIView):
                 'borderColor': colors,
             })
 
-            if not labels:
-                labels = [item[name] for item in queryset]
+            for item in queryset:
+                if item[name] not in labels:
+                    labels.append(item[name])
 
-        return Response({'labels': labels, 'datasets': datasets})
+        return Response({'labels': labels or [], 'datasets': datasets})
 
 
 class BalanceByPeriod(generics.GenericAPIView):
