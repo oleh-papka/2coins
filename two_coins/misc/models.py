@@ -1,5 +1,3 @@
-import random
-
 from django.db.models import Model, CharField, DateTimeField
 
 
@@ -109,12 +107,12 @@ class StyleMixin(Model):
     color = CharField(null=False,
                       blank=True,
                       max_length=6,
-                      default=random.choice(ColorChoices.CHOICES)[0],
+                      default=ColorChoices.COLOR_GREEN,
                       verbose_name="Color")
     icon = CharField(null=True,
                      blank=True,
                      max_length=50,
-                     default=random.choice(IconChoices.CHOICES)[0],
+                     default=IconChoices.ICON_USER,
                      verbose_name="Icon",
                      help_text="Icon name from FontAwesome")
 
