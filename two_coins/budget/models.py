@@ -1,78 +1,44 @@
+from decimal import Decimal
+
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db import transaction as db_transaction
+from django.db.models import F
 from django.utils import timezone
 
 from misc.models import TimeStampMixin, StyleMixin
 
 
 class Currency(models.Model):
-    """
-    Currencies for an account supports both fiat money and cryptocurrencies.
-    """
+    name = models.CharField(max_length=30, unique=True, verbose_name="Name")
+    symbol = models.CharField(max_length=5, unique=True, verbose_name="Symbol")
+    abbr = models.CharField(max_length=5, unique=True, verbose_name="Abbreviation")
 
-    CRYPTO = "C"
-    FIAT = "F"
-    MONEY_TYPES_CHOICES = [
-        (FIAT, "Fiat money"),
-        (CRYPTO, "Crypto currency"),
-    ]
+    class Meta:
+        verbose_name = "Currency"
+        verbose_name_plural = "Currencies"
 
-    name = models.CharField(null=False,
-                            blank=False,
-                            max_length=30,
-                            verbose_name="Currency name",
-                            unique=True)
-    currency_type = models.CharField(max_length=1,
-                                     choices=MONEY_TYPES_CHOICES,
-                                     default=FIAT,
-                                     verbose_name="Currency type")
-    symbol = models.CharField(null=False,
-                              blank=False,
-                              max_length=5,
-                              verbose_name="Symbol",
-                              unique=True)
-    abbr = models.CharField(null=False,
-                            blank=False,
-                            max_length=5,
-                            verbose_name="Abbreviation",
-                            unique=True)
+    def __str__(self):
+        return f"Currency {self.name} ({self.abbr})"
 
 
 class Account(TimeStampMixin, StyleMixin):
-    """
-       Base model representing accounts of the user.
-    """
-
-    DEFAULT_ACCOUNT = 'd'
-    SAVINGS_ACCOUNT = 's'
-
-    ACCOUNT_TYPE_CHOICES = (
-        (DEFAULT_ACCOUNT, "Default account"),
-        (SAVINGS_ACCOUNT, "Savings account")
-    )
-
-    account_type = models.CharField(null=False,
-                                    blank=False,
-                                    max_length=1,
-                                    choices=ACCOUNT_TYPE_CHOICES,
-                                    default=DEFAULT_ACCOUNT,
-                                    verbose_name="Account type")
     name = models.CharField(null=False,
                             blank=False,
                             max_length=30,
-                            verbose_name="Account name")
+                            verbose_name="Name")
     balance = models.DecimalField(null=False,
-                                  blank=True,
-                                  default=0.00,
+                                  blank=False,
+                                  default=Decimal("0"),
                                   max_digits=10,
                                   decimal_places=2,
-                                  verbose_name="Account balance")
+                                  verbose_name="Balance")
     profile = models.ForeignKey('profiles.Profile',
                                 null=False,
                                 blank=False,
                                 on_delete=models.CASCADE,
-                                related_name='accounts')
+                                related_name='+')
     currency = models.ForeignKey(Currency,
                                  null=False,
                                  blank=False,
@@ -82,58 +48,38 @@ class Account(TimeStampMixin, StyleMixin):
                                    blank=True,
                                    max_length=30,
                                    verbose_name="Description")
-    allow_negative_balance = models.BooleanField(null=False,
-                                                 blank=True,
-                                                 default=False,
-                                                 verbose_name="Allow negative balance")
 
-    # Fields for savings account only
-    initial_balance = models.DecimalField(null=True,
-                                          blank=True,
-                                          default=0.00,
-                                          max_digits=10,
-                                          decimal_places=2,
-                                          verbose_name="Initial balance")
-    target_balance = models.DecimalField(null=True,
-                                         blank=True,
-                                         default=0.00,
-                                         max_digits=10,
-                                         decimal_places=2,
-                                         verbose_name="Target balance")
-    deadline = models.DateField(null=True,
-                                blank=True,
-                                default=None,
-                                verbose_name="Deadline date")
+    class Meta:
+        verbose_name = "Account"
+        verbose_name_plural = "Accounts"
 
-    def withdraw(self, amount):
+    def __str__(self):
+        return f"Account {self.name}"
+
+    def withdraw(self, amount: Decimal):
+        amount = abs(amount)
+
         with db_transaction.atomic():
-            self.balance -= abs(amount)
-            self.save()
+            account = Account.objects.select_for_update().get(pk=self.pk)
 
-    def deposit(self, amount):
-        with db_transaction.atomic():
-            self.balance += abs(amount)
-            self.save()
+            if account.balance < amount:
+                raise ValidationError("Insufficient funds")
 
-    def transfer(self, amount, amount_converted, to_account):
-        with db_transaction.atomic():
-            self.withdraw(amount)
-            to_account.deposit(amount_converted)
+            account.balance = F("balance") - amount
+            account.save(update_fields=["balance"])
+            account.refresh_from_db(fields=["balance"])
+            self.balance = account.balance
+
+    def deposit(self, amount: Decimal):
+        amount = abs(amount)
+        Account.objects.filter(pk=self.pk).update(balance=F("balance") + amount)
+        self.refresh_from_db(fields=["balance"])
 
 
 class Category(TimeStampMixin, StyleMixin):
-    """
-    Model for storing transaction category.
-    """
-
-    INCOME = "+"
-    EXPENSE = "-"
-
-    CATEGORY_TYPES = (INCOME, EXPENSE)
-    CATEGORY_TYPES_CHOICES = [
-        (EXPENSE, "Expense"),
-        (INCOME, "Income"),
-    ]
+    class CategoryType(models.TextChoices):
+        INCOME = "+", "Income"
+        EXPENSE = "-", "Expense"
 
     name = models.CharField(null=False,
                             blank=False,
@@ -142,20 +88,23 @@ class Category(TimeStampMixin, StyleMixin):
     category_type = models.CharField(null=False,
                                      blank=False,
                                      max_length=1,
-                                     choices=CATEGORY_TYPES_CHOICES,
-                                     default=EXPENSE,
+                                     choices=CategoryType,
+                                     default=CategoryType.EXPENSE,
                                      verbose_name="Category type")
     profile = models.ForeignKey('profiles.Profile',
                                 null=False,
                                 blank=False,
                                 on_delete=models.CASCADE)
 
+    class Meta:
+        verbose_name = "Category"
+        verbose_name_plural = "Categories"
 
-class Transaction(models.Model):
-    """
-    Model for storing one transaction within an account
-    """
+    def __str__(self):
+        return f"Category {self.name}"
 
+
+class Transaction(TimeStampMixin):
     account = models.ForeignKey(null=False,
                                 blank=False,
                                 to=Account,
@@ -173,11 +122,13 @@ class Transaction(models.Model):
                                  related_name="+")
     amount = models.DecimalField(null=False,
                                  blank=False,
+                                 default=Decimal("0"),
                                  max_digits=10,
                                  decimal_places=2,
                                  verbose_name="Amount")
     amount_converted = models.DecimalField(null=True,
                                            blank=True,
+                                           default=None,
                                            max_digits=10,
                                            decimal_places=2,
                                            verbose_name="Amount in account's currency")
@@ -185,40 +136,26 @@ class Transaction(models.Model):
                                    blank=True,
                                    max_length=50,
                                    verbose_name="Description")
-    date = models.DateTimeField(null=False,
-                                blank=True,
-                                default=timezone.now,
-                                verbose_name="Date/time")
+    performed_date = models.DateField(default=timezone.localdate, verbose_name="Date")
+
+    class Meta:
+        verbose_name = "Transaction"
+        verbose_name_plural = "Transactions"
+
+    def __str__(self):
+        return f"Transaction of {self.account.name}"
 
 
-class Transfer(models.Model):
-    amount_from = models.DecimalField(null=False,
-                                      blank=False,
-                                      max_digits=10,
-                                      decimal_places=2,
-                                      verbose_name="Amount transferring from account")
-    amount_to = models.DecimalField(null=False,
-                                    blank=True,
-                                    max_digits=10,
-                                    decimal_places=2,
-                                    verbose_name="Amount transferring to account")
-    description = models.CharField(null=True,
-                                   blank=True,
-                                   max_length=50,
-                                   verbose_name="Description")
-    date = models.DateTimeField(null=False,
-                                blank=True,
-                                default=timezone.now,
-                                verbose_name="Date/time")
-    account_from = models.ForeignKey(Account,
-                                     null=False,
-                                     blank=False,
-                                     on_delete=models.CASCADE,
-                                     related_name="transfers_out",
-                                     verbose_name="From Account")
-    account_to = models.ForeignKey(Account,
-                                   null=False,
-                                   blank=False,
-                                   on_delete=models.CASCADE,
-                                   related_name="transfers_in",
-                                   verbose_name="To Account")
+class Transfer(TimeStampMixin):
+    from_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='+')
+    txn_from = models.ForeignKey(Transaction, on_delete=models.CASCADE, related_name='+')
+
+    to_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='+')
+    txn_to = models.ForeignKey(Transaction, on_delete=models.CASCADE, related_name='+')
+
+    class Meta:
+        verbose_name = "Transfer"
+        verbose_name_plural = "Transfers"
+
+    def __str__(self):
+        return f"Transfer {self.from_account.name} -> {self.to_account.name}"
